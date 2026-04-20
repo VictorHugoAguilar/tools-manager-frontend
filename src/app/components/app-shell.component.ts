@@ -55,7 +55,7 @@ export class AppShellComponent {
       route = route.firstChild;
     }
 
-    const data = route?.snapshot.data as Partial<ShellRouteData> | undefined;
+    const data = route?.snapshot?.data as Partial<ShellRouteData> | undefined;
 
     this.routeData.set({
       eyebrow: data?.eyebrow ?? 'Panel Operativo',
