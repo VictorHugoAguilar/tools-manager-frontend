@@ -1,0 +1,80 @@
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+}
+
+.confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(18, 27, 49, 0.48);
+  backdrop-filter: blur(8px);
+  pointer-events: auto;
+}
+
+.confirm-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(460px, calc(100vw - 2rem));
+  padding: 1.5rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 28px 70px rgba(18, 27, 49, 0.24);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+
+  h3 {
+    margin: 0.35rem 0 0;
+    font-size: 1.45rem;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+}
+
+.eyebrow {
+  margin: 0;
+  color: #4d77ef;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.message {
+  margin: 0.9rem 0 0;
+  color: #626e88;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  margin-top: 1.35rem;
+}
+
+.secondary,
+.primary {
+  min-height: 2.9rem;
+  padding: 0 1rem;
+  border: none;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.secondary {
+  background: #eef1fb;
+  color: #33405f;
+}
+
+.primary {
+  background: linear-gradient(135deg, #4677f6, #2d60e9);
+  color: #fff;
+}
+
+.danger {
+  background: linear-gradient(135deg, #db645d, #c4453f);
+}
+

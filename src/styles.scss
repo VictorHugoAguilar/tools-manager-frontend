@@ -1,0 +1,54 @@
+:root {
+  color-scheme: light;
+  --bg: #eef1f8;
+  --panel: #ffffff;
+  --panel-soft: rgba(255, 255, 255, 0.72);
+  --sidebar-top: #44506e;
+  --sidebar-bottom: #2e3953;
+  --text: #243047;
+  --muted: #6e7891;
+  --line: rgba(64, 79, 119, 0.12);
+  --primary: #4677f6;
+  --primary-strong: #2f5fe0;
+  --success: #4f9b43;
+  --warning: #e18a11;
+  --danger: #d95b57;
+  --info: #6f7d9b;
+  --shadow-lg: 0 24px 60px rgba(37, 55, 102, 0.12);
+  --shadow-md: 0 12px 28px rgba(38, 54, 95, 0.1);
+  --radius-xl: 28px;
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  font-family: 'Manrope', sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(86, 120, 246, 0.18), transparent 28%),
+    linear-gradient(180deg, #f6f7fb 0%, #eef1f8 100%);
+  color: var(--text);
+}
+
+body {
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+

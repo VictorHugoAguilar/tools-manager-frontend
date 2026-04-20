@@ -1,0 +1,118 @@
+<div class="dashboard-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="assets/brand-shield.svg" alt="Logo">
+      <div>
+        <p class="brand-kicker">Angular 21+</p>
+        <h1>Gestion de Herramientas</h1>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a routerLink="/tablero" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">⌂</span>
+        <span>Tablero</span>
+      </a>
+      <a routerLink="/inventario" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">▤</span>
+        <span>Inventario</span>
+      </a>
+      <a routerLink="/categorias" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">◫</span>
+        <span>Categorias</span>
+      </a>
+      <a routerLink="/reportes" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">◧</span>
+        <span>Reportes</span>
+      </a>
+      <a routerLink="/configuracion" routerLinkActive="active" class="nav-item">
+        <span class="nav-icon">⚙</span>
+        <span>Configuracion</span>
+      </a>
+    </nav>
+
+    <section class="sidebar-card">
+      <p>Resumen rapido</p>
+      <dl>
+        <div>
+          <dt>Total</dt>
+          <dd>{{ store.stats().total }}</dd>
+        </div>
+        <div>
+          <dt>Disponibles</dt>
+          <dd>{{ store.stats().available }}</dd>
+        </div>
+        <div>
+          <dt>En uso</dt>
+          <dd>{{ store.stats().active }}</dd>
+        </div>
+        <div>
+          <dt>Mantenimiento</dt>
+          <dd>{{ store.stats().maintenance }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <footer class="sidebar-footer">
+      <span class="line"></span>
+      <button type="button" class="nav-item footer-item">
+        <span class="nav-icon">≡</span>
+        <span>Menu</span>
+      </button>
+    </footer>
+  </aside>
+
+  <main class="workspace">
+    <header class="topbar">
+      @if (showCreateAction()) {
+        <button type="button" class="create-button" (click)="store.openCreateModal()">
+          <span>＋</span>
+          Anadir Herramienta
+        </button>
+      } @else {
+        <div class="topbar-placeholder"></div>
+      }
+
+      <div class="topbar-tools">
+        <label class="search-box">
+          <span>⌕</span>
+          <input
+            type="search"
+            placeholder="Buscar..."
+            [value]="store.searchTerm()"
+            (input)="store.updateSearch($any($event.target).value)"
+          >
+        </label>
+
+        <button type="button" class="icon-button" aria-label="Notificaciones">🔔</button>
+        <button type="button" class="avatar-button" aria-label="Perfil">
+          <span class="avatar">V</span>
+          <span class="caret">⌄</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="hero-strip">
+      <div>
+        <p class="eyebrow">{{ currentRoute.eyebrow }}</p>
+        <h2>{{ currentRoute.title }}</h2>
+      </div>
+
+      <div class="hero-copy">
+        <p class="page-description">{{ currentRoute.description }}</p>
+        <p class="banner">{{ store.bannerMessage() }}</p>
+      </div>
+    </section>
+
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<app-tool-form-modal
+  [visible]="store.modalOpen()"
+  [tool]="store.editingTool()"
+  [saving]="store.saving()"
+  (closed)="store.closeModal()"
+  (submitted)="store.saveTool($event)"
+/>
+

@@ -1,0 +1,55 @@
+<article class="tool-card">
+  <header class="card-header">
+    <div>
+      <h3>{{ tool().name }}</h3>
+      <p>{{ tool().description }}</p>
+    </div>
+
+    <button type="button" class="ghost-icon" (click)="edit.emit()" aria-label="Editar herramienta">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </header>
+
+  <section class="card-body">
+    <div class="image-shell">
+      <img [src]="imageUrl()" [alt]="tool().name">
+    </div>
+
+    <dl class="details">
+      @for (detail of detailRows(); track detail.label) {
+        <div class="detail-row">
+          <dt>{{ detail.label }}</dt>
+          <dd>{{ detail.value }}</dd>
+        </div>
+      }
+    </dl>
+  </section>
+
+  <footer class="card-footer">
+    <div class="badges">
+      <span class="badge badge-primary">{{ tool().state }}</span>
+      <span class="badge badge-secondary">{{ secondaryBadge() }}</span>
+    </div>
+
+    <div class="actions">
+      @for (action of footerActions(); track action.label) {
+        <button
+          type="button"
+          class="action-button"
+          (click)="triggerAction(action)"
+        >
+          {{ action.label }}
+        </button>
+      }
+    </div>
+
+    @if (tool().urlSrc) {
+      <button type="button" class="image-link" (click)="deleteImage.emit()">
+        Eliminar imagen
+      </button>
+    }
+  </footer>
+</article>
+

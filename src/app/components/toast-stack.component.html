@@ -1,0 +1,15 @@
+<div class="toast-stack">
+  @for (toast of toastService.toasts(); track toast.id) {
+    <article class="toast-item" [class.success]="toast.tone === 'success'" [class.info]="toast.tone === 'info'" [class.warning]="toast.tone === 'warning'" [class.error]="toast.tone === 'error'">
+      <div class="toast-copy">
+        <h4>{{ toast.title }}</h4>
+        <p>{{ toast.message }}</p>
+      </div>
+
+      <button type="button" (click)="toastService.dismiss(toast.id)" aria-label="Cerrar notificacion">
+        ×
+      </button>
+    </article>
+  }
+</div>
+

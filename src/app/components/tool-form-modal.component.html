@@ -1,0 +1,98 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="closed.emit()"></div>
+
+  <section class="modal-panel" role="dialog" aria-modal="true" aria-label="Formulario de herramienta">
+    <header class="modal-header">
+      <div>
+        <p class="eyebrow">{{ tool() ? 'Edicion' : 'Nueva herramienta' }}</p>
+        <h2>{{ tool() ? 'Actualizar ficha de herramienta' : 'Registrar herramienta' }}</h2>
+      </div>
+
+      <button type="button" class="close-button" (click)="closed.emit()" aria-label="Cerrar">
+        ×
+      </button>
+    </header>
+
+    <form class="modal-form" [formGroup]="form" #formElement (ngSubmit)="submit(formElement)">
+      <div class="grid two-columns">
+        <label>
+          <span>Nombre</span>
+          <input formControlName="name" placeholder="Ej. Taladro electrico">
+        </label>
+
+        <label>
+          <span>Estado</span>
+          <select formControlName="state">
+            <option value="Disponible">Disponible</option>
+            <option value="En Uso">En Uso</option>
+            <option value="En Mantenimiento">En Mantenimiento</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="grid three-columns">
+        <label>
+          <span>Tipo</span>
+          <input formControlName="type" placeholder="Electrica, Manual, Corte...">
+        </label>
+
+        <label>
+          <span>Categoria</span>
+          <input formControlName="category" placeholder="Perforacion, Obra...">
+        </label>
+
+        <label>
+          <span>Material</span>
+          <input formControlName="material" placeholder="Acero, ABS...">
+        </label>
+      </div>
+
+      <div class="grid two-columns">
+        <label>
+          <span>Longitud (cm)</span>
+          <input type="number" formControlName="long" min="1" step="0.1">
+        </label>
+
+        <label>
+          <span>URL de imagen</span>
+          <input formControlName="urlSrc" placeholder="https://... o assets/tool-generic.svg">
+        </label>
+      </div>
+
+      <label class="full-width">
+        <span>Descripcion</span>
+        <textarea rows="4" formControlName="description" placeholder="Descripcion operativa y estado actual"></textarea>
+      </label>
+
+      <div class="uploader">
+        <div>
+          <span class="uploader-title">Imagen desde archivo</span>
+          <p>Sube una imagen para reemplazar la URL actual en Firebase Storage.</p>
+        </div>
+
+        <label class="file-picker">
+          <input type="file" accept="image/*" (change)="onFileSelected($event)">
+          <span>Seleccionar imagen</span>
+        </label>
+      </div>
+
+      @if (selectedFileName()) {
+        <p class="helper">Archivo listo: {{ selectedFileName() }}</p>
+      }
+
+      @if (tool()) {
+        <button type="button" class="inline-toggle" (click)="toggleRemoveImage()">
+          {{ removeCurrentImage() ? 'No eliminar la imagen actual' : 'Eliminar imagen actual' }}
+        </button>
+      }
+
+      <div class="actions">
+        <button type="button" class="secondary" (click)="closed.emit()">Cancelar</button>
+        <button type="submit" class="primary" [disabled]="saving()">
+          {{ saving() ? 'Guardando...' : tool() ? 'Guardar cambios' : 'Crear herramienta' }}
+        </button>
+      </div>
+    </form>
+  </section>
+}
+

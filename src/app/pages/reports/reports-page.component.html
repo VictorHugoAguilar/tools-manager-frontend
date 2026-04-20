@@ -1,0 +1,71 @@
+<section class="reports-layout">
+  <article class="metrics-grid">
+    <div class="metric-card">
+      <span>Total herramientas</span>
+      <strong>{{ store.reportMetrics().totalTools }}</strong>
+    </div>
+    <div class="metric-card">
+      <span>Disponibilidad</span>
+      <strong>{{ store.reportMetrics().availableRate }}%</strong>
+    </div>
+    <div class="metric-card">
+      <span>En uso</span>
+      <strong>{{ store.reportMetrics().activeRate }}%</strong>
+    </div>
+    <div class="metric-card">
+      <span>Promedio longitud</span>
+      <strong>{{ store.reportMetrics().averageLong }} cm</strong>
+    </div>
+  </article>
+
+  <div class="report-panels">
+    <article class="report-card">
+      <header>
+        <p class="eyebrow">Distribucion</p>
+        <h3>Por tipo de herramienta</h3>
+      </header>
+
+      <div class="bars">
+        @for (entry of store.reportMetrics().byType; track entry.label) {
+          <div class="bar-row">
+            <div class="bar-copy">
+              <strong>{{ entry.label }}</strong>
+              <span>{{ entry.total }} equipos</span>
+            </div>
+            <div class="bar-track">
+              <span class="bar-fill" [style.width.%]="entry.ratio"></span>
+            </div>
+            <em>{{ entry.ratio }}%</em>
+          </div>
+        } @empty {
+          <p class="empty">Sin datos.</p>
+        }
+      </div>
+    </article>
+
+    <article class="report-card">
+      <header>
+        <p class="eyebrow">Materiales</p>
+        <h3>Composicion del parque</h3>
+      </header>
+
+      <div class="bars warm">
+        @for (entry of store.reportMetrics().byMaterial; track entry.label) {
+          <div class="bar-row">
+            <div class="bar-copy">
+              <strong>{{ entry.label }}</strong>
+              <span>{{ entry.total }} equipos</span>
+            </div>
+            <div class="bar-track">
+              <span class="bar-fill" [style.width.%]="entry.ratio"></span>
+            </div>
+            <em>{{ entry.ratio }}%</em>
+          </div>
+        } @empty {
+          <p class="empty">Sin datos.</p>
+        }
+      </div>
+    </article>
+  </div>
+</section>
+

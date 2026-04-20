@@ -1,0 +1,78 @@
+@if (store.loading()) {
+  <section class="panel">Cargando inventario...</section>
+} @else {
+  <section class="inventory-grid">
+    <article class="inventory-table">
+      <header class="table-header">
+        <div>
+          <p class="eyebrow">Vista operativa</p>
+          <h3>Inventario completo</h3>
+        </div>
+        <span class="count">{{ rows().length }} items</span>
+      </header>
+
+      <div class="table">
+        <div class="table-row table-head">
+          <span>Herramienta</span>
+          <span>Categoria</span>
+          <span>Estado</span>
+          <span>Material</span>
+          <span>Longitud</span>
+          <span>Acciones</span>
+        </div>
+
+        @for (tool of rows(); track tool.id) {
+          <div class="table-row">
+            <div class="tool-cell">
+              <img [src]="store.getImage(tool)" [alt]="tool.name">
+              <div>
+                <strong>{{ tool.name }}</strong>
+                <p>{{ tool.type }}</p>
+              </div>
+            </div>
+            <span>{{ tool.category }}</span>
+            <span class="status">{{ tool.state }}</span>
+            <span>{{ tool.material }}</span>
+            <span>{{ tool.long }} cm</span>
+            <div class="row-actions">
+              <button type="button" (click)="store.openEditModal(tool)">Editar</button>
+              <button type="button" (click)="store.requestStateChange(tool, 'Disponible')">Disponible</button>
+            </div>
+          </div>
+        } @empty {
+          <div class="table-row empty">No hay herramientas para mostrar.</div>
+        }
+      </div>
+    </article>
+
+    <aside class="inventory-side">
+      <article class="mini-panel">
+        <p class="eyebrow">Balance</p>
+        <h3>Estado del inventario</h3>
+        <div class="meter-group">
+          <div>
+            <span>Disponibles</span>
+            <strong>{{ store.stats().available }}</strong>
+          </div>
+          <div>
+            <span>En uso</span>
+            <strong>{{ store.stats().active }}</strong>
+          </div>
+          <div>
+            <span>Mantenimiento</span>
+            <strong>{{ store.stats().maintenance }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="mini-panel">
+        <p class="eyebrow">Modo</p>
+        <h3>{{ store.useDemoData() ? 'Demo local' : 'API conectada' }}</h3>
+        <p class="muted">
+          {{ store.useDemoData() ? 'Estas navegando con datos de ejemplo.' : 'Las acciones se sincronizan con el backend.' }}
+        </p>
+      </article>
+    </aside>
+  </section>
+}
+

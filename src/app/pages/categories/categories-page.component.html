@@ -1,0 +1,41 @@
+<section class="categories-grid">
+  @for (category of store.categories(); track category.name) {
+    <article class="category-card">
+      <div class="card-top">
+        <div>
+          <p class="eyebrow">Categoria</p>
+          <h3>{{ category.name }}</h3>
+        </div>
+        @if (category.sample) {
+          <img [src]="store.getImage(category.sample)" [alt]="category.name">
+        }
+      </div>
+
+      <div class="stats">
+        <div>
+          <span>Total</span>
+          <strong>{{ category.total }}</strong>
+        </div>
+        <div>
+          <span>Disponibles</span>
+          <strong>{{ category.available }}</strong>
+        </div>
+        <div>
+          <span>Con carga</span>
+          <strong>{{ category.maintenance }}</strong>
+        </div>
+      </div>
+
+      <div class="chips">
+        @for (material of category.materials; track material) {
+          <span>{{ material }}</span>
+        }
+      </div>
+    </article>
+  } @empty {
+    <article class="empty-card">
+      <p>No hay categorias para mostrar con el filtro actual.</p>
+    </article>
+  }
+</section>
+

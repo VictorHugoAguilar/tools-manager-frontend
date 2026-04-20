@@ -1,0 +1,38 @@
+@if (store.loading()) {
+  <section class="loading-panel">
+    <div class="spinner"></div>
+    <p>Cargando tablero...</p>
+  </section>
+} @else {
+  <section class="board">
+    @for (column of store.columns(); track column.id) {
+      <div class="column">
+        <header class="column-header">
+          <div class="column-title">
+            <span class="column-dot" [style.background]="column.accent"></span>
+            <h3>{{ column.title }}</h3>
+          </div>
+
+          <span class="column-count">{{ column.items.length }}</span>
+        </header>
+
+        <div class="column-content">
+          @for (tool of column.items; track tool.id) {
+            <app-tool-card
+              [tool]="tool"
+              [column]="column.id"
+              [imageUrl]="store.getImage(tool)"
+              (edit)="store.openEditModal(tool)"
+              (changeState)="store.requestStateChange(tool, $event)"
+              (deleteImage)="store.requestDeleteImage(tool)"
+            />
+          } @empty {
+            <article class="empty-card">
+              <p>No hay herramientas en esta columna.</p>
+            </article>
+          }
+        </div>
+      </div>
+    }
+  </section>
+}

@@ -1,0 +1,51 @@
+<section class="settings-grid">
+  <article class="settings-card">
+    <p class="eyebrow">Interfaz</p>
+    <h3>Preferencias visuales</h3>
+
+    <button type="button" class="toggle-row" (click)="compactMode.update(value => !value)">
+      <div>
+        <strong>Modo compacto</strong>
+        <span>Reduce espacios en tablas y paneles.</span>
+      </div>
+      <span class="toggle" [class.active]="compactMode()"></span>
+    </button>
+
+    <button type="button" class="toggle-row" (click)="reducedAnimations.update(value => !value)">
+      <div>
+        <strong>Reducir animaciones</strong>
+        <span>Prioriza transiciones mas discretas.</span>
+      </div>
+      <span class="toggle" [class.active]="reducedAnimations()"></span>
+    </button>
+  </article>
+
+  <article class="settings-card">
+    <p class="eyebrow">Datos</p>
+    <h3>Comportamiento del tablero</h3>
+
+    <button type="button" class="toggle-row" (click)="showDemoFallback.update(value => !value)">
+      <div>
+        <strong>Permitir modo demo</strong>
+        <span>Muestra datos de ejemplo cuando la API no responde.</span>
+      </div>
+      <span class="toggle" [class.active]="showDemoFallback()"></span>
+    </button>
+
+    <div class="info-box">
+      <strong>Proxy local</strong>
+      <p>El frontend reenvia `/api` a `http://localhost:3000` usando `proxy.conf.json`.</p>
+    </div>
+  </article>
+
+  <article class="settings-card span-two">
+    <p class="eyebrow">Entorno</p>
+    <h3>Notas de operacion</h3>
+    <ul class="notes">
+      <li>La app no usa autenticacion en esta version.</li>
+      <li>Las imagenes se cargan a Firebase Storage a traves del backend.</li>
+      <li>El dashboard, inventario, categorias y reportes comparten el mismo buscador global.</li>
+    </ul>
+  </article>
+</section>
+
