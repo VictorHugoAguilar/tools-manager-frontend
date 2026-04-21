@@ -8,6 +8,8 @@ export interface Tool {
   state: string;
   material: string;
   long: number;
+  brand: string;
+  model: string;
 }
 
 export interface ToolPayload {
@@ -19,6 +21,8 @@ export interface ToolPayload {
   state: string;
   material: string;
   long: number;
+  brand: string;
+  model: string;
 }
 
 export interface ToolFormSubmission {

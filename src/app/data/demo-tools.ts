@@ -10,7 +10,9 @@ export const demoTools: Tool[] = [
     urlSrc: 'assets/tool-drill.svg',
     state: 'Disponible',
     material: 'Acero y ABS',
-    long: 31.5
+    long: 31.5,
+    brand: 'Bosch',
+    model: 'GSR 18V-28'
   },
   {
     id: 'demo-sierra',
@@ -21,7 +23,9 @@ export const demoTools: Tool[] = [
     urlSrc: 'assets/tool-saw.svg',
     state: 'En Uso',
     material: 'Aluminio',
-    long: 28
+    long: 28,
+    brand: 'Makita',
+    model: 'LSX100'
   },
   {
     id: 'demo-lijadora',
@@ -32,7 +36,9 @@ export const demoTools: Tool[] = [
     urlSrc: 'assets/tool-sander.svg',
     state: 'En Mantenimiento',
     material: 'Polimero industrial',
-    long: 22
+    long: 22,
+    brand: 'DeWalt',
+    model: 'DWE6423'
   },
   {
     id: 'demo-llave',
@@ -43,7 +49,9 @@ export const demoTools: Tool[] = [
     urlSrc: 'assets/tool-wrench.svg',
     state: 'Disponible',
     material: 'Acero forjado',
-    long: 24
+    long: 24,
+    brand: 'Stanley',
+    model: 'STHT80640'
   },
   {
     id: 'demo-soldadora',
@@ -54,7 +62,9 @@ export const demoTools: Tool[] = [
     urlSrc: 'assets/tool-welder.svg',
     state: 'En Uso',
     material: 'Acero pintado',
-    long: 33
+    long: 33,
+    brand: 'Makita',
+    model: 'SPX100'
   }
 ];
 
