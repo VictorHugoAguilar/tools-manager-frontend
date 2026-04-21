@@ -24,6 +24,8 @@ export class ToolCardComponent {
     const tool = this.tool();
 
     return [
+      { label: 'Marca', value: tool.brand },
+      { label: 'Modelo', value: tool.model },
       { label: 'Tipo', value: tool.type },
       { label: 'Categoria', value: tool.category },
       { label: 'Material', value: tool.material },
