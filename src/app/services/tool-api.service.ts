@@ -23,6 +23,10 @@ export class ToolApiService {
     return this.http.put<Tool>(`${this.baseUrl}/${id}`, payload);
   }
 
+  deleteTool(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/${id}`);
+  }
+
   updateState(id: string, state: string): Observable<Tool> {
     return this.http.patch<Tool>(`${this.baseUrl}/${id}/state`, { state });
   }
