@@ -2,13 +2,14 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Tool, ToolListResponse, ToolPayload } from '../models/tool.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ToolApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/tools';
+  private readonly baseUrl = environment.apiUrl + '/api/tools';
 
   getTools(): Observable<Tool[] | ToolListResponse> {
     return this.http.get<Tool[] | ToolListResponse>(this.baseUrl);
