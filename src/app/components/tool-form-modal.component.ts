@@ -36,7 +36,9 @@ export class ToolFormModalComponent {
     urlSrc: ['', [Validators.required]],
     state: ['Disponible', [Validators.required]],
     material: ['', [Validators.required]],
-    long: [0, [Validators.required, Validators.min(1)]]
+    long: [0, [Validators.required, Validators.min(1)]],
+    brand: ['', [Validators.required]],
+    model: ['', [Validators.required]]
   });
 
   protected readonly removeCurrentImage = signal(false);
@@ -58,7 +60,9 @@ export class ToolFormModalComponent {
           urlSrc: currentTool.urlSrc,
           state: currentTool.state,
           material: currentTool.material,
-          long: currentTool.long
+          long: currentTool.long,
+          brand: currentTool.brand,
+          model: currentTool.model
         });
       } else {
         this.form.reset({
@@ -69,7 +73,9 @@ export class ToolFormModalComponent {
           urlSrc: 'assets/tool-generic.svg',
           state: 'Disponible',
           material: '',
-          long: 20
+          long: 20,
+          brand: '',
+          model: ''
         });
       }
 
