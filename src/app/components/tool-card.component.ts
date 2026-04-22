@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Tool } from '../models/tool.model';
 
@@ -9,7 +9,7 @@ export type BoardColumnKey = 'available' | 'active' | 'maintenance';
   imports: [CommonModule],
   templateUrl: './tool-card.component.html',
   styleUrl: './tool-card.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToolCardComponent {
   readonly tool = input.required<Tool>();
@@ -82,5 +82,12 @@ export class ToolCardComponent {
       this.changeState.emit(action.nextState);
     }
   }
+
+  protected expanded = signal(false);
+
+  protected changeLongDescription = (() => {
+    console.log('changeLongDescription');
+    this.expanded.update(expanded => !expanded);
+  });
 }
 
