@@ -138,18 +138,32 @@
   min-height: 2rem;
   padding: 0.35rem 0.8rem;
   border-radius: 999px;
-  font-size: 0.92rem;
+  font-size: 0.8rem;
   font-weight: 800;
 }
 
 .badge-primary {
   background: #edf7ea;
   color: #3f8635;
+  // border: thin solid #3f8635;
 }
 
 .badge-secondary {
+  background: #fbecd1;
+  color: #e0a41a;
+  // border: thin solid #e0a41a;
+}
+
+.badge-tertiary {
+  background: #f3dada;
+  color: #b7311f;
+  // border: thin solid #b7311f;
+}
+
+.badge-default {
   background: #eef0fb;
   color: #5f6787;
+  // border: thin solid #5f6787;
 }
 
 .actions {

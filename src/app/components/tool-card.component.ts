@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 import { CommonModule } from '@angular/common';
 import { Tool } from '../models/tool.model';
 import { DropdownMenuComponent } from '../components/app-dropdown-menu/dropdown-menu.component';
+import { StateColorPipe } from "../pipe/state-color-pipe";
 
 export type BoardColumnKey = 'available' | 'active' | 'maintenance';
 
 @Component({
   selector: 'app-tool-card',
-  imports: [CommonModule, DropdownMenuComponent],
+  imports: [CommonModule, DropdownMenuComponent, StateColorPipe],
   templateUrl: './tool-card.component.html',
   styleUrl: './tool-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

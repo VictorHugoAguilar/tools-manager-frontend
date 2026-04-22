@@ -31,8 +31,10 @@
 
   <footer class="card-footer">
     <div class="badges">
-      <span class="badge badge-primary">{{ tool().state }}</span>
-      <span class="badge badge-secondary">{{ secondaryBadge() }}</span>
+      <span class="badge" [ngClass]="tool().state | stateColor ">
+        {{ tool().state }}
+      </span>
+      <span class="badge badge-default">{{ secondaryBadge() }}</span>
     </div>
 
     <div class="actions">

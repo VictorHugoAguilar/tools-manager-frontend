@@ -78,13 +78,13 @@ export class ToolStoreService {
       {
         id: 'active',
         title: 'En Uso',
-        accent: '#e18a11',
+        accent: '#eda43d',
         items: items.filter((tool) => this.resolveColumn(tool.state) === 'active')
       },
       {
         id: 'maintenance',
         title: 'En Mantenimiento',
-        accent: '#6f7d9b',
+        accent: '#f14e31',
         items: items.filter((tool) => this.resolveColumn(tool.state) === 'maintenance')
       }
     ];
