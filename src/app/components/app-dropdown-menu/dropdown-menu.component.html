@@ -1,0 +1,17 @@
+<div class="dropdown">
+    <button class="trigger" (click)="toggle()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    @if (open()) {
+    <div class="menu">
+        @for (item of items; track item.value) {
+        <button (click)="select(item.value)">
+            {{ item.label }}
+        </button>
+        }
+    </div>
+    }
+</div>

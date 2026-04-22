@@ -221,6 +221,76 @@ export class ToolStoreService {
       });
   }
 
+  deleteTool(tool: Tool): void {
+    this.confirmService.confirm({
+      title: 'Eliminar herramienta',
+      message: `¿Estás seguro de que deseas eliminar "${tool.name}"? Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      tone: 'danger'
+    }).then((confirmed) => {
+      if (!confirmed) {
+        return;
+      }
+
+      if (this.useDemoData()) {
+        this.tools.set(this.tools().filter((t) => t.id !== tool.id));
+        this.bannerMessage.set('Herramienta eliminada en modo demo.');
+        this.toastService.show({
+          title: 'Herramienta eliminada',
+          message: `${tool.name} se elimino correctamente.`,
+          tone: 'success'
+        });
+        return;
+      }
+
+      if (tool.urlSrc) {
+        this.toolApi.deleteImage(tool.id).subscribe({
+          next: () => {
+            this.toastService.show({
+              title: 'Imagen eliminada',
+              message: `La imagen de ${tool.name} se elimino correctamente.`,
+              tone: 'success'
+            });
+          },
+          error: () => {
+            this.bannerMessage.set('La herramienta se elimino, pero la imagen no se pudo borrar del storage.');
+            this.toastService.show({
+              title: 'Imagen no eliminada',
+              message: `La herramienta ${tool.name} se elimino, pero su imagen no se pudo borrar del storage.`,
+              tone: 'warning'
+            });
+          }
+        });
+      }
+
+      this.toolApi.deleteTool(tool.id).subscribe({
+        next: () => {
+          this.tools.set(this.tools().filter((t) => t.id !== tool.id));
+          this.bannerMessage.set('Herramienta eliminada correctamente.');
+          this.toastService.show({
+            title: 'Herramienta eliminada',
+            message: `${tool.name} se elimino correctamente.`,
+            tone: 'success'
+          });
+        },
+        error: () => {
+          this.bannerMessage.set('No se pudo eliminar la herramienta.');
+          this.toastService.show({
+            title: 'No se pudo eliminar',
+            message: `Revisa la conexion con la API e intentalo de nuevo para eliminar ${tool.name}.`,
+            tone: 'error'
+          });
+        }
+      });
+
+
+    });
+
+
+
+
+  }
+
   async requestStateChange(tool: Tool, state: string): Promise<void> {
     const confirmed = await this.confirmService.confirm({
       title: 'Cambiar estado',

@@ -23,6 +23,7 @@
               [column]="column.id"
               [imageUrl]="store.getImage(tool)"
               (edit)="store.openEditModal(tool)"
+              (delete)="store.deleteTool(tool)"
               (changeState)="store.requestStateChange(tool, $event)"
               (deleteImage)="store.requestDeleteImage(tool)"
             />

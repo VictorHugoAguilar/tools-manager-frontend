@@ -96,6 +96,10 @@ export class ToolFormModalComponent {
   }
 
   protected submit(formElement: HTMLFormElement): void {
+    if (this.form.getRawValue()['urlSrc'].trim() === '') {
+      this.form.get('urlSrc')?.setValue('assets/tool-generic.svg');
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
