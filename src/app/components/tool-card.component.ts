@@ -1,24 +1,32 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Tool } from '../models/tool.model';
+import { DropdownMenuComponent } from '../components/app-dropdown-menu/dropdown-menu.component';
 
 export type BoardColumnKey = 'available' | 'active' | 'maintenance';
 
 @Component({
   selector: 'app-tool-card',
-  imports: [CommonModule],
+  imports: [CommonModule, DropdownMenuComponent],
   templateUrl: './tool-card.component.html',
   styleUrl: './tool-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ToolCardComponent {
+  [x: string]: any;
   readonly tool = input.required<Tool>();
   readonly column = input.required<BoardColumnKey>();
   readonly imageUrl = input.required<string>();
 
   readonly edit = output<void>();
+  readonly delete = output<void>();
   readonly changeState = output<string>();
   readonly deleteImage = output<void>();
+
+  readonly menuItems = [
+    { label: 'Editar', value: 'edit' },
+    { label: 'Eliminar', value: 'delete' },
+  ];
 
   protected readonly detailRows = computed(() => {
     const tool = this.tool();
@@ -86,8 +94,18 @@ export class ToolCardComponent {
   protected expanded = signal(false);
 
   protected changeLongDescription = (() => {
-    console.log('changeLongDescription');
     this.expanded.update(expanded => !expanded);
   });
+
+  
+  protected onAction(action: string) {
+    if (action === 'edit') {
+      this.edit.emit();
+    }
+
+    if (action === 'delete') {
+      this.delete.emit();
+    }
+  }
 }
 
