@@ -97,7 +97,7 @@ export class ToolCardComponent {
     this.expanded.update(expanded => !expanded);
   });
 
-  
+
   protected onAction(action: string) {
     if (action === 'edit') {
       this.edit.emit();
