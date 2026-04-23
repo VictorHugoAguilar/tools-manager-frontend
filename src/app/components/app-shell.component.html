@@ -1,31 +1,41 @@
 <div class="dashboard-shell">
-  <aside class="sidebar">
+  @if (sidebarOpen()) {
+    <button
+      type="button"
+      class="sidebar-overlay"
+      [class.visible]="sidebarOpen()"
+      (click)="closeSidebar()"
+      aria-label="Cerrar menu lateral"
+    ></button>
+  }
+
+  <aside class="sidebar" [class.open]="sidebarOpen()">
     <div class="brand">
       <img src="assets/brand-shield.svg" alt="Logo">
-      <div>
+      <div class="brand-copy">
         <p class="brand-kicker">Angular 21+</p>
         <h1>Gestion de Herramientas</h1>
       </div>
     </div>
 
     <nav class="nav">
-      <a routerLink="/tablero" routerLinkActive="active" class="nav-item">
+      <a routerLink="/tablero" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">⌂</span>
         <span>Tablero</span>
       </a>
-      <a routerLink="/inventario" routerLinkActive="active" class="nav-item">
+      <a routerLink="/inventario" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">▤</span>
         <span>Inventario</span>
       </a>
-      <a routerLink="/categorias" routerLinkActive="active" class="nav-item">
+      <a routerLink="/categorias" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">◫</span>
         <span>Categorias</span>
       </a>
-      <a routerLink="/reportes" routerLinkActive="active" class="nav-item">
+      <a routerLink="/reportes" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">◧</span>
         <span>Reportes</span>
       </a>
-      <a routerLink="/configuracion" routerLinkActive="active" class="nav-item">
+      <a routerLink="/configuracion" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">⚙</span>
         <span>Configuracion</span>
       </a>
@@ -55,23 +65,34 @@
 
     <footer class="sidebar-footer">
       <span class="line"></span>
-      <button type="button" class="nav-item footer-item">
-        <span class="nav-icon">≡</span>
-        <span>Menu</span>
+      <button type="button" class="nav-item footer-item" (click)="closeSidebar()">
+        <span class="nav-icon">×</span>
+        <span>Cerrar menu</span>
       </button>
     </footer>
   </aside>
 
   <main class="workspace">
     <header class="topbar">
-      @if (showCreateAction()) {
-        <button type="button" class="create-button" (click)="store.openCreateModal()">
-          <span>＋</span>
-          Anadir Herramienta
+      <div class="topbar-start">
+        <button
+          type="button"
+          class="menu-toggle"
+          [class.open]="sidebarOpen()"
+          [attr.data-tooltip]="sidebarOpen() ? null : 'Abrir menu'"
+          (click)="toggleSidebar()"
+          aria-label="Abrir o cerrar menu"
+        >
+          {{ sidebarOpen() ? '×' : '☰' }}
         </button>
-      } @else {
-        <div class="topbar-placeholder"></div>
-      }
+
+        @if (showCreateAction()) {
+          <button type="button" class="create-button" (click)="store.openCreateModal()">
+            <span>＋</span>
+            Anadir Herramienta
+          </button>
+        }
+      </div>
 
       <div class="topbar-tools">
         <label class="search-box">
@@ -115,4 +136,3 @@
   (closed)="store.closeModal()"
   (submitted)="store.saveTool($event)"
 />
-

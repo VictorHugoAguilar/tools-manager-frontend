@@ -23,6 +23,7 @@ export class AppShellComponent {
   protected readonly store = inject(ToolStoreService);
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
+  protected readonly sidebarOpen = signal(this.getInitialSidebarState());
 
   private readonly routeData = signal<ShellRouteData>({
     eyebrow: 'Panel Operativo',
@@ -48,6 +49,19 @@ export class AppShellComponent {
     return this.routeData();
   }
 
+  protected toggleSidebar(): void {
+    this.sidebarOpen.update((current) => {
+      const next = !current;
+      localStorage.setItem('tool-frontend-sidebar-open', String(next));
+      return next;
+    });
+  }
+
+  protected closeSidebar(): void {
+    this.sidebarOpen.set(false);
+    localStorage.setItem('tool-frontend-sidebar-open', 'false');
+  }
+
   private syncRouteData(): void {
     let route = this.activatedRoute.firstChild;
 
@@ -63,5 +77,19 @@ export class AppShellComponent {
       description: data?.description ?? 'Operacion diaria de herramientas.',
       showCreateAction: data?.showCreateAction ?? true
     });
+  }
+
+  private getInitialSidebarState(): boolean {
+    if (typeof localStorage === 'undefined') {
+      return true;
+    }
+
+    const storedValue = localStorage.getItem('tool-frontend-sidebar-open');
+
+    if (storedValue === null) {
+      return true;
+    }
+
+    return storedValue === 'true';
   }
 }
