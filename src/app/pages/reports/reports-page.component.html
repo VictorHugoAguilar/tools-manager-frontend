@@ -1,71 +1,333 @@
 <section class="reports-layout">
+  <article class="filters-card">
+    <header class="filters-header">
+      <div>
+        <p class="eyebrow">Filtros avanzados</p>
+        <h3>Explora tus reportes</h3>
+      </div>
+      <div class="filters-actions">
+        <button
+          type="button"
+          class="ghost-button ghost-button--accent"
+          (click)="exportExcel()"
+          [disabled]="exportingExcel() || !hasData() || selectedExportSectionCount() === 0">
+          {{ exportingExcel() ? 'Generando Excel...' : 'Exportar Excel' }}
+        </button>
+        <button
+          type="button"
+          class="ghost-button"
+          (click)="previewPdf()"
+          [disabled]="previewingPdf() || !hasData() || selectedExportSectionCount() === 0">
+          {{ previewingPdf() ? 'Preparando vista previa...' : 'Vista previa PDF' }}
+        </button>
+        <button
+          type="button"
+          class="ghost-button ghost-button--dark"
+          (click)="exportPdf()"
+          [disabled]="exportingPdf() || !hasData() || selectedExportSectionCount() === 0">
+          {{ exportingPdf() ? 'Generando PDF...' : 'Exportar PDF' }}
+        </button>
+        <span class="pill pill--slate">{{ activeFilterCount() }} filtros activos</span>
+        <button type="button" class="ghost-button" (click)="clearFilters()" [disabled]="activeFilterCount() === 0">
+          Limpiar filtros
+        </button>
+      </div>
+    </header>
+
+    <div class="filters-grid">
+      <label class="filter-field">
+        <span>Estado</span>
+        <select [ngModel]="stateFilter()" (ngModelChange)="stateFilter.set($event)">
+          @for (option of stateOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="filter-field">
+        <span>Categoria</span>
+        <select [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
+          <option value="all">Todas las categorias</option>
+          @for (option of categoryOptions(); track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="filter-field">
+        <span>Tipo</span>
+        <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)">
+          <option value="all">Todos los tipos</option>
+          @for (option of typeOptions(); track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="filter-field">
+        <span>Material</span>
+        <select [ngModel]="materialFilter()" (ngModelChange)="materialFilter.set($event)">
+          <option value="all">Todos los materiales</option>
+          @for (option of materialOptions(); track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <section class="export-config">
+      <div class="export-config__header">
+        <div>
+          <p class="eyebrow">Exportacion</p>
+          <h3>Secciones del reporte</h3>
+        </div>
+        <div class="export-config__actions">
+          <span class="pill pill--slate">{{ selectedExportSectionCount() }} secciones</span>
+          <button type="button" class="ghost-button" (click)="setAllExportSections(true)">Marcar todo</button>
+          <button type="button" class="ghost-button" (click)="setAllExportSections(false)">Quitar todo</button>
+        </div>
+      </div>
+
+      <div class="export-checks">
+        <label class="export-check">
+          <input type="checkbox" [checked]="exportSummary()" (change)="exportSummary.set($any($event.target).checked)" />
+          <span>Resumen general</span>
+        </label>
+        <label class="export-check">
+          <input type="checkbox" [checked]="exportFilters()" (change)="exportFilters.set($any($event.target).checked)" />
+          <span>Filtros aplicados</span>
+        </label>
+        <label class="export-check">
+          <input type="checkbox" [checked]="exportCharts()" (change)="exportCharts.set($any($event.target).checked)" />
+          <span>Graficas</span>
+        </label>
+        <label class="export-check">
+          <input type="checkbox" [checked]="exportInsights()" (change)="exportInsights.set($any($event.target).checked)" />
+          <span>Analisis por tipo y material</span>
+        </label>
+        <label class="export-check">
+          <input type="checkbox" [checked]="exportDetails()" (change)="exportDetails.set($any($event.target).checked)" />
+          <span>Detalle de herramientas</span>
+        </label>
+      </div>
+    </section>
+  </article>
+
   <article class="metrics-grid">
     <div class="metric-card">
       <span>Total herramientas</span>
-      <strong>{{ store.reportMetrics().totalTools }}</strong>
+      <strong>{{ reportMetrics().totalTools }}</strong>
     </div>
     <div class="metric-card">
       <span>Disponibilidad</span>
-      <strong>{{ store.reportMetrics().availableRate }}%</strong>
+      <strong>{{ reportMetrics().availableRate }}%</strong>
     </div>
     <div class="metric-card">
       <span>En uso</span>
-      <strong>{{ store.reportMetrics().activeRate }}%</strong>
+      <strong>{{ reportMetrics().activeRate }}%</strong>
     </div>
     <div class="metric-card">
       <span>Promedio longitud</span>
-      <strong>{{ store.reportMetrics().averageLong }} cm</strong>
+      <strong>{{ reportMetrics().averageLong }} cm</strong>
     </div>
   </article>
+
+  @if (!hasData()) {
+    <article class="empty-report-state">
+      @if (hasInventoryData()) {
+        <h3>No hay resultados con esos filtros</h3>
+        <p>
+          Ajusta estado, categoria, tipo o material para volver a poblar las graficas.
+        </p>
+      } @else {
+        <h3>Sin datos para graficar</h3>
+        <p>
+          Cuando haya herramientas en inventario, aqui veras la distribucion por estado,
+          tipo, material y categoria.
+        </p>
+      }
+    </article>
+  }
 
   <div class="report-panels">
     <article class="report-card">
       <header>
-        <p class="eyebrow">Distribucion</p>
-        <h3>Por tipo de herramienta</h3>
+        <div>
+          <p class="eyebrow">Estado operativo</p>
+          <h3>Disponibilidad general</h3>
+        </div>
+        <span class="pill">{{ reportMetrics().availableRate }}% disponible</span>
       </header>
 
-      <div class="bars">
-        @for (entry of store.reportMetrics().byType; track entry.label) {
-          <div class="bar-row">
-            <div class="bar-copy">
-              <strong>{{ entry.label }}</strong>
-              <span>{{ entry.total }} equipos</span>
-            </div>
-            <div class="bar-track">
-              <span class="bar-fill" [style.width.%]="entry.ratio"></span>
-            </div>
-            <em>{{ entry.ratio }}%</em>
-          </div>
-        } @empty {
-          <p class="empty">Sin datos.</p>
-        }
+      <div class="chart-frame chart-frame--compact">
+        <canvas
+          baseChart
+          [data]="stateChartData()"
+          [options]="stateChartOptions"
+          [type]="'doughnut'"></canvas>
+      </div>
+
+      <div class="chart-legend">
+        <div>
+          <strong>{{ reportMetrics().availableRate }}%</strong>
+          <span>Disponible</span>
+        </div>
+        <div>
+          <strong>{{ reportMetrics().activeRate }}%</strong>
+          <span>En uso</span>
+        </div>
+        <div>
+          <strong>{{ reportMetrics().maintenanceRate }}%</strong>
+          <span>Mantenimiento</span>
+        </div>
       </div>
     </article>
 
     <article class="report-card">
       <header>
-        <p class="eyebrow">Materiales</p>
-        <h3>Composicion del parque</h3>
+        <div>
+          <p class="eyebrow">Distribucion</p>
+          <h3>Herramientas por tipo</h3>
+        </div>
+        <span class="pill pill--blue">{{ reportMetrics().byType.length }} tipos</span>
       </header>
 
-      <div class="bars warm">
-        @for (entry of store.reportMetrics().byMaterial; track entry.label) {
-          <div class="bar-row">
-            <div class="bar-copy">
-              <strong>{{ entry.label }}</strong>
-              <span>{{ entry.total }} equipos</span>
-            </div>
-            <div class="bar-track">
-              <span class="bar-fill" [style.width.%]="entry.ratio"></span>
-            </div>
-            <em>{{ entry.ratio }}%</em>
-          </div>
-        } @empty {
-          <p class="empty">Sin datos.</p>
-        }
+      <div class="chart-frame">
+        <canvas
+          baseChart
+          [data]="typeChartData()"
+          [options]="horizontalBarOptions"
+          [type]="'bar'"></canvas>
+      </div>
+    </article>
+
+    <article class="report-card">
+      <header>
+        <div>
+          <p class="eyebrow">Materiales</p>
+          <h3>Composicion del parque</h3>
+        </div>
+        <span class="pill pill--warm">{{ reportMetrics().byMaterial.length }} materiales</span>
+      </header>
+
+      <div class="chart-frame">
+        <canvas
+          baseChart
+          [data]="materialChartData()"
+          [options]="polarAreaOptions"
+          [type]="'polarArea'"></canvas>
+      </div>
+    </article>
+
+    <article class="report-card">
+      <header>
+        <div>
+          <p class="eyebrow">Categorias</p>
+          <h3>Cobertura por categoria</h3>
+        </div>
+        <span class="pill pill--slate">{{ reportCategories().length }} categorias</span>
+      </header>
+
+      <div class="chart-frame">
+        <canvas
+          baseChart
+          [data]="categoryChartData()"
+          [options]="stackedBarOptions"
+          [type]="'bar'"></canvas>
       </div>
     </article>
   </div>
-</section>
 
+  <article class="insights-card">
+    <header>
+      <div>
+        <p class="eyebrow">Lectura rapida</p>
+        <h3>Indicadores del tablero</h3>
+      </div>
+    </header>
+
+    <div class="insights-grid">
+      <div class="insight">
+        <span>Estado dominante</span>
+        <strong>
+          {{
+            reportMetrics().availableRate >= reportMetrics().activeRate &&
+            reportMetrics().availableRate >= reportMetrics().maintenanceRate
+              ? 'Disponible'
+              : reportMetrics().activeRate >= reportMetrics().maintenanceRate
+                ? 'En uso'
+                : 'En mantenimiento'
+          }}
+        </strong>
+      </div>
+
+      <div class="insight">
+        <span>Tipo principal</span>
+        <strong>{{ reportMetrics().byType[0]?.label ?? 'Sin datos' }}</strong>
+      </div>
+
+      <div class="insight">
+        <span>Material mas comun</span>
+        <strong>{{ reportMetrics().byMaterial[0]?.label ?? 'Sin datos' }}</strong>
+      </div>
+
+      <div class="insight">
+        <span>Promedio de longitud</span>
+        <strong>{{ reportMetrics().averageLong }} cm</strong>
+      </div>
+    </div>
+  </article>
+  
+  <article class="report-summary-card">
+    <header>
+      <div>
+        <p class="eyebrow">Resumen por tipo</p>
+        <h3>Detalle complementario</h3>
+      </div>
+    </header>
+
+    <div class="summary-list">
+      @for (entry of reportMetrics().byType; track entry.label) {
+        <div class="summary-row">
+          <div>
+            <strong>{{ entry.label }}</strong>
+            <span>{{ entry.total }} herramientas</span>
+          </div>
+          <em>{{ entry.ratio }}%</em>
+        </div>
+      } @empty {
+        <p class="empty">Sin datos.</p>
+      }
+    </div>
+  </article>
+
+  @if (pdfPreviewUrl(); as previewUrl) {
+    <div class="preview-overlay" (click)="closePdfPreview()">
+      <section class="preview-panel" (click)="$event.stopPropagation()">
+        <header class="preview-panel__header">
+          <div>
+            <p class="eyebrow">Vista previa</p>
+            <h3>{{ pdfPreviewFileName() || 'Reporte PDF' }}</h3>
+          </div>
+          <div class="preview-panel__actions">
+            <button type="button" class="ghost-button ghost-button--accent" (click)="downloadPreviewBlob()">
+              Descargar este PDF
+            </button>
+            <button type="button" class="ghost-button" (click)="closePdfPreview()">Cerrar</button>
+          </div>
+        </header>
+
+        <div class="preview-frame">
+          <iframe [src]="safePdfPreviewUrl()" title="Vista previa del reporte PDF"></iframe>
+        </div>
+
+        <div class="preview-fallback">
+          <span>Si tu navegador no muestra el PDF aqui, puedes abrirlo aparte.</span>
+          <a [href]="previewUrl" [attr.download]="pdfPreviewFileName()" target="_blank" rel="noopener noreferrer">
+            Abrir PDF en una pestaña nueva
+          </a>
+        </div>
+      </section>
+    </div>
+  }
+</section>
