@@ -133,6 +133,7 @@
   [visible]="store.modalOpen()"
   [tool]="store.editingTool()"
   [saving]="store.saving()"
+  [saveError]="store.saveError()"
   (closed)="store.closeModal()"
   (submitted)="store.saveTool($event)"
 />
