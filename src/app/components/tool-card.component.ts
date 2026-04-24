@@ -58,13 +58,13 @@ export class ToolCardComponent {
         return [
           { label: 'Editar', kind: 'edit' },
           { label: 'Asignar', kind: 'state', nextState: 'En Uso' },
-          { label: 'Mantenimiento', kind: 'state', nextState: 'En Mantenimiento' }
+          { label: 'Mantenimiento', kind: 'state', nextState: 'Mantenimiento' }
         ] as const;
       case 'active':
         return [
           { label: 'Editar', kind: 'edit' },
           { label: 'Devolver', kind: 'state', nextState: 'Disponible' },
-          { label: 'Mantenimiento', kind: 'state', nextState: 'En Mantenimiento' }
+          { label: 'Mantenimiento', kind: 'state', nextState: 'Mantenimiento' }
         ] as const;
       default:
         return [
