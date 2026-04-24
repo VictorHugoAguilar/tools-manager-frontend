@@ -1,35 +1,82 @@
-<section class="categories-grid">
-  @for (category of store.categories(); track category.name) {
+<section class="categories-page">
+  <article class="categories-toolbar">
+    <div>
+      <p class="eyebrow">Organizacion</p>
+      <h2>Orden dentro de cada categoria</h2>
+    </div>
+
+    <div class="toolbar-controls">
+      <label class="toolbar-field">
+        <span>Ordenar por</span>
+        <select [ngModel]="sortField()" (ngModelChange)="sortField.set($event)">
+          <option value="name">Nombre</option>
+          <option value="state">Estado</option>
+          <option value="brand">Marca</option>
+        </select>
+      </label>
+
+      <label class="toolbar-field">
+        <span>Sentido</span>
+        <select [ngModel]="sortOrder()" (ngModelChange)="sortOrder.set($event)">
+          <option value="asc">Ascendente</option>
+          <option value="desc">Descendente</option>
+        </select>
+      </label>
+    </div>
+  </article>
+
+  <section class="categories-grid">
+  @for (category of categories(); track category.name) {
     <article class="category-card">
-      <div class="card-top">
+      <button
+        type="button"
+        class="card-top"
+        [class.card-top--expanded]="isExpanded(category.name)"
+        (click)="toggleCategory(category.name)"
+        [attr.aria-expanded]="isExpanded(category.name)">
         <div>
           <p class="eyebrow">Categoria</p>
           <h3>{{ category.name }}</h3>
         </div>
-        @if (category.sample) {
-          <img [src]="store.getImage(category.sample)" [alt]="category.name">
-        }
-      </div>
+        <div class="card-top__meta">
+          <span class="count">{{ category.total }} herramientas</span>
+          <span class="chevron" [class.chevron--collapsed]="!isExpanded(category.name)">⌄</span>
+        </div>
+      </button>
 
-      <div class="stats">
-        <div>
-          <span>Total</span>
-          <strong>{{ category.total }}</strong>
-        </div>
-        <div>
-          <span>Disponibles</span>
-          <strong>{{ category.available }}</strong>
-        </div>
-        <div>
-          <span>Con carga</span>
-          <strong>{{ category.maintenance }}</strong>
-        </div>
-      </div>
+      <div class="category-table-shell" [class.category-table-shell--collapsed]="!isExpanded(category.name)">
+        <div class="category-table">
+          <div class="category-table__head">
+            <span>Imagen</span>
+            <span>Herramienta</span>
+            <span>Marca</span>
+            <span>Modelo</span>
+            <span>Estado</span>
+          </div>
 
-      <div class="chips">
-        @for (material of category.materials; track material) {
-          <span>{{ material }}</span>
-        }
+          @for (tool of category.tools; track tool.id) {
+            <div class="category-table__row">
+              <div class="tool-image">
+                <img [src]="store.getImage(tool)" [alt]="tool.name">
+              </div>
+              <div class="tool-copy">
+                <strong>{{ tool.name }}</strong>
+                <span>{{ tool.type }}</span>
+              </div>
+              <span class="tool-meta">{{ tool.brand || 'Sin marca' }}</span>
+              <span class="tool-meta">{{ tool.model || 'Sin modelo' }}</span>
+              <span
+                class="tool-state"
+                [class.tool-state--available]="getStateTone(tool.state) === 'available'"
+                [class.tool-state--active]="getStateTone(tool.state) === 'active'"
+                [class.tool-state--maintenance]="getStateTone(tool.state) === 'maintenance'">
+                {{ tool.state }}
+              </span>
+            </div>
+          } @empty {
+            <div class="category-table__empty">No hay herramientas en esta categoria.</div>
+          }
+        </div>
       </div>
     </article>
   } @empty {
@@ -37,5 +84,5 @@
       <p>No hay categorias para mostrar con el filtro actual.</p>
     </article>
   }
+  </section>
 </section>
-
