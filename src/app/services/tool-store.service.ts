@@ -85,7 +85,7 @@ export class ToolStoreService {
       },
       {
         id: 'maintenance',
-        title: 'En Mantenimiento',
+        title: 'Mantenimiento',
         accent: '#f14e31',
         items: items.filter((tool) => this.resolveColumn(tool.state) === 'maintenance')
       }

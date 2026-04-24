@@ -34,7 +34,7 @@ export const demoTools: Tool[] = [
     category: 'Mantenimiento',
     description: 'Requiere cambio de pad y revision del cable de alimentacion.',
     urlSrc: 'assets/tool-sander.svg',
-    state: 'En Mantenimiento',
+    state: 'Mantenimiento',
     material: 'Polimero industrial',
     long: 22,
     brand: 'DeWalt',
