@@ -14,11 +14,21 @@
   </header>
 
   <form class="modal-form" [formGroup]="form" #formElement (ngSubmit)="submit(formElement)">
+    @if (validationMessage() || saveError()) {
+      <div class="form-alert">
+        <strong>No se pudo guardar la herramienta.</strong>
+        <span>{{ saveError() || validationMessage() }}</span>
+      </div>
+    }
+
     <div class="grid two-columns">
 
       <label>
         <span>Nombre</span>
         <input formControlName="name" placeholder="Ej. Taladro electrico">
+        @if (fieldError('name'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
       <label>
@@ -28,6 +38,9 @@
           <option value="En Uso">En Uso</option>
           <option value="En Mantenimiento">En Mantenimiento</option>
         </select>
+        @if (fieldError('state'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
     </div>
@@ -37,16 +50,25 @@
       <label>
         <span>Marca</span>
         <input formControlName="brand" placeholder="Ej. Bosch, Stanley...">
+        @if (fieldError('brand'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
       <label>
         <span>Modelo</span>
         <input formControlName="model" placeholder="Ej. GSB 13 RE...">
+        @if (fieldError('model'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
       <label>
         <span>Tipo</span>
         <input formControlName="type" placeholder="Electrica, Manual, Corte...">
+        @if (fieldError('type'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
     </div>
@@ -56,16 +78,25 @@
       <label>
         <span>Categoria</span>
         <input formControlName="category" placeholder="Perforacion, Obra...">
+        @if (fieldError('category'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
       <label>
         <span>Material</span>
         <input formControlName="material" placeholder="Acero, ABS...">
+        @if (fieldError('material'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
       <label>
         <span>Longitud (cm)</span>
         <input type="number" formControlName="long" min="1" step="0.1">
+        @if (fieldError('long'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
 
     </div>
@@ -74,12 +105,18 @@
       <label>
         <span>URL de imagen</span>
         <input formControlName="urlSrc" placeholder="https://... o assets/tool-generic.svg">
+        @if (fieldError('urlSrc'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
       </label>
     </div>
 
     <label class="full-width">
       <span>Descripcion</span>
       <textarea rows="4" formControlName="description" placeholder="Descripcion operativa y estado actual"></textarea>
+      @if (fieldError('description'); as error) {
+        <small class="field-error">{{ error }}</small>
+      }
     </label>
 
     <div class="uploader">

@@ -67,6 +67,24 @@
   gap: 1rem;
 }
 
+.form-alert {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(214, 95, 95, 0.22);
+  background: #fff4f4;
+  color: #9f2f2f;
+
+  strong {
+    font-size: 0.95rem;
+  }
+
+  span {
+    line-height: 1.45;
+  }
+}
+
 .grid {
   display: grid;
   gap: 1rem;
@@ -96,6 +114,12 @@ label,
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
+}
+
+.field-error {
+  color: #b43333;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 input,

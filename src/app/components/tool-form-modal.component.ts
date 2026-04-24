@@ -21,12 +21,14 @@ export class ToolFormModalComponent {
   readonly visible = input(false);
   readonly tool = input<Tool | null>(null);
   readonly saving = input(false);
+  readonly saveError = input<string | null>(null);
 
   readonly closed = output<void>();
   readonly submitted = output<ToolFormSubmission>();
 
   private readonly formBuilder = new FormBuilder();
   protected readonly selectedFileName = signal<string>('');
+  protected readonly validationMessage = signal<string | null>(null);
 
   protected readonly form = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required]],
@@ -81,6 +83,7 @@ export class ToolFormModalComponent {
 
       this.selectedFileName.set('');
       this.removeCurrentImage.set(false);
+      this.validationMessage.set(null);
     });
   }
 
@@ -96,12 +99,15 @@ export class ToolFormModalComponent {
   }
 
   protected submit(formElement: HTMLFormElement): void {
+    this.validationMessage.set(null);
+
     if (this.form.getRawValue()['urlSrc'].trim() === '') {
       this.form.get('urlSrc')?.setValue('assets/tool-generic.svg');
     }
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.validationMessage.set(this.getFirstValidationError());
       return;
     }
 
@@ -115,5 +121,68 @@ export class ToolFormModalComponent {
       mode: this.tool() ? 'edit' : 'create'
     });
   }
-}
 
+  protected fieldError(name: keyof ReturnType<typeof this.form.getRawValue>): string | null {
+    const control = this.form.get(name);
+
+    if (!control || !control.invalid || !control.touched) {
+      return null;
+    }
+
+    if (control.errors?.['required']) {
+      return 'Este campo es obligatorio.';
+    }
+
+    if (control.errors?.['minlength']) {
+      return `Debe tener al menos ${control.errors['minlength'].requiredLength} caracteres.`;
+    }
+
+    if (control.errors?.['min']) {
+      return `Debe ser mayor o igual que ${control.errors['min'].min}.`;
+    }
+
+    return 'Valor no valido.';
+  }
+
+  private getFirstValidationError(): string {
+    const fields: Array<keyof ReturnType<typeof this.form.getRawValue>> = [
+      'name',
+      'type',
+      'category',
+      'description',
+      'urlSrc',
+      'state',
+      'material',
+      'long',
+      'brand',
+      'model'
+    ];
+
+    for (const field of fields) {
+      const error = this.fieldError(field);
+
+      if (error) {
+        return `${this.getFieldLabel(field)}: ${error}`;
+      }
+    }
+
+    return 'Revisa los campos obligatorios antes de continuar.';
+  }
+
+  private getFieldLabel(field: keyof ReturnType<typeof this.form.getRawValue>): string {
+    const labels: Record<keyof ReturnType<typeof this.form.getRawValue>, string> = {
+      name: 'Nombre',
+      type: 'Tipo',
+      category: 'Categoria',
+      description: 'Descripcion',
+      urlSrc: 'URL de imagen',
+      state: 'Estado',
+      material: 'Material',
+      long: 'Longitud',
+      brand: 'Marca',
+      model: 'Modelo'
+    };
+
+    return labels[field];
+  }
+}
