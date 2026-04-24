@@ -142,12 +142,14 @@
   align-items: center;
 
   button {
+    width: 100%;
     min-height: 2.2rem;
     padding: 0 0.8rem;
     border-radius: 10px;
     border: 1px solid rgba(84, 101, 144, 0.16);
     background: #fff;
     font-weight: 700;
+    text-align: center;
   }
 }
 
