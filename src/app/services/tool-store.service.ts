@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { demoTools } from '../data/demo-tools';
 import { Tool, ToolFormSubmission, ToolListResponse } from '../models/tool.model';
@@ -28,6 +29,7 @@ export class ToolStoreService {
   readonly saving = signal(false);
   readonly modalOpen = signal(false);
   readonly editingTool = signal<Tool | null>(null);
+  readonly saveError = signal<string | null>(null);
   readonly useDemoData = signal(false);
   readonly bannerMessage = signal('Conectado a tu API de herramientas.');
 
@@ -157,21 +159,25 @@ export class ToolStoreService {
   }
 
   openCreateModal(): void {
+    this.saveError.set(null);
     this.editingTool.set(null);
     this.modalOpen.set(true);
   }
 
   openEditModal(tool: Tool): void {
+    this.saveError.set(null);
     this.editingTool.set(tool);
     this.modalOpen.set(true);
   }
 
   closeModal(): void {
+    this.saveError.set(null);
     this.modalOpen.set(false);
     this.editingTool.set(null);
   }
 
   saveTool(submission: ToolFormSubmission): void {
+    this.saveError.set(null);
     this.saving.set(true);
 
     if (this.useDemoData()) {
@@ -192,6 +198,7 @@ export class ToolStoreService {
             ? this.replaceTool(this.tools(), tool)
             : [tool, ...this.tools()];
 
+          this.saveError.set(null);
           this.tools.set(nextTools);
           this.bannerMessage.set('Herramienta sincronizada correctamente.');
           this.toastService.show({
@@ -210,11 +217,13 @@ export class ToolStoreService {
             this.uploadImage(tool.id, submission.file);
           }
         },
-        error: () => {
-          this.bannerMessage.set('No se pudo guardar en la API. Se mantiene la vista actual.');
+        error: (error: unknown) => {
+          const message = this.extractErrorMessage(error);
+          this.saveError.set(message);
+          this.bannerMessage.set(`No se pudo guardar: ${message}`);
           this.toastService.show({
             title: 'No se pudo guardar',
-            message: 'Revisa la conexion con la API e intentalo de nuevo.',
+            message,
             tone: 'error'
           });
         }
@@ -542,5 +551,51 @@ export class ToolStoreService {
       }))
       .sort((left, right) => right.total - left.total);
   }
-}
 
+  private extractErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      const payload = error.error as
+        | string
+        | { message?: string; error?: string; errors?: string[] | Record<string, string | string[]> }
+        | null;
+
+      if (typeof payload === 'string' && payload.trim()) {
+        return payload.trim();
+      }
+
+      if (payload && typeof payload === 'object') {
+        if (typeof payload.message === 'string' && payload.message.trim()) {
+          return payload.message.trim();
+        }
+
+        if (typeof payload.error === 'string' && payload.error.trim()) {
+          return payload.error.trim();
+        }
+
+        if (Array.isArray(payload.errors) && payload.errors.length > 0) {
+          return payload.errors.join(' ');
+        }
+
+        if (payload.errors && typeof payload.errors === 'object') {
+          const messages = Object.values(payload.errors)
+            .flatMap((value) => Array.isArray(value) ? value : [value])
+            .filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+          if (messages.length > 0) {
+            return messages.join(' ');
+          }
+        }
+      }
+
+      if (typeof error.message === 'string' && error.message.trim()) {
+        return error.message.trim();
+      }
+    }
+
+    if (error instanceof Error && error.message.trim()) {
+      return error.message.trim();
+    }
+
+    return 'Revisa los datos enviados e intentalo de nuevo.';
+  }
+}
