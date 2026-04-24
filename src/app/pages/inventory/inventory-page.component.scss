@@ -56,6 +56,7 @@
 }
 
 .table-row {
+  position: relative;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 0.8fr 1.2fr;
   gap: 1rem;
@@ -63,6 +64,27 @@
   padding: 0.95rem 0.35rem;
   border-top: 1px solid rgba(85, 100, 135, 0.1);
   color: #30405d;
+}
+
+.table-row::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.table-row--available::before {
+  background: #4f9b43;
+}
+
+.table-row--active::before {
+  background: #eda43d;
+}
+
+.table-row--maintenance::before {
+  background: #f14e31;
 }
 
 .table-head {
@@ -101,10 +123,23 @@
   font-weight: 800;
 }
 
+.status--available {
+  color: #2f7f37;
+}
+
+.status--active {
+  color: #b46a10;
+}
+
+.status--maintenance {
+  color: #c23a3a;
+}
+
 .row-actions {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  align-items: center;
 
   button {
     min-height: 2.2rem;
@@ -114,6 +149,65 @@
     background: #fff;
     font-weight: 700;
   }
+}
+
+.state-menu {
+  position: relative;
+}
+
+.state-trigger {
+  min-width: 150px;
+  text-align: left;
+}
+
+.state-trigger--available {
+  background: #eef7ea !important;
+  border-color: rgba(79, 155, 67, 0.22) !important;
+  color: #2f7f37;
+}
+
+.state-trigger--active {
+  background: #fff4df !important;
+  border-color: rgba(237, 164, 61, 0.28) !important;
+  color: #b46a10;
+}
+
+.state-trigger--maintenance {
+  background: #fff1f1 !important;
+  border-color: rgba(241, 78, 49, 0.24) !important;
+  color: #c23a3a;
+}
+
+.state-menu__panel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  z-index: 5;
+  min-width: 180px;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border: 1px solid rgba(84, 101, 144, 0.16);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(36, 50, 79, 0.14);
+}
+
+.state-option {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.state-option--active {
+  background: #edf3ff !important;
+  border-color: #cdd9ff !important;
+  color: #2c56c9;
+}
+
+.danger-action {
+  border-color: rgba(220, 74, 74, 0.22) !important;
+  color: #b43333;
+  background: #fff5f5 !important;
 }
 
 .inventory-side {
@@ -180,4 +274,3 @@
     display: none;
   }
 }
-
