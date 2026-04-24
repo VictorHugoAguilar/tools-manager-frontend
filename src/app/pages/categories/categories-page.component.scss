@@ -175,7 +175,7 @@ h3 {
 .category-table__head,
 .category-table__row {
   display: grid;
-  grid-template-columns: 88px minmax(180px, 1.2fr) minmax(110px, 0.8fr) minmax(110px, 0.8fr) auto;
+  grid-template-columns: 80px minmax(180px, 1.2fr) minmax(100px, 0.8fr) minmax(100px, 0.8fr) auto;
   gap: 0.9rem;
   align-items: center;
   padding: 0.9rem 1rem;
@@ -237,7 +237,7 @@ h3 {
   padding: 0.45rem 0.8rem;
   border-radius: 999px;
   font-weight: 800;
-  font-size: 0.88rem;
+  font-size: 0.7rem;
   white-space: nowrap;
 }
 
@@ -274,6 +274,7 @@ h3 {
 }
 
 @media (max-width: 760px) {
+
   .categories-toolbar,
   .toolbar-controls {
     display: grid;

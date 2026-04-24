@@ -13,7 +13,7 @@ import { ToolStoreService } from '../../services/tool-store.service';
 export class InventoryPageComponent {
   protected readonly store = inject(ToolStoreService);
   protected readonly openStateMenuId = signal<string | null>(null);
-  protected readonly stateOptions = ['Disponible', 'En Uso', 'En Mantenimiento'] as const;
+  protected readonly stateOptions = ['Disponible', 'En Uso', 'Mantenimiento'] as const;
 
   protected readonly rows = computed(() => this.store.filteredTools());
 

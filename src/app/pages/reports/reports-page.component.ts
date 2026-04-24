@@ -42,7 +42,7 @@ export class ReportsPageComponent implements OnDestroy {
     { value: 'all', label: 'Todos los estados' },
     { value: 'available', label: 'Disponible' },
     { value: 'active', label: 'En uso' },
-    { value: 'maintenance', label: 'En mantenimiento' }
+    { value: 'maintenance', label: 'Mantenimiento' }
   ] as const;
 
   protected readonly reportBaseTools = computed(() => this.store.filteredTools());
@@ -127,7 +127,7 @@ export class ReportsPageComponent implements OnDestroy {
     const metrics = this.reportMetrics();
 
     return {
-      labels: ['Disponible', 'En uso', 'En mantenimiento'],
+      labels: ['Disponible', 'En uso', 'Mantenimiento'],
       datasets: [
         {
           data: [
@@ -512,7 +512,7 @@ export class ReportsPageComponent implements OnDestroy {
             ['Total herramientas', metrics.totalTools],
             ['Disponibilidad', `${metrics.availableRate}%`],
             ['En uso', `${metrics.activeRate}%`],
-            ['En mantenimiento', `${metrics.maintenanceRate}%`],
+            ['Mantenimiento', `${metrics.maintenanceRate}%`],
             ['Promedio longitud', `${metrics.averageLong} cm`]
           );
         }
@@ -688,7 +688,7 @@ export class ReportsPageComponent implements OnDestroy {
           ['Total herramientas', String(metrics.totalTools)],
           ['Disponibilidad', `${metrics.availableRate}%`],
           ['En uso', `${metrics.activeRate}%`],
-          ['En mantenimiento', `${metrics.maintenanceRate}%`],
+          ['Mantenimiento', `${metrics.maintenanceRate}%`],
           ['Promedio longitud', `${metrics.averageLong} cm`]
         ],
         theme: 'grid',
