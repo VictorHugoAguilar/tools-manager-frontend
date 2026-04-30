@@ -12,7 +12,9 @@ export const demoTools: Tool[] = [
     material: 'Acero y ABS',
     long: 31.5,
     brand: 'Bosch',
-    model: 'GSR 18V-28'
+    model: 'GSR 18V-28',
+    serialNumber: 'SN-TAL-00045',
+    location: 'Taller Mecanico'
   },
   {
     id: 'demo-sierra',
@@ -25,7 +27,9 @@ export const demoTools: Tool[] = [
     material: 'Aluminio',
     long: 28,
     brand: 'Makita',
-    model: 'LSX100'
+    model: 'LSX100',
+    serialNumber: 'SN-SIE-00018',
+    location: 'Area de Obra'
   },
   {
     id: 'demo-lijadora',
@@ -34,11 +38,13 @@ export const demoTools: Tool[] = [
     category: 'Mantenimiento',
     description: 'Requiere cambio de pad y revision del cable de alimentacion.',
     urlSrc: 'assets/tool-sander.svg',
-    state: 'Mantenimiento',
+    state: 'En Mantenimiento',
     material: 'Polimero industrial',
     long: 22,
     brand: 'DeWalt',
-    model: 'DWE6423'
+    model: 'DWE6423',
+    serialNumber: 'SN-LIJ-00027',
+    location: 'Zona de Diagnostico'
   },
   {
     id: 'demo-llave',
@@ -51,7 +57,9 @@ export const demoTools: Tool[] = [
     material: 'Acero forjado',
     long: 24,
     brand: 'Stanley',
-    model: 'STHT80640'
+    model: 'STHT80640',
+    serialNumber: 'SN-LLA-00011',
+    location: 'Almacen Central'
   },
   {
     id: 'demo-soldadora',
@@ -64,7 +72,8 @@ export const demoTools: Tool[] = [
     material: 'Acero pintado',
     long: 33,
     brand: 'Makita',
-    model: 'SPX100'
+    model: 'SPX100',
+    serialNumber: 'SN-SOL-00009',
+    location: 'Area de Soldadura'
   }
 ];
-

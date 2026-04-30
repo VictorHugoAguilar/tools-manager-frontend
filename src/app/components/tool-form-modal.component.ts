@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
+  inject,
   input,
   output,
   signal
@@ -9,6 +11,8 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Tool, ToolFormSubmission } from '../models/tool.model';
+import { LocationStoreService } from '../services/location-store.service';
+import { ToolTypeStoreService } from '../services/tool-type-store.service';
 
 @Component({
   selector: 'app-tool-form-modal',
@@ -26,9 +30,31 @@ export class ToolFormModalComponent {
   readonly closed = output<void>();
   readonly submitted = output<ToolFormSubmission>();
 
+  private readonly locationStore = inject(LocationStoreService);
+  private readonly toolTypeStore = inject(ToolTypeStoreService);
   private readonly formBuilder = new FormBuilder();
   protected readonly selectedFileName = signal<string>('');
   protected readonly validationMessage = signal<string | null>(null);
+  protected readonly typeOptions = computed(() => {
+    const baseOptions = this.toolTypeStore.typeNames();
+    const currentType = this.tool()?.type?.trim() ?? '';
+
+    if (currentType && !baseOptions.includes(currentType)) {
+      return [currentType, ...baseOptions];
+    }
+
+    return baseOptions;
+  });
+  protected readonly locationOptions = computed(() => {
+    const baseOptions = this.locationStore.locationNames();
+    const currentLocation = this.tool()?.location?.trim() ?? '';
+
+    if (currentLocation && !baseOptions.includes(currentLocation)) {
+      return [currentLocation, ...baseOptions];
+    }
+
+    return baseOptions;
+  });
 
   protected readonly form = this.formBuilder.nonNullable.group({
     name: ['', [Validators.required]],
@@ -40,12 +66,17 @@ export class ToolFormModalComponent {
     material: ['', [Validators.required]],
     long: [0, [Validators.required, Validators.min(1)]],
     brand: ['', [Validators.required]],
-    model: ['', [Validators.required]]
+    model: ['', [Validators.required]],
+    serialNumber: ['', [Validators.required]],
+    location: ['', [Validators.required]]
   });
 
   protected readonly removeCurrentImage = signal(false);
 
   constructor() {
+    this.locationStore.ensureLoaded();
+    this.toolTypeStore.ensureLoaded();
+
     effect(() => {
       const currentTool = this.tool();
 
@@ -64,7 +95,9 @@ export class ToolFormModalComponent {
           material: currentTool.material,
           long: currentTool.long,
           brand: currentTool.brand,
-          model: currentTool.model
+          model: currentTool.model,
+          serialNumber: currentTool.serialNumber,
+          location: currentTool.location
         });
       } else {
         this.form.reset({
@@ -77,13 +110,41 @@ export class ToolFormModalComponent {
           material: '',
           long: 20,
           brand: '',
-          model: ''
+          model: '',
+          serialNumber: '',
+          location: ''
         });
       }
 
       this.selectedFileName.set('');
       this.removeCurrentImage.set(false);
       this.validationMessage.set(null);
+    });
+
+    effect(() => {
+      if (!this.visible()) {
+        return;
+      }
+
+      const currentLocation = this.form.getRawValue().location;
+      const options = this.locationOptions();
+
+      if (!currentLocation && options.length > 0) {
+        this.form.patchValue({ location: options[0] }, { emitEvent: false });
+      }
+    });
+
+    effect(() => {
+      if (!this.visible()) {
+        return;
+      }
+
+      const currentType = this.form.getRawValue().type;
+      const options = this.typeOptions();
+
+      if (!currentType && options.length > 0) {
+        this.form.patchValue({ type: options[0] }, { emitEvent: false });
+      }
     });
   }
 
@@ -155,7 +216,9 @@ export class ToolFormModalComponent {
       'material',
       'long',
       'brand',
-      'model'
+      'model',
+      'serialNumber',
+      'location'
     ];
 
     for (const field of fields) {
@@ -180,7 +243,9 @@ export class ToolFormModalComponent {
       material: 'Material',
       long: 'Longitud',
       brand: 'Marca',
-      model: 'Modelo'
+      model: 'Modelo',
+      serialNumber: 'Numero de serie',
+      location: 'Ubicacion'
     };
 
     return labels[field];

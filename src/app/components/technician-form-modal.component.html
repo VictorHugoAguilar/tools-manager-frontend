@@ -1,0 +1,75 @@
+@if (visible()) {
+<div class="modal-backdrop" (click)="closed.emit()"></div>
+
+<section class="modal-panel" role="dialog" aria-modal="true" aria-label="Formulario de tecnico">
+  <header class="modal-header">
+    <div>
+      <p class="eyebrow">{{ technician() ? 'Edicion' : 'Nuevo tecnico' }}</p>
+      <h2>{{ technician() ? 'Actualizar tecnico' : 'Registrar tecnico' }}</h2>
+    </div>
+
+    <button type="button" class="close-button" (click)="closed.emit()" aria-label="Cerrar">
+      ×
+    </button>
+  </header>
+
+  <form class="modal-form" [formGroup]="form" (ngSubmit)="submit()">
+    @if (validationMessage() || saveError()) {
+      <div class="form-alert">
+        <strong>No se pudo guardar el tecnico.</strong>
+        <span>{{ saveError() || validationMessage() }}</span>
+      </div>
+    }
+
+    <div class="grid two-columns">
+      <label>
+        <span>Nombre</span>
+        <input formControlName="name" placeholder="Ej. Juan Perez">
+        @if (fieldError('name'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
+      </label>
+
+      <label>
+        <span>Especialidad</span>
+        <input formControlName="specialty" placeholder="Ej. Electrica, Soldadura...">
+        @if (fieldError('specialty'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
+      </label>
+    </div>
+
+    <div class="grid two-columns">
+      <label>
+        <span>Telefono</span>
+        <input formControlName="phone" placeholder="600 000 000">
+      </label>
+
+      <label>
+        <span>Correo</span>
+        <input formControlName="email" placeholder="tecnico@empresa.com">
+        @if (fieldError('email'); as error) {
+          <small class="field-error">{{ error }}</small>
+        }
+      </label>
+    </div>
+
+    <label class="full-width">
+      <span>Notas</span>
+      <textarea rows="4" formControlName="notes" placeholder="Turno, observaciones o certificaciones"></textarea>
+    </label>
+
+    <label class="status-toggle">
+      <input type="checkbox" formControlName="active">
+      <span>Activo para seleccionarlo en arreglos</span>
+    </label>
+
+    <div class="actions">
+      <button type="button" class="secondary" (click)="closed.emit()">Cancelar</button>
+      <button type="submit" class="primary" [disabled]="saving()">
+        {{ saving() ? 'Guardando...' : technician() ? 'Guardar cambios' : 'Crear tecnico' }}
+      </button>
+    </div>
+  </form>
+</section>
+}

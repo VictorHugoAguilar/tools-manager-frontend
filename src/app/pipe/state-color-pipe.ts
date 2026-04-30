@@ -8,12 +8,14 @@ export class StateColorPipe implements PipeTransform {
   transform(state: string | null | undefined): string {
     if (!state) return 'badge-default';
 
+    console.log('StateColorPipe: transforming state', state);
+
     switch (state.toLowerCase()) {
       case 'disponible':
         return 'badge-primary';
       case 'en uso':
         return 'badge-secondary';
-      case 'mantenimiento':
+      case 'en mantenimiento':
         return 'badge-tertiary';
       default:
         return 'badge-default';

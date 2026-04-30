@@ -1,12 +1,7 @@
 <div class="dashboard-shell">
   @if (sidebarOpen()) {
-    <button
-      type="button"
-      class="sidebar-overlay"
-      [class.visible]="sidebarOpen()"
-      (click)="closeSidebar()"
-      aria-label="Cerrar menu lateral"
-    ></button>
+  <button type="button" class="sidebar-overlay" [class.visible]="sidebarOpen()" (click)="closeSidebar()"
+    aria-label="Cerrar menu lateral"></button>
   }
 
   <aside class="sidebar" [class.open]="sidebarOpen()">
@@ -34,6 +29,14 @@
       <a routerLink="/reportes" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">◧</span>
         <span>Reportes</span>
+      </a>
+      <a routerLink="/arreglos" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+        <span class="nav-icon">🛠</span>
+        <span>Arreglos</span>
+      </a>
+      <a routerLink="/tecnicos" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+        <span class="nav-icon">👷</span>
+        <span>Tecnicos</span>
       </a>
       <a routerLink="/configuracion" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">⚙</span>
@@ -75,34 +78,25 @@
   <main class="workspace">
     <header class="topbar">
       <div class="topbar-start">
-        <button
-          type="button"
-          class="menu-toggle"
-          [class.open]="sidebarOpen()"
-          [attr.data-tooltip]="sidebarOpen() ? null : 'Abrir menu'"
-          (click)="toggleSidebar()"
-          aria-label="Abrir o cerrar menu"
-        >
+        <button type="button" class="menu-toggle" [class.open]="sidebarOpen()"
+          [attr.data-tooltip]="sidebarOpen() ? null : 'Abrir menu'" (click)="toggleSidebar()"
+          aria-label="Abrir o cerrar menu">
           {{ sidebarOpen() ? '×' : '☰' }}
         </button>
 
         @if (showCreateAction()) {
-          <button type="button" class="create-button" (click)="store.openCreateModal()">
-            <span>＋</span>
-            Anadir Herramienta
-          </button>
+        <button type="button" class="create-button" (click)="store.openCreateModal()">
+          <span>＋</span>
+          Anadir Herramienta
+        </button>
         }
       </div>
 
       <div class="topbar-tools">
         <label class="search-box">
           <span>⌕</span>
-          <input
-            type="search"
-            placeholder="Buscar..."
-            [value]="store.searchTerm()"
-            (input)="store.updateSearch($any($event.target).value)"
-          >
+          <input type="search" placeholder="Buscar..." [value]="store.searchTerm()"
+            (input)="store.updateSearch($any($event.target).value)">
         </label>
 
         <button type="button" class="icon-button" aria-label="Notificaciones">🔔</button>
@@ -129,11 +123,5 @@
   </main>
 </div>
 
-<app-tool-form-modal
-  [visible]="store.modalOpen()"
-  [tool]="store.editingTool()"
-  [saving]="store.saving()"
-  [saveError]="store.saveError()"
-  (closed)="store.closeModal()"
-  (submitted)="store.saveTool($event)"
-/>
+<app-tool-form-modal [visible]="store.modalOpen()" [tool]="store.editingTool()" [saving]="store.saving()"
+  [saveError]="store.saveError()" (closed)="store.closeModal()" (submitted)="store.saveTool($event)" />

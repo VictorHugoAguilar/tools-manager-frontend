@@ -1,103 +1,110 @@
 @if (store.loading()) {
-<section class="panel">Cargando inventario...</section>
+  <section class="panel">Cargando inventario...</section>
 } @else {
-<section class="inventory-grid">
-  <article class="inventory-table">
-    <header class="table-header">
-      <div>
-        <p class="eyebrow">Vista operativa</p>
-        <h3>Inventario completo</h3>
-      </div>
-      <span class="count">{{ rows().length }} items</span>
-    </header>
-
-    <div class="table">
-      <div class="table-row table-head">
-        <span>Herramienta</span>
-        <span>Categoria</span>
-        <span>Estado</span>
-        <span>Material</span>
-        <span>Longitud</span>
-        <span>Acciones</span>
-      </div>
-
-      @for (tool of rows(); track tool.id) {
-      <div class="table-row" [class.table-row--available]="getStateTone(tool.state) === 'available'"
-        [class.table-row--active]="getStateTone(tool.state) === 'active'"
-        [class.table-row--maintenance]="getStateTone(tool.state) === 'maintenance'">
-        <div class="tool-cell">
-          <img [src]="store.getImage(tool)" [alt]="tool.name">
-          <div>
-            <strong>{{ tool.name }}</strong>
-            <p>{{ tool.type }}</p>
-          </div>
+  <section class="inventory-grid">
+    <article class="inventory-table">
+      <header class="table-header">
+        <div>
+          <p class="eyebrow">Vista operativa</p>
+          <h3>Inventario completo</h3>
         </div>
-        <span>{{ tool.category }}</span>
-        <span class="status" [class.status--available]="getStateTone(tool.state) === 'available'"
-          [class.status--active]="getStateTone(tool.state) === 'active'"
-          [class.status--maintenance]="getStateTone(tool.state) === 'maintenance'">
-          {{ tool.state }}
-        </span>
-        <span>{{ tool.material }}</span>
-        <span>{{ tool.long }} cm</span>
-        <div class="row-actions">
-          <button type="button" (click)="store.openEditModal(tool)">Editar</button>
-          <button type="button" class="state-trigger"
-            [class.state-trigger--available]="getStateTone(tool.state) === 'available'"
-            [class.state-trigger--active]="getStateTone(tool.state) === 'active'"
-            [class.state-trigger--maintenance]="getStateTone(tool.state) === 'maintenance'"
-            (click)="toggleStateMenu(tool.id, $event)" [attr.aria-expanded]="openStateMenuId() === tool.id">
-            Estado: {{ tool.state }}
-          </button>
-          <div class="state-menu" (click)="$event.stopPropagation()">
-            @if (openStateMenuId() === tool.id) {
-            <div class="state-menu__panel">
-              @for (state of stateOptions; track state) {
-              <button type="button" class="state-option" [class.state-option--active]="isCurrentState(tool, state)"
-                [disabled]="isCurrentState(tool, state)" (click)="changeState(tool, state, $event)">
-                {{ state }}
-              </button>
-              }
+        <span class="count">{{ rows().length }} items</span>
+      </header>
+
+      <div class="table">
+        <div class="table-row table-head">
+          <span>Herramienta</span>
+          <span>Categoria</span>
+          <span>Estado</span>
+          <span>Material</span>
+          <span>Longitud</span>
+          <span>Acciones</span>
+        </div>
+
+        @for (tool of rows(); track tool.id) {
+          <div
+            class="table-row"
+            [class.table-row--available]="getStateTone(tool.state) === 'available'"
+            [class.table-row--active]="getStateTone(tool.state) === 'active'"
+            [class.table-row--maintenance]="getStateTone(tool.state) === 'maintenance'">
+            <div class="tool-cell">
+              <img [src]="store.getImage(tool)" [alt]="tool.name">
+              <div>
+                <strong>{{ tool.name }}</strong>
+                <p>{{ tool.type }}</p>
+              </div>
             </div>
-            }
+            <span>{{ tool.category }}</span>
+            <span class="status" [class.status--available]="getStateTone(tool.state) === 'available'" [class.status--active]="getStateTone(tool.state) === 'active'" [class.status--maintenance]="getStateTone(tool.state) === 'maintenance'">
+              {{ tool.state }}
+            </span>
+            <span>{{ tool.material }}</span>
+            <span>{{ tool.long }} cm</span>
+            <div class="row-actions">
+              <button type="button" (click)="store.openEditModal(tool)">Editar</button>
+              <div class="state-menu" (click)="$event.stopPropagation()">
+                <button
+                  type="button"
+                  class="state-trigger"
+                  [class.state-trigger--available]="getStateTone(tool.state) === 'available'"
+                  [class.state-trigger--active]="getStateTone(tool.state) === 'active'"
+                  [class.state-trigger--maintenance]="getStateTone(tool.state) === 'maintenance'"
+                  (click)="toggleStateMenu(tool.id, $event)"
+                  [attr.aria-expanded]="openStateMenuId() === tool.id">
+                  Estado: {{ tool.state }}
+                </button>
+
+                @if (openStateMenuId() === tool.id) {
+                  <div class="state-menu__panel">
+                    @for (state of stateOptions; track state) {
+                      <button
+                        type="button"
+                        class="state-option"
+                        [class.state-option--active]="isCurrentState(tool, state)"
+                        [disabled]="isCurrentState(tool, state)"
+                        (click)="changeState(tool, state, $event)">
+                        {{ state }}
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+              <button type="button" class="danger-action" (click)="store.deleteTool(tool)">Eliminar</button>
+            </div>
           </div>
-          <button type="button" class="danger-action" (click)="store.deleteTool(tool)">Eliminar</button>
-        </div>
-      </div>
-      } @empty {
-      <div class="table-row empty">No hay herramientas para mostrar.</div>
-      }
-    </div>
-  </article>
-
-  <aside class="inventory-side">
-    <article class="mini-panel">
-      <p class="eyebrow">Balance</p>
-      <h3>Estado del inventario</h3>
-      <div class="meter-group">
-        <div>
-          <span>Disponibles</span>
-          <strong>{{ store.stats().available }}</strong>
-        </div>
-        <div>
-          <span>En uso</span>
-          <strong>{{ store.stats().active }}</strong>
-        </div>
-        <div>
-          <span>Mantenimiento</span>
-          <strong>{{ store.stats().maintenance }}</strong>
-        </div>
+        } @empty {
+          <div class="table-row empty">No hay herramientas para mostrar.</div>
+        }
       </div>
     </article>
 
-    <article class="mini-panel">
-      <p class="eyebrow">Modo</p>
-      <h3>{{ store.useDemoData() ? 'Demo local' : 'API conectada' }}</h3>
-      <p class="muted">
-        {{ store.useDemoData() ? 'Estas navegando con datos de ejemplo.' : 'Las acciones se sincronizan con el backend.'
-        }}
-      </p>
-    </article>
-  </aside>
-</section>
+    <aside class="inventory-side">
+      <article class="mini-panel">
+        <p class="eyebrow">Balance</p>
+        <h3>Estado del inventario</h3>
+        <div class="meter-group">
+          <div>
+            <span>Disponibles</span>
+            <strong>{{ store.stats().available }}</strong>
+          </div>
+          <div>
+            <span>En uso</span>
+            <strong>{{ store.stats().active }}</strong>
+          </div>
+          <div>
+            <span>Mantenimiento</span>
+            <strong>{{ store.stats().maintenance }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="mini-panel">
+        <p class="eyebrow">Modo</p>
+        <h3>{{ store.useDemoData() ? 'Demo local' : 'API conectada' }}</h3>
+        <p class="muted">
+          {{ store.useDemoData() ? 'Estas navegando con datos de ejemplo.' : 'Las acciones se sincronizan con el backend.' }}
+        </p>
+      </article>
+    </aside>
+  </section>
 }

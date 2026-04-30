@@ -2,6 +2,10 @@
   <header class="card-header">
     <div>
       <h3>{{ tool().name }}</h3>
+      <div class="meta-strip">
+        <span class="meta-pill">Serie: {{ tool().serialNumber }}</span>
+        <span class="meta-pill meta-pill--soft">Ubicacion: {{ tool().location }}</span>
+      </div>
       <p [class.expanded]="expanded()" class="textlong">{{ tool().description }}</p>
       @if (tool().description.length > 100) {
       <span (click)="changeLongDescription()" class="toggle">

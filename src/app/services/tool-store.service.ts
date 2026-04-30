@@ -49,7 +49,9 @@ export class ToolStoreService {
         tool.category,
         tool.description,
         tool.material,
-        tool.state
+        tool.state,
+        tool.serialNumber,
+        tool.location
       ].join(' ').toLowerCase();
 
       return haystack.includes(search);
@@ -85,7 +87,7 @@ export class ToolStoreService {
       },
       {
         id: 'maintenance',
-        title: 'Mantenimiento',
+        title: 'En Mantenimiento',
         accent: '#f14e31',
         items: items.filter((tool) => this.resolveColumn(tool.state) === 'maintenance')
       }

@@ -1,0 +1,242 @@
+@if (!selectedTool()) {
+  <section class="empty-page">
+    <h3>Sin herramientas disponibles</h3>
+    <p>Necesitas herramientas cargadas en inventario para registrar arreglos.</p>
+  </section>
+} @else {
+  <section class="repairs-page">
+    <header class="repairs-header">
+      <div>
+        <p class="eyebrow">Seguimiento de Arreglos</p>
+        <h2>Seguimiento de Arreglo de Herramientas</h2>
+        <p class="intro">Registra y consulta el historial de reparaciones de cada herramienta.</p>
+      </div>
+
+      <label class="tool-selector">
+        <span>Herramienta</span>
+        <select [value]="selectedTool()!.id" (change)="selectTool($any($event.target).value)">
+          @for (tool of tools(); track tool.id) {
+            <option [value]="tool.id">{{ tool.name }}</option>
+          }
+        </select>
+      </label>
+    </header>
+
+    <article class="section-card">
+      <div class="section-title">
+        <span class="section-icon">🧰</span>
+        <h3>Informacion de la Herramienta</h3>
+      </div>
+
+      <div class="info-grid">
+        <label>
+          <span>Codigo / ID</span>
+          <input [value]="selectedMeta()?.code ?? selectedTool()!.id" readonly>
+        </label>
+
+        <label>
+          <span>Nombre de la Herramienta</span>
+          <input [value]="selectedTool()!.name" readonly>
+        </label>
+
+        <label>
+          <span>Marca</span>
+          <input [value]="selectedTool()!.brand" readonly>
+        </label>
+
+        <label>
+          <span>Modelo</span>
+          <input [value]="selectedTool()!.model" readonly>
+        </label>
+
+        <label>
+          <span>Numero de Serie</span>
+          <input [value]="selectedTool()!.serialNumber" readonly>
+        </label>
+
+        <label>
+          <span>Ubicacion Actual</span>
+          <select
+            [value]="selectedTool()!.location"
+            [disabled]="locationOptions().length === 0 || updatingLocation()"
+            (change)="updateLocation($any($event.target).value)">
+            @if (locationOptions().length === 0) {
+              <option [value]="selectedTool()!.location">{{ selectedTool()!.location || 'Sin ubicaciones configuradas' }}</option>
+            } @else {
+              @for (location of locationOptions(); track location) {
+                <option [value]="location">{{ location }}</option>
+              }
+            }
+          </select>
+          @if (locationOptions().length === 0) {
+            <small class="field-error">No hay ubicaciones configuradas en la aplicacion.</small>
+          }
+        </label>
+
+        <div class="status-field">
+          <span>Estado Actual</span>
+          <div
+            class="state-pill"
+            [class.state-pill--available]="getToolStateTone(selectedTool()!.state) === 'available'"
+            [class.state-pill--active]="getToolStateTone(selectedTool()!.state) === 'active'"
+            [class.state-pill--maintenance]="getToolStateTone(selectedTool()!.state) === 'maintenance'">
+            {{ selectedTool()!.state }}
+          </div>
+        </div>
+
+        <div class="image-field">
+          <span>Imagen (opcional)</span>
+          <div class="image-card">
+            <img [src]="store.getImage(selectedTool()!)" [alt]="selectedTool()!.name">
+            <button type="button" class="image-edit" (click)="openSelectedToolEditor()">✎</button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="section-card">
+      <div class="section-title">
+        <span class="section-icon">🛠</span>
+        <h3>Registrar Nuevo Arreglo</h3>
+      </div>
+
+      <form class="repair-form" [formGroup]="repairForm" (ngSubmit)="saveRepair()">
+        <div class="form-grid four-columns">
+          <label>
+            <span>Fecha de Entrada</span>
+            <input type="date" formControlName="entryDate">
+            @if (fieldError('entryDate'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+
+          <label>
+            <span>Fecha de Salida</span>
+            <input type="date" formControlName="exitDate">
+            @if (fieldError('exitDate'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+
+          <label>
+            <span>Estado</span>
+            <select formControlName="status">
+              <option value="Reparado">Reparado</option>
+              <option value="En revision">En revision</option>
+              <option value="Pendiente">Pendiente</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Prioridad</span>
+            <select formControlName="priority">
+              <option value="Normal">Normal</option>
+              <option value="Alta">Alta</option>
+              <option value="Critica">Critica</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-grid two-columns">
+          <label>
+            <span>Motivo / Falla Reportada</span>
+            <textarea rows="4" formControlName="issue"></textarea>
+            @if (fieldError('issue'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+
+          <label>
+            <span>Descripcion del Arreglo Realizado</span>
+            <textarea rows="4" formControlName="description"></textarea>
+            @if (fieldError('description'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+        </div>
+
+        <div class="form-grid four-columns">
+          <label>
+            <span>Tecnico que realiza el arreglo</span>
+            <select formControlName="technicianId">
+              @for (technician of technicians(); track technician.id) {
+                <option [value]="technician.id">{{ technician.name }}</option>
+              }
+            </select>
+            @if (fieldError('technicianId'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+
+          <label>
+            <span>Costo del Arreglo (opcional)</span>
+            <input type="number" formControlName="cost" min="0" step="0.01" placeholder="1250.00">
+          </label>
+
+          <label>
+            <span>Observaciones (opcional)</span>
+            <input formControlName="observations" placeholder="Observaciones adicionales">
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="secondary" (click)="clearRepairForm()">Limpiar</button>
+          <button type="submit" class="primary" [disabled]="technicians().length === 0">Guardar Arreglo</button>
+        </div>
+      </form>
+    </article>
+
+    <article class="section-card">
+      <div class="history-header">
+        <div class="section-title">
+          <span class="section-icon">🕘</span>
+          <h3>Historico de Arreglos</h3>
+        </div>
+
+        <button type="button" class="secondary export-button" (click)="exportHistory()">Exportar</button>
+      </div>
+
+      <div class="history-table">
+        <div class="history-table__head">
+          <span>#</span>
+          <span>Fecha de Entrada</span>
+          <span>Fecha de Salida</span>
+          <span>Prioridad</span>
+          <span>Motivo / Falla</span>
+          <span>Descripcion del Arreglo</span>
+          <span>Tecnico</span>
+          <span>Costo</span>
+          <span>Observaciones</span>
+          <span>Estado</span>
+        </div>
+
+        @if (historyLoading()) {
+          <div class="history-table__empty">Cargando historial...</div>
+        } @else if (historyError()) {
+          <div class="history-table__empty">{{ historyError() }}</div>
+        } @else {
+        @for (record of selectedHistory(); track record.id; let index = $index) {
+          <div class="history-table__row">
+            <span>{{ selectedHistory().length - index }}</span>
+            <span>{{ formatDate(record.entryDate) }}</span>
+            <span>{{ formatDate(record.exitDate) }}</span>
+            <span>{{ record.priority }}</span>
+            <span>{{ record.issue }}</span>
+            <span>{{ record.description }}</span>
+            <span>{{ record.technicianName }}</span>
+            <span>{{ formatCost(record.cost) }}</span>
+            <span>{{ record.observations || '-' }}</span>
+            <span class="history-status">{{ record.status }}</span>
+          </div>
+        } @empty {
+          <div class="history-table__empty">Todavia no hay arreglos registrados para esta herramienta.</div>
+        }
+        }
+      </div>
+
+      <p class="history-footnote">
+        Mostrando {{ selectedHistory().length === 0 ? 0 : 1 }} a {{ selectedHistory().length }} de {{ selectedHistory().length }} registros
+      </p>
+    </article>
+  </section>
+}

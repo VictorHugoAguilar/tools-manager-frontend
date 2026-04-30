@@ -1,0 +1,84 @@
+<section class="technicians-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Soporte Tecnico</p>
+      <h2>Gestion de Tecnicos</h2>
+      <p class="intro">Administra el equipo que podra asignarse a los arreglos de herramientas.</p>
+    </div>
+
+    <button type="button" class="primary" (click)="technicianStore.openCreateModal()">
+      ＋ Anadir Tecnico
+    </button>
+  </header>
+
+  <section class="summary-grid">
+    <article class="summary-card">
+      <span class="summary-label">Tecnicos registrados</span>
+      <strong>{{ totals().total }}</strong>
+    </article>
+
+    <article class="summary-card summary-card--accent">
+      <span class="summary-label">Disponibles para arreglos</span>
+      <strong>{{ totals().active }}</strong>
+    </article>
+  </section>
+
+  <section class="table-card">
+    <div class="table-toolbar">
+      <div>
+        <h3>Equipo tecnico</h3>
+        <p>Solo los tecnicos activos apareceran para elegirlos al registrar un arreglo.</p>
+      </div>
+    </div>
+
+    @if (technicianStore.loading()) {
+      <div class="empty-state">Cargando tecnicos...</div>
+    } @else if (technicians().length === 0) {
+      <div class="empty-state">Todavia no hay tecnicos registrados.</div>
+    } @else {
+      <div class="table-wrap">
+        <div class="tech-table">
+          <div class="tech-table__head">
+            <span>Nombre</span>
+            <span>Especialidad</span>
+            <span>Telefono</span>
+            <span>Correo</span>
+            <span>Estado</span>
+            <span>Acciones</span>
+          </div>
+
+          @for (technician of technicians(); track technician.id) {
+            <div class="tech-table__row">
+              <span class="primary-cell">{{ technician.name }}</span>
+              <span>{{ technician.specialty }}</span>
+              <span>{{ technician.phone || '-' }}</span>
+              <span>{{ technician.email || '-' }}</span>
+              <span>
+                <span class="state-pill" [class.state-pill--inactive]="!technician.active">
+                  {{ technician.active ? 'Activo' : 'Inactivo' }}
+                </span>
+              </span>
+              <span class="actions-cell">
+                <button type="button" class="secondary small" (click)="technicianStore.openEditModal(technician)">
+                  Editar
+                </button>
+                <button type="button" class="danger small" (click)="technicianStore.deleteTechnician(technician)">
+                  Eliminar
+                </button>
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </section>
+</section>
+
+<app-technician-form-modal
+  [visible]="technicianStore.modalOpen()"
+  [technician]="technicianStore.editingTechnician()"
+  [saving]="technicianStore.saving()"
+  [saveError]="technicianStore.saveError()"
+  (closed)="technicianStore.closeModal()"
+  (submitted)="technicianStore.saveTechnician($event)"
+/>
