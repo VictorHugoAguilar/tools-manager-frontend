@@ -36,7 +36,6 @@ export class ToolCardComponent {
       { label: 'Marca', value: tool.brand },
       { label: 'Modelo', value: tool.model },
       { label: 'Tipo', value: tool.type },
-      { label: 'Categoria', value: tool.category },
       { label: 'Material', value: tool.material },
       { label: 'Longitud', value: `${tool.long} cm` }
     ];

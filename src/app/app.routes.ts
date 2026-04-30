@@ -4,7 +4,9 @@ import { DashboardPageComponent } from './pages/dashboard/dashboard-page.compone
 import { InventoryPageComponent } from './pages/inventory/inventory-page.component';
 import { CategoriesPageComponent } from './pages/categories/categories-page.component';
 import { ReportsPageComponent } from './pages/reports/reports-page.component';
+import { RepairsPageComponent } from './pages/repairs/repairs-page.component';
 import { SettingsPageComponent } from './pages/settings/settings-page.component';
+import { TechniciansPageComponent } from './pages/technicians/technicians-page.component';
 
 export const appRoutes: Routes = [
   {
@@ -53,6 +55,26 @@ export const appRoutes: Routes = [
           eyebrow: 'Analitica',
           title: 'Reportes',
           description: 'Lectura rapida del estado general, uso y composicion del inventario.',
+          showCreateAction: false
+        }
+      },
+      {
+        path: 'arreglos',
+        component: RepairsPageComponent,
+        data: {
+          eyebrow: 'Mantenimiento',
+          title: 'Seguimiento de Arreglos',
+          description: 'Registro visual del historial de reparaciones y seguimiento por herramienta.',
+          showCreateAction: false
+        }
+      },
+      {
+        path: 'tecnicos',
+        component: TechniciansPageComponent,
+        data: {
+          eyebrow: 'Equipo',
+          title: 'Gestion de Tecnicos',
+          description: 'Alta, edicion y disponibilidad del personal que realiza los arreglos.',
           showCreateAction: false
         }
       },

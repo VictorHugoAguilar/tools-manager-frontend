@@ -15,10 +15,10 @@
 
   <form class="modal-form" [formGroup]="form" #formElement (ngSubmit)="submit(formElement)">
     @if (validationMessage() || saveError()) {
-      <div class="form-alert">
-        <strong>No se pudo guardar la herramienta.</strong>
-        <span>{{ saveError() || validationMessage() }}</span>
-      </div>
+    <div class="form-alert">
+      <strong>No se pudo guardar la herramienta.</strong>
+      <span>{{ saveError() || validationMessage() }}</span>
+    </div>
     }
 
     <div class="grid two-columns">
@@ -27,7 +27,7 @@
         <span>Nombre</span>
         <input formControlName="name" placeholder="Ej. Taladro electrico">
         @if (fieldError('name'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
         }
       </label>
 
@@ -39,7 +39,7 @@
           <option value="Mantenimiento">Mantenimiento</option>
         </select>
         @if (fieldError('state'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
         }
       </label>
 
@@ -51,7 +51,7 @@
         <span>Marca</span>
         <input formControlName="brand" placeholder="Ej. Bosch, Stanley...">
         @if (fieldError('brand'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
         }
       </label>
 
@@ -59,15 +59,26 @@
         <span>Modelo</span>
         <input formControlName="model" placeholder="Ej. GSB 13 RE...">
         @if (fieldError('model'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
         }
       </label>
 
       <label>
         <span>Tipo</span>
-        <input formControlName="type" placeholder="Electrica, Manual, Corte...">
+        <select formControlName="type" [disabled]="typeOptions().length === 0">
+          @if (typeOptions().length === 0) {
+          <option value="">Sin tipos configurados</option>
+          } @else {
+          @for (type of typeOptions(); track type) {
+          <option [value]="type">{{ type }}</option>
+          }
+          }
+        </select>
         @if (fieldError('type'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
+        }
+        @if (typeOptions().length === 0) {
+        <small class="field-error">Primero crea tipos desde Configuracion.</small>
         }
       </label>
 
@@ -79,7 +90,7 @@
         <span>Categoria</span>
         <input formControlName="category" placeholder="Perforacion, Obra...">
         @if (fieldError('category'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
         }
       </label>
 
@@ -87,7 +98,7 @@
         <span>Material</span>
         <input formControlName="material" placeholder="Acero, ABS...">
         @if (fieldError('material'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
         }
       </label>
 
@@ -95,7 +106,38 @@
         <span>Longitud (cm)</span>
         <input type="number" formControlName="long" min="1" step="0.1">
         @if (fieldError('long'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
+        }
+      </label>
+
+    </div>
+
+    <div class="grid two-columns">
+
+      <label>
+        <span>Numero de Serie</span>
+        <input formControlName="serialNumber" placeholder="Ej. SN-00045">
+        @if (fieldError('serialNumber'); as error) {
+        <small class="field-error">{{ error }}</small>
+        }
+      </label>
+
+      <label>
+        <span>Ubicacion</span>
+        <select formControlName="location" [disabled]="locationOptions().length === 0">
+          @if (locationOptions().length === 0) {
+          <option value="">Sin ubicaciones configuradas</option>
+          } @else {
+          @for (location of locationOptions(); track location) {
+          <option [value]="location">{{ location }}</option>
+          }
+          }
+        </select>
+        @if (fieldError('location'); as error) {
+        <small class="field-error">{{ error }}</small>
+        }
+        @if (locationOptions().length === 0) {
+        <small class="field-error">Primero crea ubicaciones desde Configuracion.</small>
         }
       </label>
 
@@ -106,7 +148,7 @@
         <span>URL de imagen</span>
         <input formControlName="urlSrc" placeholder="https://... o assets/tool-generic.svg">
         @if (fieldError('urlSrc'); as error) {
-          <small class="field-error">{{ error }}</small>
+        <small class="field-error">{{ error }}</small>
         }
       </label>
     </div>
@@ -115,7 +157,7 @@
       <span>Descripcion</span>
       <textarea rows="4" formControlName="description" placeholder="Descripcion operativa y estado actual"></textarea>
       @if (fieldError('description'); as error) {
-        <small class="field-error">{{ error }}</small>
+      <small class="field-error">{{ error }}</small>
       }
     </label>
 

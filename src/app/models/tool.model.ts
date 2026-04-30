@@ -10,6 +10,8 @@ export interface Tool {
   long: number;
   brand: string;
   model: string;
+  serialNumber: string;
+  location: string;
 }
 
 export interface ToolPayload {
@@ -23,6 +25,8 @@ export interface ToolPayload {
   long: number;
   brand: string;
   model: string;
+  serialNumber: string;
+  location: string;
 }
 
 export interface ToolFormSubmission {
@@ -43,4 +47,3 @@ export interface ToolListResponse {
     hasPreviousPage: boolean;
   };
 }
-
