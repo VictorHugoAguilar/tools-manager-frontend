@@ -32,17 +32,11 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Detect bump type from commit messages
+      - name: Detect bump type from PR title/body
         id: detect-bump
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
-          MERGE_COMMIT="${{ github.event.pull_request.merge_commit_sha }}"
-
-          # Busca en el título y cuerpo de la PR, y en los commits que la componen
           PR_TITLE="${{ github.event.pull_request.title }}"
           PR_BODY="${{ github.event.pull_request.body }}"
-
-          # Concatena todo el texto para buscar la etiqueta
           FULL_TEXT="$PR_TITLE $PR_BODY"
 
           echo "Analizando: $FULL_TEXT"
@@ -63,8 +57,21 @@ jobs:
 
       - name: Bump version in package.json
         if: steps.detect-bump.outputs.bump_type != 'none'
+        env:
+          BUMP_TYPE: ${{ steps.detect-bump.outputs.bump_type }}
         run: |
-          node scripts/bump-version.js ${{ steps.detect-bump.outputs.bump_type }}
+          node --input-type=module << 'EOF'
+          import { readFileSync, writeFileSync } from 'fs';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          let [major, minor, patch] = pkg.version.split('.').map(Number);
+          const type = process.env.BUMP_TYPE;
+          if (type === 'major') { major++; minor = 0; patch = 0; }
+          else if (type === 'minor') { minor++; patch = 0; }
+          else if (type === 'patch') { patch++; }
+          pkg.version = `${major}.${minor}.${patch}`;
+          writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          console.log(`✅ Nueva versión: ${pkg.version}`);
+          EOF
 
       - name: Configure Git identity
         if: steps.detect-bump.outputs.bump_type != 'none'
@@ -75,7 +82,7 @@ jobs:
       - name: Commit and push new version
         if: steps.detect-bump.outputs.bump_type != 'none'
         run: |
-          NEW_VERSION=$(node -p "require('./package.json').version")
+          NEW_VERSION=$(node --input-type=module --eval "import pkg from './package.json' assert {type:'json'}; process.stdout.write(pkg.version)")
           git add package.json
           git commit -m "chore: bump version to v$NEW_VERSION [skip ci]"
           git tag "v$NEW_VERSION"
