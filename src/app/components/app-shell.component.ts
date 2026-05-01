@@ -4,6 +4,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, Ro
 import { filter } from 'rxjs';
 import { ToolFormModalComponent } from './tool-form-modal.component';
 import { ToolStoreService } from '../services/tool-store.service';
+import packageInfo from '../../../package.json';
 
 interface ShellRouteData {
   eyebrow: string;
@@ -24,6 +25,7 @@ export class AppShellComponent {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   protected readonly sidebarOpen = signal(this.getInitialSidebarState());
+  protected readonly appVersion = packageInfo.version;
 
   private readonly routeData = signal<ShellRouteData>({
     eyebrow: 'Panel Operativo',
