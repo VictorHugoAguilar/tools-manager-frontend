@@ -82,7 +82,7 @@ jobs:
       - name: Commit and push new version
         if: steps.detect-bump.outputs.bump_type != 'none'
         run: |
-          NEW_VERSION=$(node --input-type=module --eval "import pkg from './package.json' assert {type:'json'}; process.stdout.write(pkg.version)")
+          NEW_VERSION=$(node -e "import('./package.json', {with:{type:'json'}}).then(m=>process.stdout.write(m.default.version))")
           git add package.json
           git commit -m "chore: bump version to v$NEW_VERSION [skip ci]"
           git tag "v$NEW_VERSION"
