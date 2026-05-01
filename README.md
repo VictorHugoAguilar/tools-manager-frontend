@@ -37,3 +37,7 @@ npm run build
 - Subida y borrado de imagenes conectados con la API
 - Toasts globales y confirmaciones visuales para acciones sensibles
 - Modo demo si la API no responde o no devuelve datos
+
+## Features
+
+- Add script bump-version.js for update version app
