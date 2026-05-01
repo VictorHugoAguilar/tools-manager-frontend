@@ -10,30 +10,20 @@
  *   node scripts/bump-version.js major
  */
 
-const fs = require('fs');
-const path = require('path');
-
-// ─── Argumentos ───────────────────────────────────────────────────────────────
+import { readFileSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
 
 const VALID_TYPES = ['major', 'minor', 'patch'];
 const bumpType = process.argv[2];
 
 if (!bumpType || !VALID_TYPES.includes(bumpType)) {
     console.error(`❌ Tipo de bump inválido: "${bumpType}"`);
-    console.error(`   Uso: node bump-version.js [${VALID_TYPES.join(' | ')}]`);
+    console.error(`   Uso: node scripts/bump-version.js [${VALID_TYPES.join(' | ')}]`);
     process.exit(1);
 }
 
-// ─── Leer package.json ────────────────────────────────────────────────────────
-
-const packagePath = path.resolve(process.cwd(), 'package.json');
-
-if (!fs.existsSync(packagePath)) {
-    console.error(`❌ No se encontró package.json en: ${packagePath}`);
-    process.exit(1);
-}
-
-const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+const packagePath = resolve(process.cwd(), 'package.json');
+const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
 const currentVersion = pkg.version;
 
 if (!currentVersion) {
@@ -41,42 +31,14 @@ if (!currentVersion) {
     process.exit(1);
 }
 
-// ─── Calcular nueva versión ───────────────────────────────────────────────────
+let [major, minor, patch] = currentVersion.split('.').map(Number);
 
-const versionRegex = /^(\d+)\.(\d+)\.(\d+)$/;
-const match = currentVersion.match(versionRegex);
+if (bumpType === 'major') { major++; minor = 0; patch = 0; }
+else if (bumpType === 'minor') { minor++; patch = 0; }
+else if (bumpType === 'patch') { patch++; }
 
-if (!match) {
-    console.error(`❌ El formato de versión no es semver válido: "${currentVersion}"`);
-    process.exit(1);
-}
+pkg.version = `${major}.${minor}.${patch}`;
 
-let [, major, minor, patch] = match.map(Number);
+writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
 
-switch (bumpType) {
-    case 'major':
-        major += 1;
-        minor = 0;
-        patch = 0;
-        break;
-    case 'minor':
-        minor += 1;
-        patch = 0;
-        break;
-    case 'patch':
-        patch += 1;
-        break;
-}
-
-const newVersion = `${major}.${minor}.${patch}`;
-
-// ─── Escribir package.json ────────────────────────────────────────────────────
-
-pkg.version = newVersion;
-
-// Preserva el formato original (2 espacios de indentación)
-fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
-
-// ─── Output ───────────────────────────────────────────────────────────────────
-
-console.log(`✅ Versión actualizada: ${currentVersion} → ${newVersion} (${bumpType})`);
+console.log(`✅ Versión actualizada: ${currentVersion} → ${pkg.version} (${bumpType})`);
