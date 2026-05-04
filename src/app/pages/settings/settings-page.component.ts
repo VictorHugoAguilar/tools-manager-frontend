@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TechnicianFormModalComponent } from '../../components/technician-form-modal.component';
@@ -7,6 +7,7 @@ import { ToolType } from '../../models/tool-type.model';
 import { LocationStoreService } from '../../services/location-store.service';
 import { TechnicianStoreService } from '../../services/technician-store.service';
 import { ToolTypeStoreService } from '../../services/tool-type-store.service';
+import { PropertiesStorageService } from '../../services/properties-storage.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -20,6 +21,10 @@ export class SettingsPageComponent {
   protected readonly locationStore = inject(LocationStoreService);
   protected readonly technicianStore = inject(TechnicianStoreService);
   protected readonly toolTypeStore = inject(ToolTypeStoreService);
+  protected readonly propertiesStorage = inject(PropertiesStorageService);
+
+  protected readonly showTechniciansAccessInMenu = signal(this.getShowTecnicosInitialValue());
+  protected readonly showArreglosAccessInMenu = signal(this.getShowArreglosInitialValue());
 
   protected readonly compactMode = signal(false);
   protected readonly reducedAnimations = signal(false);
@@ -47,6 +52,14 @@ export class SettingsPageComponent {
     this.locationStore.ensureLoaded();
     this.technicianStore.ensureLoaded();
     this.toolTypeStore.ensureLoaded();
+
+    effect(() => {
+      this.propertiesStorage.setValueOfLocalStorageByKey('show-access-to-technicians-menu', this.showTechniciansAccessInMenu());
+    });
+
+    effect(() => {
+      this.propertiesStorage.setValueOfLocalStorageByKey('show-access-to-arrangements-menu', this.showArreglosAccessInMenu());
+    });
   }
 
   protected startCreateLocation(): void {
@@ -156,4 +169,13 @@ export class SettingsPageComponent {
   protected technicianStateLabel(active: boolean): string {
     return active ? 'Activo' : 'Inactivo';
   }
+
+  private getShowTecnicosInitialValue(): boolean {
+    return this.propertiesStorage.getValueOfLocalStorageByKey('show-access-to-technicians-menu');
+  }
+
+  private getShowArreglosInitialValue(): boolean {
+    return this.propertiesStorage.getValueOfLocalStorageByKey('show-access-to-arrangements-menu');
+  }
+
 }

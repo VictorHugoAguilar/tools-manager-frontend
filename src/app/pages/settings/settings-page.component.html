@@ -21,6 +21,27 @@
   </article>
 
   <article class="settings-card">
+    <p class="eyebrow">Menu</p>
+    <h3>Preferencias del menu</h3>
+
+    <button type="button" class="toggle-row" (click)="showTechniciansAccessInMenu.update(value => !value)">
+      <div>
+        <strong>Mostrar Tecnicos</strong>
+        <span>Mostrar acceso a la sección de técnicos.</span>
+      </div>
+      <span class="toggle" [class.active]="showTechniciansAccessInMenu()"></span>
+    </button>
+
+    <button type="button" class="toggle-row" (click)="showArreglosAccessInMenu.update(value => !value)">
+      <div>
+        <strong>Mostrar Arreglos</strong>
+        <span>Mostrar acceso a la sección de arreglos.</span>
+      </div>
+      <span class="toggle" [class.active]="showArreglosAccessInMenu()"></span>
+    </button>
+  </article>
+
+  <article class="settings-card">
     <p class="eyebrow">Datos</p>
     <h3>Comportamiento del tablero</h3>
 
@@ -48,7 +69,7 @@
           <span>Nombre</span>
           <input formControlName="name" placeholder="Ej. Almacen Central">
           @if (locationFieldError('name'); as error) {
-            <small class="field-error">{{ error }}</small>
+          <small class="field-error">{{ error }}</small>
           }
         </label>
 
@@ -58,12 +79,12 @@
         </label>
 
         @if (locationStore.saveError()) {
-          <div class="form-alert">{{ locationStore.saveError() }}</div>
+        <div class="form-alert">{{ locationStore.saveError() }}</div>
         }
 
         <div class="form-actions">
           @if (editingLocation()) {
-            <button type="button" class="secondary-button" (click)="cancelLocationEdit()">Cancelar</button>
+          <button type="button" class="secondary-button" (click)="cancelLocationEdit()">Cancelar</button>
           }
           <button type="submit" class="primary-button" [disabled]="locationStore.saving()">
             {{ locationStore.saving() ? 'Guardando...' : editingLocation() ? 'Guardar cambios' : 'Anadir ubicacion' }}
@@ -78,25 +99,26 @@
         </div>
 
         @if (locationStore.loading()) {
-          <div class="empty-box">Cargando ubicaciones...</div>
+        <div class="empty-box">Cargando ubicaciones...</div>
         } @else if (locations().length === 0) {
-          <div class="empty-box">Todavia no hay ubicaciones configuradas.</div>
+        <div class="empty-box">Todavia no hay ubicaciones configuradas.</div>
         } @else {
-          <div class="locations-list">
-            @for (location of locations(); track location.id) {
-              <article class="location-item">
-                <div>
-                  <strong>{{ location.name }}</strong>
-                  <p>{{ location.description || 'Sin descripcion adicional.' }}</p>
-                </div>
+        <div class="locations-list">
+          @for (location of locations(); track location.id) {
+          <article class="location-item">
+            <div>
+              <strong>{{ location.name }}</strong>
+              <p>{{ location.description || 'Sin descripcion adicional.' }}</p>
+            </div>
 
-                <div class="location-actions">
-                  <button type="button" class="secondary-button" (click)="startEditLocation(location)">Editar</button>
-                  <button type="button" class="danger-button" (click)="locationStore.deleteLocation(location)">Eliminar</button>
-                </div>
-              </article>
-            }
-          </div>
+            <div class="location-actions">
+              <button type="button" class="secondary-button" (click)="startEditLocation(location)">Editar</button>
+              <button type="button" class="danger-button"
+                (click)="locationStore.deleteLocation(location)">Eliminar</button>
+            </div>
+          </article>
+          }
+        </div>
         }
       </div>
     </div>
@@ -112,7 +134,7 @@
           <span>Nombre</span>
           <input formControlName="name" placeholder="Ej. Corte, Manual, Electrica">
           @if (toolTypeFieldError('name'); as error) {
-            <small class="field-error">{{ error }}</small>
+          <small class="field-error">{{ error }}</small>
           }
         </label>
 
@@ -122,12 +144,12 @@
         </label>
 
         @if (toolTypeStore.saveError()) {
-          <div class="form-alert">{{ toolTypeStore.saveError() }}</div>
+        <div class="form-alert">{{ toolTypeStore.saveError() }}</div>
         }
 
         <div class="form-actions">
           @if (editingToolType()) {
-            <button type="button" class="secondary-button" (click)="cancelToolTypeEdit()">Cancelar</button>
+          <button type="button" class="secondary-button" (click)="cancelToolTypeEdit()">Cancelar</button>
           }
           <button type="submit" class="primary-button" [disabled]="toolTypeStore.saving()">
             {{ toolTypeStore.saving() ? 'Guardando...' : editingToolType() ? 'Guardar cambios' : 'Anadir tipo' }}
@@ -142,25 +164,26 @@
         </div>
 
         @if (toolTypeStore.loading()) {
-          <div class="empty-box">Cargando tipos...</div>
+        <div class="empty-box">Cargando tipos...</div>
         } @else if (toolTypes().length === 0) {
-          <div class="empty-box">Todavia no hay tipos configurados.</div>
+        <div class="empty-box">Todavia no hay tipos configurados.</div>
         } @else {
-          <div class="locations-list">
-            @for (toolType of toolTypes(); track toolType.id) {
-              <article class="location-item">
-                <div>
-                  <strong>{{ toolType.name }}</strong>
-                  <p>{{ toolType.description || 'Sin descripcion adicional.' }}</p>
-                </div>
+        <div class="locations-list">
+          @for (toolType of toolTypes(); track toolType.id) {
+          <article class="location-item">
+            <div>
+              <strong>{{ toolType.name }}</strong>
+              <p>{{ toolType.description || 'Sin descripcion adicional.' }}</p>
+            </div>
 
-                <div class="location-actions">
-                  <button type="button" class="secondary-button" (click)="startEditToolType(toolType)">Editar</button>
-                  <button type="button" class="danger-button" (click)="toolTypeStore.deleteToolType(toolType)">Eliminar</button>
-                </div>
-              </article>
-            }
-          </div>
+            <div class="location-actions">
+              <button type="button" class="secondary-button" (click)="startEditToolType(toolType)">Editar</button>
+              <button type="button" class="danger-button"
+                (click)="toolTypeStore.deleteToolType(toolType)">Eliminar</button>
+            </div>
+          </article>
+          }
+        </div>
         }
       </div>
     </div>
@@ -198,44 +221,46 @@
       </div>
 
       @if (technicianStore.loading()) {
-        <div class="empty-box">Cargando tecnicos...</div>
+      <div class="empty-box">Cargando tecnicos...</div>
       } @else if (technicians().length === 0) {
-        <div class="empty-box">Todavia no hay tecnicos registrados.</div>
+      <div class="empty-box">Todavia no hay tecnicos registrados.</div>
       } @else {
-        <div class="table-wrap">
-          <div class="tech-table">
-            <div class="tech-table__head">
-              <span>Nombre</span>
-              <span>Especialidad</span>
-              <span>Telefono</span>
-              <span>Correo</span>
-              <span>Estado</span>
-              <span>Acciones</span>
-            </div>
-
-            @for (technician of technicians(); track technician.id) {
-              <div class="tech-table__row">
-                <span class="primary-cell">{{ technician.name }}</span>
-                <span>{{ technician.specialty }}</span>
-                <span>{{ technician.phone || '-' }}</span>
-                <span>{{ technician.email || '-' }}</span>
-                <span>
-                  <span class="state-pill" [class.state-pill--inactive]="!technician.active">
-                    {{ technicianStateLabel(technician.active) }}
-                  </span>
-                </span>
-                <span class="actions-cell">
-                  <button type="button" class="secondary-button small-button" (click)="technicianStore.openEditModal(technician)">
-                    Editar
-                  </button>
-                  <button type="button" class="danger-button small-button" (click)="technicianStore.deleteTechnician(technician)">
-                    Eliminar
-                  </button>
-                </span>
-              </div>
-            }
+      <div class="table-wrap">
+        <div class="tech-table">
+          <div class="tech-table__head">
+            <span>Nombre</span>
+            <span>Especialidad</span>
+            <span>Telefono</span>
+            <span>Correo</span>
+            <span>Estado</span>
+            <span>Acciones</span>
           </div>
+
+          @for (technician of technicians(); track technician.id) {
+          <div class="tech-table__row">
+            <span class="primary-cell">{{ technician.name }}</span>
+            <span>{{ technician.specialty }}</span>
+            <span>{{ technician.phone || '-' }}</span>
+            <span>{{ technician.email || '-' }}</span>
+            <span>
+              <span class="state-pill" [class.state-pill--inactive]="!technician.active">
+                {{ technicianStateLabel(technician.active) }}
+              </span>
+            </span>
+            <span class="actions-cell">
+              <button type="button" class="secondary-button small-button"
+                (click)="technicianStore.openEditModal(technician)">
+                Editar
+              </button>
+              <button type="button" class="danger-button small-button"
+                (click)="technicianStore.deleteTechnician(technician)">
+                Eliminar
+              </button>
+            </span>
+          </div>
+          }
         </div>
+      </div>
       }
     </div>
   </article>
@@ -252,11 +277,6 @@
   </article>
 </section>
 
-<app-technician-form-modal
-  [visible]="technicianStore.modalOpen()"
-  [technician]="technicianStore.editingTechnician()"
-  [saving]="technicianStore.saving()"
-  [saveError]="technicianStore.saveError()"
-  (closed)="technicianStore.closeModal()"
-  (submitted)="technicianStore.saveTechnician($event)"
-/>
+<app-technician-form-modal [visible]="technicianStore.modalOpen()" [technician]="technicianStore.editingTechnician()"
+  [saving]="technicianStore.saving()" [saveError]="technicianStore.saveError()" (closed)="technicianStore.closeModal()"
+  (submitted)="technicianStore.saveTechnician($event)" />
