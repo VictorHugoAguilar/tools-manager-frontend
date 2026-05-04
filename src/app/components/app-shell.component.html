@@ -31,14 +31,18 @@
         <span class="nav-icon">◧</span>
         <span>Reportes</span>
       </a>
+      @if(showArreglos()) {
       <a routerLink="/arreglos" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">🛠</span>
         <span>Arreglos</span>
       </a>
+      }
+      @if(showTecnicos()) {
       <a routerLink="/tecnicos" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">👷</span>
         <span>Tecnicos</span>
       </a>
+      }
       <a routerLink="/configuracion" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">⚙</span>
         <span>Configuracion</span>

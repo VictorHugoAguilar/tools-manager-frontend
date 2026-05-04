@@ -4,6 +4,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, Ro
 import { filter } from 'rxjs';
 import { ToolFormModalComponent } from './tool-form-modal.component';
 import { ToolStoreService } from '../services/tool-store.service';
+import { PropertiesStorageService } from '../services/properties-storage.service';
 import packageInfo from '../../../package.json';
 
 interface ShellRouteData {
@@ -24,8 +25,21 @@ export class AppShellComponent {
   protected readonly store = inject(ToolStoreService);
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly propertiesStorage = inject(PropertiesStorageService);
+
   protected readonly sidebarOpen = signal(this.getInitialSidebarState());
   protected readonly appVersion = packageInfo.version;
+
+  protected readonly showTecnicos = signal(this.getShowTecnicosInitialValue());
+  protected readonly showArreglos = signal(this.getShowArreglosInitialValue());
+
+  private getShowTecnicosInitialValue(): boolean { 
+    return this.propertiesStorage.getValueOfLocalStorageByKey('show-access-to-technicians-menu');
+  }
+
+  private getShowArreglosInitialValue(): boolean {
+    return this.propertiesStorage.getValueOfLocalStorageByKey('show-access-to-arrangements-menu');
+  }
 
   private readonly routeData = signal<ShellRouteData>({
     eyebrow: 'Panel Operativo',
@@ -54,14 +68,25 @@ export class AppShellComponent {
   protected toggleSidebar(): void {
     this.sidebarOpen.update((current) => {
       const next = !current;
-      localStorage.setItem('tool-frontend-sidebar-open', String(next));
+      this.propertiesStorage.setValueOfLocalStorageByKey('tool-frontend-sidebar-open', next);
       return next;
     });
+
+    this.showTecnicos.update((current) => {
+      const next = this.getShowTecnicosInitialValue();
+      return next;
+    });
+
+    this.showArreglos.update((current) => {
+      const next = this.getShowArreglosInitialValue();
+      return next;
+    });
+
   }
 
   protected closeSidebar(): void {
     this.sidebarOpen.set(false);
-    localStorage.setItem('tool-frontend-sidebar-open', 'false');
+    this.propertiesStorage.setValueOfLocalStorageByKey('tool-frontend-sidebar-open', false);
   }
 
   private syncRouteData(): void {
@@ -82,16 +107,6 @@ export class AppShellComponent {
   }
 
   private getInitialSidebarState(): boolean {
-    if (typeof localStorage === 'undefined') {
-      return true;
-    }
-
-    const storedValue = localStorage.getItem('tool-frontend-sidebar-open');
-
-    if (storedValue === null) {
-      return true;
-    }
-
-    return storedValue === 'true';
+    return this.propertiesStorage.getValueOfLocalStorageByKey('tool-frontend-sidebar-open');
   }
 }
