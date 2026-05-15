@@ -17,10 +17,10 @@
   gap: 0.8rem;
   width: min(360px, calc(100vw - 2rem));
   padding: 0.95rem 1rem;
-  border-radius: 18px;
-  border: 1px solid rgba(87, 102, 139, 0.14);
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 20px 44px rgba(31, 47, 86, 0.16);
+  border-radius: 22px;
+  border: 3px solid var(--primary);
+  background: rgba(255, 253, 248, 0.98);
+  box-shadow: 6px 8px 0 rgba(35, 52, 90, 0.9);
   pointer-events: auto;
 
   h4 {
@@ -44,23 +44,22 @@
   }
 
   &.success {
-    border-left: 5px solid #4f9b43;
+    background: #e4f5ec;
   }
 
   &.info {
-    border-left: 5px solid #4677f6;
+    background: #eef3ff;
   }
 
   &.warning {
-    border-left: 5px solid #e18a11;
+    background: #fff6d9;
   }
 
   &.error {
-    border-left: 5px solid #d95b57;
+    background: #ffe3de;
   }
 }
 
 .toast-copy {
   flex: 1;
 }
-

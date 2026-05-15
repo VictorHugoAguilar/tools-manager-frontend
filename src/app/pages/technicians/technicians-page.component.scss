@@ -1,15 +1,16 @@
 .technicians-page {
   display: grid;
-  gap: 1rem;
+  gap: 1.2rem;
 }
 
 .page-header,
 .summary-card,
 .table-card {
-  padding: 1.2rem;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: 0 16px 34px rgba(36, 50, 79, 0.09);
+  padding: 1.25rem;
+  border: 3px solid var(--primary);
+  border-radius: 28px;
+  background: var(--panel);
+  box-shadow: var(--shadow-lg);
 }
 
 .page-header,
@@ -20,29 +21,35 @@
   gap: 1rem;
 }
 
+.page-header {
+  background:
+    radial-gradient(circle at top right, rgba(142, 223, 192, 0.16), transparent 30%),
+    var(--panel);
+}
+
 .eyebrow {
   margin: 0;
-  color: #4d77ef;
+  color: rgba(35, 52, 90, 0.72);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 h2,
 h3 {
   margin: 0.25rem 0 0;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
 }
 
 h2 {
-  font-size: 2rem;
+  font-size: clamp(1.9rem, 3vw, 2.45rem);
 }
 
 .intro,
 .table-toolbar p {
   margin: 0.65rem 0 0;
-  color: #63708b;
+  color: rgba(35, 52, 90, 0.72);
 }
 
 .summary-grid {
@@ -54,20 +61,21 @@ h2 {
 .summary-card {
   display: grid;
   gap: 0.35rem;
+  background: linear-gradient(180deg, #fffdf8 0%, #fff6e0 100%);
 
   strong {
-    font-size: 2rem;
-    color: #1f3156;
+    font-size: clamp(1.8rem, 2.8vw, 2.3rem);
+    color: var(--primary);
   }
 }
 
 .summary-card--accent {
-  background: linear-gradient(135deg, rgba(71, 119, 246, 0.12), rgba(53, 162, 141, 0.14));
+  background: linear-gradient(135deg, rgba(246, 215, 104, 0.28), rgba(142, 223, 192, 0.22));
 }
 
 .summary-label {
-  color: #60708d;
-  font-weight: 800;
+  color: rgba(35, 52, 90, 0.76);
+  font-weight: 900;
 }
 
 .primary,
@@ -75,25 +83,34 @@ h2 {
 .danger {
   min-height: 3rem;
   padding: 0 1.1rem;
-  border-radius: 14px;
-  font-weight: 800;
+  border-radius: 16px;
+  font-weight: 900;
   font: inherit;
-  border: none;
+  border: 3px solid var(--primary);
+  box-shadow: 4px 6px 0 rgba(35, 52, 90, 0.88);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
 .primary {
-  background: linear-gradient(135deg, #1745a7, #0f3690);
-  color: #fff;
+  background: var(--accent-yellow);
+  color: var(--primary);
 }
 
 .secondary {
-  background: #edf2ff;
-  color: #224aa5;
+  background: #fffdf8;
+  color: var(--primary);
 }
 
 .danger {
-  background: #fff1f1;
-  color: #ba3131;
+  background: #ffe3de;
+  color: #a93d31;
+}
+
+.primary:hover,
+.secondary:hover,
+.danger:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 7px 0 rgba(35, 52, 90, 0.92);
 }
 
 .small {
@@ -108,10 +125,11 @@ h2 {
 
 .tech-table {
   min-width: 920px;
-  border: 1px solid rgba(84, 101, 144, 0.12);
-  border-radius: 18px;
+  border: 3px solid var(--primary);
+  border-radius: 22px;
   overflow: hidden;
-  background: #fbfcff;
+  background: #fffdf8;
+  box-shadow: 4px 6px 0 rgba(35, 52, 90, 0.84);
 }
 
 .tech-table__head,
@@ -121,27 +139,37 @@ h2 {
 }
 
 .tech-table__head {
-  background: linear-gradient(180deg, #14356f 0%, #0d2a5a 100%);
-  color: #fff;
+  background: var(--accent-mint);
+  color: var(--primary);
   font-size: 0.8rem;
-  font-weight: 800;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .tech-table__head span,
 .tech-table__row span {
   padding: 0.95rem 0.85rem;
-  border-right: 1px solid rgba(84, 101, 144, 0.08);
+  border-right: 2px solid rgba(35, 52, 90, 0.08);
 }
 
 .tech-table__row {
   align-items: center;
-  border-top: 1px solid rgba(84, 101, 144, 0.1);
-  color: #30405d;
+  border-top: 2px solid rgba(35, 52, 90, 0.1);
+  color: rgba(35, 52, 90, 0.9);
   background: #fff;
 }
 
+.tech-table__row:nth-child(even) {
+  background: rgba(246, 215, 104, 0.1);
+}
+
+.tech-table__row:hover {
+  background: rgba(142, 223, 192, 0.12);
+}
+
 .primary-cell {
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .state-pill {
@@ -151,29 +179,33 @@ h2 {
   min-width: 84px;
   min-height: 2.2rem;
   padding: 0 0.85rem;
+  border: 3px solid var(--primary);
   border-radius: 999px;
-  background: #eef7ea;
-  color: #2f7f37;
-  font-weight: 800;
+  background: #dff4dd;
+  color: #2a6f3e;
+  font-weight: 900;
+  box-shadow: 2px 3px 0 rgba(35, 52, 90, 0.78);
 }
 
 .state-pill--inactive {
-  background: #fff4df;
-  color: #b46a10;
+  background: #ffe9b5;
+  color: #a76100;
 }
 
 .actions-cell {
   display: flex;
   gap: 0.65rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .empty-state {
   margin-top: 1rem;
   padding: 1.2rem;
-  border-radius: 18px;
-  background: #f6f8fe;
-  color: #66718c;
+  border: 3px dashed rgba(35, 52, 90, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.75);
+  color: rgba(35, 52, 90, 0.72);
   text-align: center;
 }
 
