@@ -8,7 +8,7 @@
 .confirm-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(18, 27, 49, 0.48);
+  background: rgba(35, 52, 90, 0.28);
   backdrop-filter: blur(8px);
   pointer-events: auto;
 }
@@ -19,11 +19,15 @@
   left: 50%;
   width: min(460px, calc(100vw - 2rem));
   padding: 1.5rem;
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.98);
-  box-shadow: 0 28px 70px rgba(18, 27, 49, 0.24);
+  border-radius: 28px;
+  border: 3px solid var(--primary);
+  background: #fffdf8;
+  box-shadow: 8px 10px 0 rgba(35, 52, 90, 0.9);
   transform: translate(-50%, -50%);
   pointer-events: auto;
+  background:
+    radial-gradient(circle at top right, rgba(246, 215, 104, 0.18), transparent 28%),
+    #fffdf8;
 
   h3 {
     margin: 0.35rem 0 0;
@@ -35,11 +39,11 @@
 
 .eyebrow {
   margin: 0;
-  color: #4d77ef;
+  color: rgba(35, 52, 90, 0.72);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .message {
@@ -59,22 +63,29 @@
 .primary {
   min-height: 2.9rem;
   padding: 0 1rem;
-  border: none;
-  border-radius: 14px;
-  font-weight: 800;
+  border: 3px solid var(--primary);
+  border-radius: 18px;
+  font-weight: 900;
+  box-shadow: 4px 6px 0 rgba(35, 52, 90, 0.88);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
 
 .secondary {
-  background: #eef1fb;
+  background: #fffdf8;
   color: #33405f;
 }
 
 .primary {
-  background: linear-gradient(135deg, #4677f6, #2d60e9);
-  color: #fff;
+  background: var(--accent-yellow);
+  color: var(--primary);
 }
 
 .danger {
-  background: linear-gradient(135deg, #db645d, #c4453f);
+  background: #ffd9d4;
 }
 
+.secondary:hover,
+.primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 7px 0 rgba(35, 52, 90, 0.92);
+}

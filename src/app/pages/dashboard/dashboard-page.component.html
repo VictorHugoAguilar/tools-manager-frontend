@@ -6,7 +6,7 @@
 } @else {
   <section class="board">
     @for (column of store.columns(); track column.id) {
-      <div class="column">
+      <div class="column" [class.column--available]="column.id === 'available'" [class.column--active]="column.id === 'active'" [class.column--maintenance]="column.id === 'maintenance'">
         <header class="column-header">
           <div class="column-title">
             <span class="column-dot" [style.background]="column.accent"></span>
