@@ -114,19 +114,19 @@
   </article>
 
   <article class="metrics-grid">
-    <div class="metric-card">
+    <div class="metric-card metric-card--total">
       <span>Total herramientas</span>
       <strong>{{ reportMetrics().totalTools }}</strong>
     </div>
-    <div class="metric-card">
+    <div class="metric-card metric-card--available">
       <span>Disponibilidad</span>
       <strong>{{ reportMetrics().availableRate }}%</strong>
     </div>
-    <div class="metric-card">
+    <div class="metric-card metric-card--active">
       <span>En uso</span>
       <strong>{{ reportMetrics().activeRate }}%</strong>
     </div>
-    <div class="metric-card">
+    <div class="metric-card metric-card--length">
       <span>Promedio longitud</span>
       <strong>{{ reportMetrics().averageLong }} cm</strong>
     </div>
@@ -296,7 +296,7 @@
           <em>{{ entry.ratio }}%</em>
         </div>
       } @empty {
-        <p class="empty">Sin datos.</p>
+        <p class="empty">Sin datos disponibles.</p>
       }
     </div>
   </article>

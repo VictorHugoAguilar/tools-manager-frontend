@@ -1,4 +1,4 @@
-<article class="tool-card">
+<article class="tool-card" [attr.data-column]="column()">
   <header class="card-header">
     <div>
       <h3>{{ tool().name }}</h3>
@@ -6,11 +6,13 @@
         <span class="meta-pill">Serie: {{ tool().serialNumber }}</span>
         <span class="meta-pill meta-pill--soft">Ubicacion: {{ tool().location }}</span>
       </div>
-      <p [class.expanded]="expanded()" class="textlong">{{ tool().description }}</p>
+      <div class="description-shell">
+        <p [class.expanded]="expanded()" class="textlong">{{ tool().description }}</p>
+      </div>
       @if (tool().description.length > 100) {
-      <span (click)="changeLongDescription()" class="toggle">
+      <button type="button" (click)="changeLongDescription()" class="toggle">
         {{ expanded() ? ' ver menos' : '... ver más' }}
-      </span>
+      </button>
       }
     </div>
 

@@ -37,26 +37,31 @@ body {
 }
 :root {
   color-scheme: light;
-  --bg: #eef1f8;
-  --panel: #ffffff;
-  --panel-soft: rgba(255, 255, 255, 0.72);
-  --sidebar-top: #44506e;
-  --sidebar-bottom: #2e3953;
-  --text: #243047;
-  --muted: #6e7891;
-  --line: rgba(64, 79, 119, 0.12);
-  --primary: #4677f6;
-  --primary-strong: #2f5fe0;
-  --success: #4f9b43;
-  --warning: #e18a11;
-  --danger: #d95b57;
-  --info: #6f7d9b;
-  --shadow-lg: 0 24px 60px rgba(37, 55, 102, 0.12);
-  --shadow-md: 0 12px 28px rgba(38, 54, 95, 0.1);
-  --radius-xl: 28px;
+  --bg: #f6f1e7;
+  --panel: #fffdf8;
+  --panel-soft: rgba(255, 253, 248, 0.92);
+  --sidebar-top: #fffdf8;
+  --sidebar-bottom: #fff8ef;
+  --text: #23345a;
+  --muted: #5f6e90;
+  --line: rgba(35, 52, 90, 0.18);
+  --primary: #23345a;
+  --primary-strong: #182748;
+  --success: #4ea07d;
+  --warning: #e1b848;
+  --danger: #d7685f;
+  --info: #6b7b9f;
+  --accent-yellow: #f6d768;
+  --accent-mint: #8edfc0;
+  --accent-cream: #fff7d7;
+  --accent-sky: #dbe8ff;
+  --shadow-lg: 8px 10px 0 rgba(35, 52, 90, 0.94);
+  --shadow-md: 6px 8px 0 rgba(35, 52, 90, 0.92);
+  --shadow-sm: 4px 5px 0 rgba(35, 52, 90, 0.86);
+  --radius-xl: 26px;
   --radius-lg: 20px;
-  --radius-md: 14px;
-  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-sm: 12px;
 }
 
 * {
@@ -67,15 +72,17 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: 'Manrope', sans-serif;
+  font-family: "Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(86, 120, 246, 0.18), transparent 28%),
-    linear-gradient(180deg, #f6f7fb 0%, #eef1f8 100%);
+    radial-gradient(circle at top left, rgba(246, 215, 104, 0.26), transparent 20%),
+    radial-gradient(circle at bottom right, rgba(142, 223, 192, 0.22), transparent 18%),
+    linear-gradient(180deg, #f8f4eb 0%, #f4efe5 100%);
   color: var(--text);
 }
 
 body {
   min-height: 100vh;
+  line-height: 1.45;
 }
 
 button,
@@ -83,9 +90,46 @@ input,
 select,
 textarea {
   font: inherit;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: default;
+}
+
+::selection {
+  background: rgba(246, 215, 104, 0.62);
+  color: var(--primary);
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+button,
+label,
+span,
+strong,
+dt,
+dd {
+  overflow-wrap: anywhere;
+}
+
+h1,
+h2,
+h3,
+h4,
+button {
+  text-wrap: balance;
+}
+
+p,
+li,
+dd {
+  text-wrap: pretty;
+}

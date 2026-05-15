@@ -8,7 +8,7 @@
           <p class="eyebrow">Vista operativa</p>
           <h3>Inventario completo</h3>
         </div>
-        <span class="count">{{ rows().length }} items</span>
+        <span class="count">{{ rows().length }} herramientas</span>
       </header>
 
       <div class="table">
@@ -27,20 +27,24 @@
             [class.table-row--available]="getStateTone(tool.state) === 'available'"
             [class.table-row--active]="getStateTone(tool.state) === 'active'"
             [class.table-row--maintenance]="getStateTone(tool.state) === 'maintenance'">
-            <div class="tool-cell">
+            <div class="tool-cell" data-label="Herramienta">
               <img [src]="store.getImage(tool)" [alt]="tool.name">
               <div>
                 <strong>{{ tool.name }}</strong>
                 <p>{{ tool.type }}</p>
+                <div class="tool-tags">
+                  <span>{{ tool.serialNumber }}</span>
+                  <span>{{ tool.location }}</span>
+                </div>
               </div>
             </div>
-            <span>{{ tool.category }}</span>
-            <span class="status" [class.status--available]="getStateTone(tool.state) === 'available'" [class.status--active]="getStateTone(tool.state) === 'active'" [class.status--maintenance]="getStateTone(tool.state) === 'maintenance'">
+            <span data-label="Categoria">{{ tool.category }}</span>
+            <span data-label="Estado" class="status" [class.status--available]="getStateTone(tool.state) === 'available'" [class.status--active]="getStateTone(tool.state) === 'active'" [class.status--maintenance]="getStateTone(tool.state) === 'maintenance'">
               {{ tool.state }}
             </span>
-            <span>{{ tool.material }}</span>
-            <span>{{ tool.long }} cm</span>
-            <div class="row-actions">
+            <span data-label="Material">{{ tool.material }}</span>
+            <span data-label="Longitud">{{ tool.long }} cm</span>
+            <div class="row-actions" data-label="Acciones">
               <button type="button" (click)="store.openEditModal(tool)">Editar</button>
               <div class="state-menu" (click)="$event.stopPropagation()">
                 <button
@@ -100,7 +104,7 @@
 
       <article class="mini-panel">
         <p class="eyebrow">Modo</p>
-        <h3>{{ store.useDemoData() ? 'Demo local' : 'API conectada' }}</h3>
+        <h3>{{ store.useDemoData() ? 'Modo demostracion' : 'Sincronizacion activa' }}</h3>
         <p class="muted">
           {{ store.useDemoData() ? 'Estas navegando con datos de ejemplo.' : 'Las acciones se sincronizan con el backend.' }}
         </p>
