@@ -1,0 +1,372 @@
+@if (store.loading()) {
+  <section class="empty-state">
+    <h3>Cargando almacenamiento...</h3>
+    <p>Estamos preparando tus cajas y productos.</p>
+  </section>
+} @else {
+  <section class="storage-page">
+    <header class="storage-toolbar">
+      <div>
+        <p class="eyebrow">Organizacion fisica</p>
+        <h2>Almacenamiento</h2>
+        <p class="intro">Agrupa productos por caja, genera QR directos y consulta el contenido de cada unidad.</p>
+      </div>
+
+      <div class="toolbar-actions">
+        <span class="metric-pill">{{ store.boxes().length }} cajas</span>
+        <span class="metric-pill metric-pill--soft">{{ store.totalProducts() }} productos</span>
+        <button type="button" class="primary-button" (click)="openCreateBoxModal()">＋ Añadir caja</button>
+      </div>
+    </header>
+
+    @if (store.boxes().length === 0) {
+      <article class="empty-state">
+        <h3>Aun no hay cajas registradas</h3>
+        <p>Crea la primera caja para empezar a organizar producto y generar su QR.</p>
+        <button type="button" class="primary-button" (click)="openCreateBoxModal()">Crear primera caja</button>
+      </article>
+    } @else {
+      <section class="boxes-grid">
+        @for (box of store.boxes(); track box.id) {
+          <article class="box-card" (click)="openBox(box)">
+            <header class="box-card__header">
+              <span class="code-pill">{{ box.code }}</span>
+
+              <div class="card-actions">
+                <button type="button" class="icon-button" (click)="openEditBoxModal(box, $event)">Editar</button>
+                <button type="button" class="icon-button danger" (click)="deleteBox(box, $event)">Eliminar</button>
+              </div>
+            </header>
+
+            <div class="box-card__body">
+              <button type="button" class="preview-frame-button" (click)="openQrPreview(box, $event)" aria-label="Ampliar QR de la caja">
+                <img class="qr-preview" [src]="qrCodeFor(box.id)" [alt]="'QR de ' + box.name">
+              </button>
+              <button type="button" class="preview-frame-button" (click)="openImagePreview(box, $event)" aria-label="Ampliar imagen de la caja">
+                <img class="box-preview" [src]="getBoxImage(box)" [alt]="'Imagen de ' + box.name">
+              </button>
+
+              <div class="box-copy">
+                <h3>{{ box.name }}</h3>
+                <p>{{ box.description }}</p>
+              </div>
+            </div>
+
+            <footer class="box-card__footer">
+              <span class="metric-pill">{{ box.products.length }} productos</span>
+              <button type="button" class="secondary-button" (click)="openCreateProductModal(box, $event)">
+                Añadir producto
+              </button>
+            </footer>
+
+            <div class="product-preview-list">
+              @for (product of box.products.slice(0, 3); track product.id) {
+                <div class="product-preview">
+                  <img [src]="getProductImage(product)" [alt]="product.name">
+                  <div>
+                    <strong>{{ product.name }}</strong>
+                    <span>{{ product.quantity }} uds.</span>
+                  </div>
+                </div>
+              } @empty {
+                <p class="product-preview-empty">Todavia no hay productos en esta caja.</p>
+              }
+            </div>
+          </article>
+        }
+      </section>
+    }
+  </section>
+}
+
+@if (expandedBox(); as box) {
+  <div class="expanded-overlay" (click)="closeExpandedBox()">
+    <section class="expanded-panel" (click)="$event.stopPropagation()">
+      <header class="expanded-header">
+        <div>
+          <span class="code-pill">{{ box.code }}</span>
+          <h3>{{ box.name }}</h3>
+          <p>{{ box.description }}</p>
+        </div>
+
+        <div class="expanded-actions">
+          <button type="button" class="secondary-button" (click)="openEditBoxModal(box, $event)">Editar caja</button>
+          <button type="button" class="primary-button" (click)="openCreateProductModal(box, $event)">Añadir producto</button>
+          <button type="button" class="close-button" (click)="closeExpandedBox()">×</button>
+        </div>
+      </header>
+
+      <div class="expanded-summary">
+        <article class="summary-card summary-card--qr">
+          <span class="eyebrow">Codigo QR</span>
+          <button type="button" class="summary-qr-button" (click)="openQrPreview(box, $event)" aria-label="Ampliar QR de la caja">
+            <img [src]="qrCodeFor(box.id)" [alt]="'QR de ' + box.name">
+          </button>
+          <p>Escanea para abrir directamente esta caja en vista completa.</p>
+        </article>
+
+        <article class="summary-card">
+          <span class="eyebrow">Resumen</span>
+          <dl>
+            <div>
+              <dt>Caja</dt>
+              <dd>{{ box.code }}</dd>
+            </div>
+            <div>
+              <dt>Productos</dt>
+              <dd>{{ box.products.length }}</dd>
+            </div>
+            <div>
+              <dt>Nuevos</dt>
+              <dd>{{ countProductsByState(box, 'Nuevo') }}</dd>
+            </div>
+            <div>
+              <dt>Usados</dt>
+              <dd>{{ countProductsByState(box, 'Usado') }}</dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="summary-card summary-card--image">
+          <span class="eyebrow">Imagen de la caja</span>
+          <button type="button" class="summary-image-button" (click)="openImagePreview(box, $event)" aria-label="Ampliar imagen de la caja">
+            <img [src]="getBoxImage(box)" [alt]="'Imagen de ' + box.name">
+          </button>
+          <p>Si la caja no tiene foto, se muestra una imagen por defecto.</p>
+        </article>
+      </div>
+
+      <section class="products-section">
+        <div class="section-top">
+          <div>
+            <p class="eyebrow">Contenido</p>
+            <h4>Productos de la caja</h4>
+          </div>
+          <span class="metric-pill">{{ box.products.length }} registrados</span>
+        </div>
+
+        <div class="products-grid">
+          @for (product of box.products; track product.id) {
+            <article class="product-card">
+              <img [src]="getProductImage(product)" [alt]="product.name">
+
+              <div class="product-card__copy">
+                <header>
+                  <div class="product-card__title">
+                    <h5>{{ product.name }}</h5>
+                    <span class="state-pill product-state-pill" [class.state-pill--used]="product.state === 'Usado'">
+                      {{ product.state }}
+                    </span>
+                  </div>
+                  <div class="product-meta">
+                    <span>{{ product.quantity }} unidades</span>
+                  </div>
+                </header>
+
+                <p>{{ product.description }}</p>
+              </div>
+
+              <div class="product-card__actions">
+                <button type="button" class="secondary-button small-button" (click)="openEditProductModal(box, product, $event)">
+                  Editar
+                </button>
+                <button type="button" class="danger-button small-button" (click)="deleteProduct(box, product, $event)">
+                  Eliminar
+                </button>
+              </div>
+            </article>
+          } @empty {
+            <article class="empty-products">
+              <h5>Sin productos</h5>
+              <p>Esta caja todavia no tiene productos guardados.</p>
+            </article>
+          }
+        </div>
+      </section>
+    </section>
+  </div>
+}
+
+@if (imagePreview(); as preview) {
+  <div class="image-overlay" (click)="closeImagePreview()">
+    <section class="image-panel" (click)="$event.stopPropagation()">
+      <header class="image-panel__header">
+        <div>
+          <p class="eyebrow">Imagen de la caja</p>
+          <h3>{{ preview.code }}</h3>
+          <p class="qr-panel__subtitle">{{ preview.name }}</p>
+        </div>
+
+        <div class="image-panel__actions">
+          <button type="button" class="close-button" (click)="closeImagePreview()">×</button>
+        </div>
+      </header>
+
+      <div class="image-panel__body">
+        <img [src]="preview.image" [alt]="'Imagen de ' + preview.code">
+      </div>
+    </section>
+  </div>
+}
+
+@if (qrPreview(); as preview) {
+  <div class="qr-overlay" (click)="closeQrPreview()">
+    <section class="qr-panel" (click)="$event.stopPropagation()">
+      <header class="qr-panel__header">
+        <div>
+          <p class="eyebrow">Codigo QR</p>
+          <h3>{{ preview.code }}</h3>
+          <p class="qr-panel__subtitle">{{ preview.name }}</p>
+        </div>
+
+        <div class="qr-panel__actions">
+          <button type="button" class="secondary-button" (click)="printQrPreview()">Imprimir QR</button>
+          <button type="button" class="secondary-button" (click)="downloadQrPreview()">Guardar QR</button>
+          <button type="button" class="close-button" (click)="closeQrPreview()">×</button>
+        </div>
+      </header>
+
+      <div class="qr-panel__body">
+        <img [src]="preview.image" [alt]="'QR de ' + preview.code">
+      </div>
+    </section>
+  </div>
+}
+
+@if (store.boxModalOpen()) {
+  <div class="modal-overlay" (click)="store.closeBoxModal()">
+    <section class="modal-panel" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Caja</p>
+          <h3>{{ store.editingBox() ? 'Editar caja' : 'Nueva caja' }}</h3>
+        </div>
+        <button type="button" class="close-button" (click)="store.closeBoxModal()">×</button>
+      </header>
+
+      <form class="modal-form" [formGroup]="boxForm" (ngSubmit)="submitBox()">
+        <label>
+          <span>Codigo</span>
+          <input formControlName="code" [readonly]="!store.editingBox()" placeholder="Se generara automaticamente">
+        </label>
+
+        <label>
+          <span>Nombre</span>
+          <input formControlName="name" placeholder="Ej. Caja de tornilleria fina">
+          @if (boxFieldError('name'); as error) {
+            <small class="field-error">{{ error }}</small>
+          }
+        </label>
+
+        <label>
+          <span>Descripcion</span>
+          <textarea rows="4" formControlName="description" placeholder="Que guarda esta caja y para que se usa"></textarea>
+          @if (boxFieldError('description'); as error) {
+            <small class="field-error">{{ error }}</small>
+          }
+        </label>
+
+        <div class="image-uploader">
+          <div class="image-uploader__preview">
+            <img [src]="boxImagePreview()" alt="Vista previa de la caja">
+          </div>
+
+          <label class="image-uploader__control">
+            <span>Imagen de la caja</span>
+            <p>Puedes tomar una foto o elegirla desde tus archivos.</p>
+            <span class="picker-button">Seleccionar imagen</span>
+            <input type="file" accept="image/*" capture="environment" (change)="onBoxImageSelected($event)">
+          </label>
+        </div>
+
+        @if (store.saveError()) {
+          <div class="form-alert">{{ store.saveError() }}</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-button" (click)="store.closeBoxModal()">Cancelar</button>
+          <button type="submit" class="primary-button" [disabled]="store.saving()">
+            {{ store.saving() ? 'Guardando...' : store.editingBox() ? 'Guardar cambios' : 'Crear caja' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (store.productModalOpen()) {
+  <div class="modal-overlay" (click)="store.closeProductModal()">
+    <section class="modal-panel" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div>
+          <p class="eyebrow">Producto</p>
+          <h3>{{ store.editingProduct() ? 'Editar producto' : 'Nuevo producto' }}</h3>
+        </div>
+        <button type="button" class="close-button" (click)="store.closeProductModal()">×</button>
+      </header>
+
+      <form class="modal-form" [formGroup]="productForm" (ngSubmit)="submitProduct()">
+        <div class="modal-grid">
+          <label>
+            <span>Nombre</span>
+            <input formControlName="name" placeholder="Ej. Tornillo M8">
+            @if (productFieldError('name'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+
+          <label>
+            <span>Cantidad</span>
+            <input type="number" min="0" formControlName="quantity">
+            @if (productFieldError('quantity'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+        </div>
+
+        <label>
+          <span>Descripcion</span>
+          <textarea rows="4" formControlName="description" placeholder="Detalles del producto"></textarea>
+          @if (productFieldError('description'); as error) {
+            <small class="field-error">{{ error }}</small>
+          }
+        </label>
+
+        <div class="modal-grid">
+          <label>
+            <span>Estado</span>
+            <select formControlName="state">
+              @for (state of productStates; track state) {
+                <option [value]="state">{{ state }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <div class="image-uploader">
+          <div class="image-uploader__preview">
+            <img [src]="productImagePreview()" alt="Vista previa del producto">
+          </div>
+
+          <label class="image-uploader__control">
+            <span>Imagen del producto</span>
+            <p>Usa la cámara del dispositivo o selecciona un archivo.</p>
+            <span class="picker-button">Seleccionar imagen</span>
+            <input type="file" accept="image/*" capture="environment" (change)="onProductImageSelected($event)">
+          </label>
+        </div>
+
+        @if (store.saveError()) {
+          <div class="form-alert">{{ store.saveError() }}</div>
+        }
+
+        <div class="modal-actions">
+          <button type="button" class="secondary-button" (click)="store.closeProductModal()">Cancelar</button>
+          <button type="submit" class="primary-button" [disabled]="store.saving()">
+            {{ store.saving() ? 'Guardando...' : store.editingProduct() ? 'Guardar producto' : 'Añadir producto' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
