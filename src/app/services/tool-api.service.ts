@@ -10,6 +10,12 @@ import {
 } from '../models/repair.model';
 import { LocationPayload, ToolLocation } from '../models/location.model';
 import { ToolType, ToolTypePayload } from '../models/tool-type.model';
+import {
+  StorageBox,
+  StorageBoxPayload,
+  StorageBoxProduct,
+  StorageProductPayload
+} from '../models/storage-box.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -21,6 +27,7 @@ export class ToolApiService {
   private readonly techniciansUrl = environment.apiUrl + '/api/technicians';
   private readonly locationsUrl = environment.apiUrl + '/api/locations';
   private readonly toolTypesUrl = environment.apiUrl + '/api/tool-types';
+  private readonly storageBoxesUrl = environment.apiUrl + '/api/storage-boxes';
 
   getTools(): Observable<Tool[] | ToolListResponse> {
     return this.http.get<Tool[] | ToolListResponse>(this.baseUrl);
@@ -118,5 +125,53 @@ export class ToolApiService {
 
   deleteToolType(id: string): Observable<void> {
     return this.http.delete<void>(`${this.toolTypesUrl}/${id}`);
+  }
+
+  getStorageBoxes(): Observable<StorageBox[]> {
+    return this.http.get<StorageBox[]>(this.storageBoxesUrl);
+  }
+
+  createStorageBox(payload: StorageBoxPayload): Observable<StorageBox> {
+    return this.http.post<StorageBox>(this.storageBoxesUrl, payload);
+  }
+
+  updateStorageBox(id: string, payload: StorageBoxPayload): Observable<StorageBox> {
+    return this.http.put<StorageBox>(`${this.storageBoxesUrl}/${id}`, payload);
+  }
+
+  deleteStorageBox(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.storageBoxesUrl}/${id}`);
+  }
+
+  uploadStorageBoxImage(id: string, file: File): Observable<{ message: string; box: StorageBox }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return this.http.post<{ message: string; box: StorageBox }>(
+      `${this.storageBoxesUrl}/${id}/image`,
+      formData
+    );
+  }
+
+  createStorageProduct(boxId: string, payload: StorageProductPayload): Observable<StorageBoxProduct> {
+    return this.http.post<StorageBoxProduct>(`${this.storageBoxesUrl}/${boxId}/products`, payload);
+  }
+
+  updateStorageProduct(boxId: string, productId: string, payload: StorageProductPayload): Observable<StorageBoxProduct> {
+    return this.http.put<StorageBoxProduct>(`${this.storageBoxesUrl}/${boxId}/products/${productId}`, payload);
+  }
+
+  deleteStorageProduct(boxId: string, productId: string): Observable<void> {
+    return this.http.delete<void>(`${this.storageBoxesUrl}/${boxId}/products/${productId}`);
+  }
+
+  uploadStorageProductImage(boxId: string, productId: string, file: File): Observable<{ message: string; product: StorageBoxProduct }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return this.http.post<{ message: string; product: StorageBoxProduct }>(
+      `${this.storageBoxesUrl}/${boxId}/products/${productId}/image`,
+      formData
+    );
   }
 }
