@@ -7,6 +7,7 @@ import { ReportsPageComponent } from './pages/reports/reports-page.component';
 import { RepairsPageComponent } from './pages/repairs/repairs-page.component';
 import { SettingsPageComponent } from './pages/settings/settings-page.component';
 import { TechniciansPageComponent } from './pages/technicians/technicians-page.component';
+import { StoragePageComponent } from './pages/storage/storage-page.component';
 
 export const appRoutes: Routes = [
   {
@@ -36,6 +37,26 @@ export const appRoutes: Routes = [
           title: 'Inventario',
           description: 'Listado operativo para revisar y actualizar rapidamente todo el parque.',
           showCreateAction: true
+        }
+      },
+      {
+        path: 'almacenamiento',
+        component: StoragePageComponent,
+        data: {
+          eyebrow: 'Logistica',
+          title: 'Almacenamiento',
+          description: 'Gestion visual de cajas, productos almacenados y acceso rapido por QR.',
+          showCreateAction: false
+        }
+      },
+      {
+        path: 'almacenamiento/:boxId',
+        component: StoragePageComponent,
+        data: {
+          eyebrow: 'Logistica',
+          title: 'Almacenamiento',
+          description: 'Gestion visual de cajas, productos almacenados y acceso rapido por QR.',
+          showCreateAction: false
         }
       },
       {
