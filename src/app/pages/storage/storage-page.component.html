@@ -275,8 +275,12 @@
             <span>Imagen de la caja</span>
             <p>Puedes tomar una foto o elegirla desde tus archivos.</p>
             <span class="picker-button">Seleccionar imagen</span>
-            <input type="file" accept="image/*" capture="environment" (change)="onBoxImageSelected($event)">
+            <input type="file" accept="image/*" (change)="onBoxImageSelected($event)">
           </label>
+
+          @if (boxImageError(); as error) {
+            <small class="field-error image-uploader__error">{{ error }}</small>
+          }
         </div>
 
         @if (store.saveError()) {
@@ -352,8 +356,12 @@
             <span>Imagen del producto</span>
             <p>Usa la cámara del dispositivo o selecciona un archivo.</p>
             <span class="picker-button">Seleccionar imagen</span>
-            <input type="file" accept="image/*" capture="environment" (change)="onProductImageSelected($event)">
+            <input type="file" accept="image/*" (change)="onProductImageSelected($event)">
           </label>
+
+          @if (productImageError(); as error) {
+            <small class="field-error image-uploader__error">{{ error }}</small>
+          }
         </div>
 
         @if (store.saveError()) {
