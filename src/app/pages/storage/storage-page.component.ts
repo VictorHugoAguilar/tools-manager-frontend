@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, OnDestroy, computed, effect, inject, signal, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -28,8 +28,11 @@ export class StoragePageComponent implements OnDestroy {
   protected readonly selectedProductImageFile = signal<File | null>(null);
   protected readonly boxImagePreview = signal<string>(this.defaultImage);
   protected readonly productImagePreview = signal<string>(this.defaultImage);
+  protected readonly boxImageError = signal<string | null>(null);
+  protected readonly productImageError = signal<string | null>(null);
   protected readonly qrPreview = signal<{ image: string; code: string; name: string } | null>(null);
   protected readonly imagePreview = signal<{ image: string; code: string; name: string } | null>(null);
+  private readonly maxImageSizeMb = 20;
 
   protected readonly boxIdFromRoute = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('boxId'))),
@@ -73,6 +76,7 @@ export class StoragePageComponent implements OnDestroy {
 
       if (!this.store.boxModalOpen()) {
         this.selectedBoxImageFile.set(null);
+        this.boxImageError.set(null);
         this.setPreview(this.boxImagePreview, this.defaultImage);
         this.boxForm.reset({
           code: '',
@@ -84,6 +88,7 @@ export class StoragePageComponent implements OnDestroy {
 
       if (editingBox) {
         this.selectedBoxImageFile.set(null);
+        this.boxImageError.set(null);
         this.setPreview(this.boxImagePreview, this.getBoxImage(editingBox));
         this.boxForm.reset({
           code: editingBox.code,
@@ -94,6 +99,7 @@ export class StoragePageComponent implements OnDestroy {
       }
 
       this.selectedBoxImageFile.set(null);
+      this.boxImageError.set(null);
       this.setPreview(this.boxImagePreview, this.defaultImage);
       this.boxForm.reset({
         code: '',
@@ -107,6 +113,7 @@ export class StoragePageComponent implements OnDestroy {
 
       if (!this.store.productModalOpen()) {
         this.selectedProductImageFile.set(null);
+        this.productImageError.set(null);
         this.setPreview(this.productImagePreview, this.defaultImage);
         this.productForm.reset({
           name: '',
@@ -119,6 +126,7 @@ export class StoragePageComponent implements OnDestroy {
 
       if (editingProduct) {
         this.selectedProductImageFile.set(null);
+        this.productImageError.set(null);
         this.setPreview(this.productImagePreview, this.getProductImage(editingProduct));
         this.productForm.reset({
           name: editingProduct.name,
@@ -130,6 +138,7 @@ export class StoragePageComponent implements OnDestroy {
       }
 
       this.selectedProductImageFile.set(null);
+      this.productImageError.set(null);
       this.setPreview(this.productImagePreview, this.defaultImage);
       this.productForm.reset({
         name: '',
@@ -393,16 +402,26 @@ export class StoragePageComponent implements OnDestroy {
   protected onBoxImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
-    this.selectedBoxImageFile.set(file);
-    this.setPreview(this.boxImagePreview, file ? URL.createObjectURL(file) : this.store.editingBox() ? this.getBoxImage(this.store.editingBox()!) : this.defaultImage);
+    const fallbackImage = this.store.editingBox() ? this.getBoxImage(this.store.editingBox()!) : this.defaultImage;
+
+    if (!this.applySelectedImage(file, this.selectedBoxImageFile, this.boxImagePreview, this.boxImageError, fallbackImage)) {
+      input.value = '';
+      return;
+    }
+
     input.value = '';
   }
 
   protected onProductImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
-    this.selectedProductImageFile.set(file);
-    this.setPreview(this.productImagePreview, file ? URL.createObjectURL(file) : this.store.editingProduct() ? this.getProductImage(this.store.editingProduct()!) : this.defaultImage);
+    const fallbackImage = this.store.editingProduct() ? this.getProductImage(this.store.editingProduct()!) : this.defaultImage;
+
+    if (!this.applySelectedImage(file, this.selectedProductImageFile, this.productImagePreview, this.productImageError, fallbackImage)) {
+      input.value = '';
+      return;
+    }
+
     input.value = '';
   }
 
@@ -487,8 +506,42 @@ export class StoragePageComponent implements OnDestroy {
   }
 
   private setPreview(target: typeof this.boxImagePreview, nextValue: string): void {
-    this.revokePreviewIfNeeded(target());
+    this.revokePreviewIfNeeded(untracked(() => target()));
     target.set(nextValue);
+  }
+
+  private applySelectedImage(
+    file: File | null,
+    fileTarget: typeof this.selectedBoxImageFile,
+    previewTarget: typeof this.boxImagePreview,
+    errorTarget: typeof this.boxImageError,
+    fallbackImage: string
+  ): boolean {
+    errorTarget.set(null);
+
+    if (!file) {
+      fileTarget.set(null);
+      this.setPreview(previewTarget, fallbackImage);
+      return true;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      fileTarget.set(null);
+      errorTarget.set('Selecciona un archivo de imagen válido.');
+      this.setPreview(previewTarget, fallbackImage);
+      return false;
+    }
+
+    if (file.size > this.maxImageSizeMb * 1024 * 1024) {
+      fileTarget.set(null);
+      errorTarget.set(`La imagen supera ${this.maxImageSizeMb} MB. Elige una imagen más ligera.`);
+      this.setPreview(previewTarget, fallbackImage);
+      return false;
+    }
+
+    fileTarget.set(file);
+    this.setPreview(previewTarget, URL.createObjectURL(file));
+    return true;
   }
 
   private revokePreviewIfNeeded(value: string): void {
