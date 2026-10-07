@@ -309,6 +309,27 @@ export class StorageBoxStoreService {
               )
             )
           );
+          this.searchResults.update((results) =>
+            results
+              .map((result) => {
+                if (result.box.id !== box.id) {
+                  return result;
+                }
+
+                const matchingProducts = result.matchingProducts.filter((storedProduct) => storedProduct.id !== product.id);
+
+                return {
+                  ...result,
+                  box: {
+                    ...result.box,
+                    products: result.box.products.filter((storedProduct) => storedProduct.id !== product.id)
+                  },
+                  matchingProducts,
+                  matchCount: matchingProducts.length
+                };
+              })
+              .filter((result) => result.matchCount > 0)
+          );
           this.toastService.show({
             title: 'Producto eliminado',
             message: `${product.name} se elimino correctamente.`,
@@ -366,6 +387,8 @@ export class StorageBoxStoreService {
   private normalizeBox(box: StorageBox): StorageBox {
     return {
       ...box,
+      shelfRow: Number.isInteger(box.shelfRow) ? box.shelfRow : 1,
+      shelfColumn: Number.isInteger(box.shelfColumn) ? box.shelfColumn : 1,
       products: (box.products ?? []).map((product) => this.normalizeProduct(product))
     };
   }

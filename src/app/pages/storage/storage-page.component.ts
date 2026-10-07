@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
 import * as QRCode from 'qrcode';
-import { StorageBox, StorageBoxProduct, StorageProductState } from '../../models/storage-box.model';
+import { StorageBox, StorageBoxProduct, StorageBoxSearchResult, StorageProductState } from '../../models/storage-box.model';
 import { StorageBoxStoreService } from '../../services/storage-box-store.service';
 import { TagStoreService } from '../../services/tag-store.service';
 
@@ -13,6 +13,8 @@ interface HighlightPart {
   text: string;
   highlight: boolean;
 }
+
+type StorageFilterKey = 'new' | 'used' | 'withImage' | 'withoutImage' | 'withTags' | 'empty' | 'lowStock';
 
 @Component({
   selector: 'app-storage-page',
@@ -31,6 +33,8 @@ export class StoragePageComponent implements OnDestroy {
   protected readonly defaultImage = 'assets/no-image.svg';
   protected readonly qrCodes = signal<Record<string, string>>({});
   protected readonly productStates: StorageProductState[] = ['Nuevo', 'Usado'];
+  protected readonly shelfRows = [1, 2, 3, 4, 5];
+  protected readonly shelfColumns = [1, 2, 3, 4, 5, 6];
   protected readonly selectedBoxImageFile = signal<File | null>(null);
   protected readonly selectedProductImageFile = signal<File | null>(null);
   protected readonly boxImagePreview = signal<string>(this.defaultImage);
@@ -38,6 +42,7 @@ export class StoragePageComponent implements OnDestroy {
   protected readonly boxImageError = signal<string | null>(null);
   protected readonly productImageError = signal<string | null>(null);
   protected readonly storageSearchTerm = signal('');
+  protected readonly activeStorageFilters = signal<StorageFilterKey[]>([]);
   protected readonly productTagInput = signal('');
   protected readonly selectedProductTags = signal<string[]>([]);
   protected readonly qrPreview = signal<{ image: string; code: string; name: string } | null>(null);
@@ -55,8 +60,43 @@ export class StoragePageComponent implements OnDestroy {
   );
 
   protected readonly hasStorageSearch = computed(() => this.storageSearchTerm().trim().length > 0);
+  protected readonly hasActiveStorageFilters = computed(() => this.activeStorageFilters().length > 0);
+  protected readonly showStorageResults = computed(() => this.hasStorageSearch() || this.hasActiveStorageFilters());
+  protected readonly storageFilterOptions: { key: StorageFilterKey; label: string }[] = [
+    { key: 'new', label: 'Nuevo' },
+    { key: 'used', label: 'Usado' },
+    { key: 'withImage', label: 'Con imagen' },
+    { key: 'withoutImage', label: 'Sin imagen' },
+    { key: 'withTags', label: 'Con tags' },
+    { key: 'empty', label: 'Cantidad 0' },
+    { key: 'lowStock', label: 'Stock bajo' }
+  ];
+  protected readonly filteredStorageResults = computed(() => {
+    const baseResults = this.hasStorageSearch()
+      ? this.store.searchResults()
+      : this.buildResultsFromStoredBoxes();
+    const activeFilters = this.activeStorageFilters();
+
+    if (activeFilters.length === 0) {
+      return baseResults;
+    }
+
+    return baseResults
+      .map((result) => {
+        const matchingProducts = result.matchingProducts.filter((product) =>
+          this.matchesStorageFilters(product, activeFilters)
+        );
+
+        return {
+          ...result,
+          matchingProducts,
+          matchCount: matchingProducts.length
+        };
+      })
+      .filter((result) => result.matchCount > 0);
+  });
   protected readonly storageSearchMatchTotal = computed(() =>
-    this.store.searchResults().reduce((total, result) => total + result.matchCount, 0)
+    this.filteredStorageResults().reduce((total, result) => total + result.matchCount, 0)
   );
 
   protected readonly filteredProductTagOptions = computed(() => {
@@ -87,7 +127,9 @@ export class StoragePageComponent implements OnDestroy {
   protected readonly boxForm = this.formBuilder.nonNullable.group({
     code: [''],
     name: ['', [Validators.required, Validators.maxLength(120)]],
-    description: ['', [Validators.required, Validators.maxLength(400)]]
+    description: ['', [Validators.required, Validators.maxLength(400)]],
+    shelfRow: [1, [Validators.required, Validators.min(1), Validators.max(5)]],
+    shelfColumn: [1, [Validators.required, Validators.min(1), Validators.max(6)]]
   });
 
   protected readonly productForm = this.formBuilder.nonNullable.group({
@@ -123,7 +165,9 @@ export class StoragePageComponent implements OnDestroy {
         this.boxForm.reset({
           code: '',
           name: '',
-          description: ''
+          description: '',
+          shelfRow: 1,
+          shelfColumn: 1
         });
         return;
       }
@@ -135,7 +179,9 @@ export class StoragePageComponent implements OnDestroy {
         this.boxForm.reset({
           code: editingBox.code,
           name: editingBox.name,
-          description: editingBox.description
+          description: editingBox.description,
+          shelfRow: editingBox.shelfRow,
+          shelfColumn: editingBox.shelfColumn
         });
         return;
       }
@@ -146,7 +192,9 @@ export class StoragePageComponent implements OnDestroy {
       this.boxForm.reset({
         code: '',
         name: '',
-        description: ''
+        description: '',
+        shelfRow: 1,
+        shelfColumn: 1
       });
     }, { allowSignalWrites: true });
 
@@ -255,7 +303,9 @@ export class StoragePageComponent implements OnDestroy {
       ...(raw.code.trim() ? { code: raw.code.trim() } : {}),
       name: raw.name.trim(),
       description: raw.description.trim(),
-      imageUrl: this.store.editingBox()?.imageUrl ?? ''
+      imageUrl: this.store.editingBox()?.imageUrl ?? '',
+      shelfRow: Number(raw.shelfRow),
+      shelfColumn: Number(raw.shelfColumn)
     };
 
     const savedBox = await this.store.saveBox(payload, this.selectedBoxImageFile());
@@ -308,6 +358,22 @@ export class StoragePageComponent implements OnDestroy {
 
     this.storageSearchTerm.set('');
     this.store.clearSearch();
+  }
+
+  protected toggleStorageFilter(filter: StorageFilterKey): void {
+    this.activeStorageFilters.update((filters) =>
+      filters.includes(filter)
+        ? filters.filter((item) => item !== filter)
+        : [...filters, filter]
+    );
+  }
+
+  protected isStorageFilterActive(filter: StorageFilterKey): boolean {
+    return this.activeStorageFilters().includes(filter);
+  }
+
+  protected clearStorageFilters(): void {
+    this.activeStorageFilters.set([]);
   }
 
   protected highlightSearchText(value: string | number): HighlightPart[] {
@@ -382,6 +448,10 @@ export class StoragePageComponent implements OnDestroy {
       state: raw.state,
       tags
     }, this.selectedProductImageFile());
+
+    if (this.hasStorageSearch()) {
+      this.store.searchProducts(this.storageSearchTerm());
+    }
   }
 
   protected deleteBox(box: StorageBox, event?: Event): void {
@@ -400,6 +470,18 @@ export class StoragePageComponent implements OnDestroy {
 
   protected getBoxImage(box: StorageBox): string {
     return box.imageUrl?.trim() ? box.imageUrl : this.defaultImage;
+  }
+
+  protected shelfPositionLabel(box: Pick<StorageBox, 'shelfRow' | 'shelfColumn'>): string {
+    return `F${box.shelfRow}-C${box.shelfColumn}`;
+  }
+
+  protected isShelfCellSelected(box: Pick<StorageBox, 'shelfRow' | 'shelfColumn'>, row: number, column: number): boolean {
+    return box.shelfRow === row && box.shelfColumn === column;
+  }
+
+  protected isLowStock(product: StorageBoxProduct): boolean {
+    return product.quantity <= 1;
   }
 
   protected updateProductTagInput(value: string): void {
@@ -616,7 +698,7 @@ export class StoragePageComponent implements OnDestroy {
     return box.products.filter((product) => product.state === state).length;
   }
 
-  protected boxFieldError(fieldName: 'name' | 'description'): string | null {
+  protected boxFieldError(fieldName: 'name' | 'description' | 'shelfRow' | 'shelfColumn'): string | null {
     const control = this.boxForm.controls[fieldName];
 
     if (!control.touched || !control.invalid) {
@@ -629,6 +711,10 @@ export class StoragePageComponent implements OnDestroy {
 
     if (control.hasError('maxlength')) {
       return 'Has superado la longitud permitida.';
+    }
+
+    if (control.hasError('min') || control.hasError('max')) {
+      return 'Selecciona una posicion valida.';
     }
 
     return 'Revisa este campo.';
@@ -766,5 +852,56 @@ export class StoragePageComponent implements OnDestroy {
 
   private escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  private buildResultsFromStoredBoxes(): StorageBoxSearchResult[] {
+    return this.store.boxes()
+      .map((box) => ({
+        box,
+        matchingProducts: box.products,
+        matchCount: box.products.length
+      }))
+      .filter((result) => result.matchCount > 0);
+  }
+
+  private matchesStorageFilters(product: StorageBoxProduct, filters: StorageFilterKey[]): boolean {
+    const stateFilters = filters.filter((filter) => filter === 'new' || filter === 'used');
+    const imageFilters = filters.filter((filter) => filter === 'withImage' || filter === 'withoutImage');
+    const hasImage = product.imageUrl?.trim().length > 0;
+
+    if (stateFilters.length > 0) {
+      const matchesState = stateFilters.some((filter) =>
+        (filter === 'new' && product.state === 'Nuevo') ||
+        (filter === 'used' && product.state === 'Usado')
+      );
+
+      if (!matchesState) {
+        return false;
+      }
+    }
+
+    if (imageFilters.length === 1) {
+      if (imageFilters[0] === 'withImage' && !hasImage) {
+        return false;
+      }
+
+      if (imageFilters[0] === 'withoutImage' && hasImage) {
+        return false;
+      }
+    }
+
+    if (filters.includes('withTags') && product.tags.length === 0) {
+      return false;
+    }
+
+    if (filters.includes('empty') && product.quantity !== 0) {
+      return false;
+    }
+
+    if (filters.includes('lowStock') && !this.isLowStock(product)) {
+      return false;
+    }
+
+    return true;
   }
 }

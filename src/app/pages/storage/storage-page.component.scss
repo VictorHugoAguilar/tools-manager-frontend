@@ -39,6 +39,41 @@
   flex-wrap: wrap;
 }
 
+.storage-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.filter-chip {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.75rem;
+  border: 3px solid rgba(35, 52, 90, 0.18);
+  border-radius: 999px;
+  background: #fffdf8;
+  color: rgba(35, 52, 90, 0.76);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  box-shadow: 2px 3px 0 rgba(35, 52, 90, 0.16);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.filter-chip:hover,
+.filter-chip.active {
+  transform: translate(-1px, -1px);
+  border-color: var(--primary);
+  background: var(--accent-mint);
+  color: var(--primary);
+  box-shadow: 3px 4px 0 rgba(35, 52, 90, 0.28);
+}
+
+.filter-chip--clear {
+  background: #ffe3de;
+  color: #a93d31;
+}
+
 .storage-search-results {
   display: grid;
   gap: 0.85rem;
@@ -164,6 +199,34 @@
   }
 }
 
+.search-product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.low-stock {
+  border-color: rgba(179, 66, 53, 0.34) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 227, 222, 0.58), rgba(255, 253, 248, 0.9)) !important;
+}
+
+.stock-warning {
+  display: inline-flex !important;
+  align-items: center;
+  width: fit-content;
+  min-height: 1.55rem;
+  margin-top: 0.35rem;
+  padding: 0.12rem 0.52rem;
+  border: 2px solid #a93d31;
+  border-radius: 999px;
+  background: #ffe3de;
+  color: #a93d31 !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+}
+
 .storage-toolbar {
   display: flex;
   align-items: end;
@@ -227,6 +290,7 @@ h5 {
 
 .metric-pill,
 .code-pill,
+.location-pill,
 .state-pill {
   display: inline-flex;
   align-items: center;
@@ -241,12 +305,22 @@ h5 {
   box-shadow: 2px 3px 0 rgba(35, 52, 90, 0.78);
 }
 
+.box-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .metric-pill--soft {
   background: var(--accent-mint);
 }
 
 .code-pill {
   background: var(--accent-yellow);
+}
+
+.location-pill {
+  background: var(--accent-mint);
 }
 
 .primary-button,
@@ -471,6 +545,63 @@ h5 {
   grid-template-columns: minmax(240px, 0.9fr) minmax(260px, 1fr) minmax(240px, 0.95fr);
   gap: 1rem;
   align-items: stretch;
+}
+
+.shelf-location-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(360px, 1.3fr);
+  gap: 1rem;
+  padding: 1rem;
+  border: 3px solid var(--primary);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(246, 215, 104, 0.16), transparent 28%),
+    #fffdf8;
+  box-shadow: 4px 6px 0 rgba(35, 52, 90, 0.18);
+
+  p {
+    margin: 0.45rem 0 0;
+    color: rgba(35, 52, 90, 0.72);
+    line-height: 1.5;
+  }
+}
+
+.shelf-map {
+  display: grid;
+  grid-template-columns: 48px repeat(6, minmax(44px, 1fr));
+  gap: 0.45rem;
+  align-items: stretch;
+  padding: 0.85rem;
+  border: 3px solid rgba(35, 52, 90, 0.14);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.shelf-corner,
+.shelf-axis,
+.shelf-cell {
+  min-height: 2.7rem;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  font-weight: 900;
+}
+
+.shelf-axis {
+  background: rgba(142, 223, 192, 0.2);
+  color: rgba(35, 52, 90, 0.78);
+}
+
+.shelf-cell {
+  border: 3px solid var(--primary);
+  background: #fffdf8;
+  color: var(--primary);
+  box-shadow: 2px 3px 0 rgba(35, 52, 90, 0.12);
+}
+
+.shelf-cell.selected {
+  background: var(--accent-yellow);
+  box-shadow: 3px 4px 0 rgba(35, 52, 90, 0.46);
 }
 
 .summary-card {
@@ -795,6 +926,18 @@ h5 {
   gap: 1rem;
 }
 
+.modal-shelf-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border: 3px solid rgba(35, 52, 90, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(142, 223, 192, 0.22), rgba(255, 255, 255, 0.82));
+  box-shadow: 3px 4px 0 rgba(35, 52, 90, 0.14);
+}
+
 .tag-field {
   position: relative;
 }
@@ -980,6 +1123,10 @@ textarea {
   .expanded-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .shelf-location-card {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1058,6 +1205,11 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .shelf-map {
+    overflow-x: auto;
+    grid-template-columns: 42px repeat(6, minmax(54px, 1fr));
+  }
+
   .search-result-card header,
   .search-results-header {
     display: grid;
@@ -1085,6 +1237,11 @@ textarea {
   }
 
   .search-product {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-shelf-preview {
+    display: grid;
     grid-template-columns: 1fr;
   }
 

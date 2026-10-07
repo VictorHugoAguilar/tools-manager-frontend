@@ -41,26 +41,45 @@
         </div>
       </form>
 
-      @if (hasStorageSearch()) {
+      <div class="storage-filter-row" aria-label="Filtros rapidos de almacenamiento">
+        @for (filter of storageFilterOptions; track filter.key) {
+          <button
+            type="button"
+            class="filter-chip"
+            [class.active]="isStorageFilterActive(filter.key)"
+            (click)="toggleStorageFilter(filter.key)">
+            {{ filter.label }}
+          </button>
+        }
+
+        @if (hasActiveStorageFilters()) {
+          <button type="button" class="filter-chip filter-chip--clear" (click)="clearStorageFilters()">Quitar filtros</button>
+        }
+      </div>
+
+      @if (showStorageResults()) {
         <div class="storage-search-results">
-          @if (store.searchLoading()) {
+          @if (hasStorageSearch() && store.searchLoading()) {
             <div class="search-message">Buscando coincidencias...</div>
           } @else if (store.searchError()) {
             <div class="search-message search-message--error">{{ store.searchError() }}</div>
-          } @else if (store.searchResults().length === 0 && store.lastSearchTerm()) {
-            <div class="search-message">No hay productos que coincidan con "{{ store.lastSearchTerm() }}".</div>
-          } @else if (store.searchResults().length > 0) {
+          } @else if (filteredStorageResults().length === 0) {
+            <div class="search-message">
+              No hay productos que coincidan con los criterios actuales.
+            </div>
+          } @else {
             <div class="search-results-header">
-              <strong>{{ store.searchResults().length }} cajas encontradas</strong>
+              <strong>{{ filteredStorageResults().length }} cajas encontradas</strong>
               <span>{{ storageSearchMatchTotal() }} productos coinciden</span>
             </div>
 
             <div class="search-results-grid">
-              @for (result of store.searchResults(); track result.box.id) {
+              @for (result of filteredStorageResults(); track result.box.id) {
                 <article class="search-result-card" (click)="openBox(result.box)">
                   <header>
                     <div>
                       <span class="code-pill">{{ result.box.code }}</span>
+                      <span class="location-pill">{{ shelfPositionLabel(result.box) }}</span>
                       <h3>{{ result.box.name }}</h3>
                       <p>{{ result.box.description }}</p>
                     </div>
@@ -69,7 +88,7 @@
 
                   <div class="search-product-list">
                     @for (product of result.matchingProducts; track product.id) {
-                      <div class="search-product">
+                      <div class="search-product" [class.low-stock]="isLowStock(product)">
                         <img [src]="getProductImage(product)" [alt]="product.name">
                         <div>
                           <strong>
@@ -88,6 +107,9 @@
                               } @else {
                                 {{ part.text }}
                               }
+                            }
+                            @if (isLowStock(product)) {
+                              <span class="stock-warning">Stock bajo</span>
                             }
                           </span>
                           <p>
@@ -114,6 +136,15 @@
                               }
                             </div>
                           }
+
+                          <div class="search-product-actions">
+                            <button type="button" class="secondary-button small-button" (click)="openEditProductModal(result.box, product, $event)">
+                              Editar
+                            </button>
+                            <button type="button" class="danger-button small-button" (click)="deleteProduct(result.box, product, $event)">
+                              Eliminar
+                            </button>
+                          </div>
                         </div>
                       </div>
                     }
@@ -137,7 +168,10 @@
         @for (box of store.boxes(); track box.id) {
           <article class="box-card" (click)="openBox(box)">
             <header class="box-card__header">
-              <span class="code-pill">{{ box.code }}</span>
+              <div class="box-card__badges">
+                <span class="code-pill">{{ box.code }}</span>
+                <span class="location-pill">{{ shelfPositionLabel(box) }}</span>
+              </div>
 
               <div class="card-actions">
                 <button type="button" class="icon-button" (click)="openEditBoxModal(box, $event)">Editar</button>
@@ -156,6 +190,7 @@
               <div class="box-copy">
                 <h3>{{ box.name }}</h3>
                 <p>{{ box.description }}</p>
+                <span class="box-copy__meta">Ubicacion {{ shelfPositionLabel(box) }}</span>
               </div>
             </div>
 
@@ -168,11 +203,14 @@
 
             <div class="product-preview-list">
               @for (product of box.products.slice(0, 3); track product.id) {
-                <div class="product-preview">
+                <div class="product-preview" [class.low-stock]="isLowStock(product)">
                   <img [src]="getProductImage(product)" [alt]="product.name">
                   <div>
                     <strong>{{ product.name }}</strong>
                     <span>{{ product.quantity }} uds.</span>
+                    @if (isLowStock(product)) {
+                      <span class="stock-warning">Stock bajo</span>
+                    }
                   </div>
                 </div>
               } @empty {
@@ -192,6 +230,7 @@
       <header class="expanded-header">
         <div>
           <span class="code-pill">{{ box.code }}</span>
+          <span class="location-pill">{{ shelfPositionLabel(box) }}</span>
           <h3>{{ box.name }}</h3>
           <p>{{ box.description }}</p>
         </div>
@@ -231,6 +270,10 @@
               <dt>Usados</dt>
               <dd>{{ countProductsByState(box, 'Usado') }}</dd>
             </div>
+            <div>
+              <dt>Ubicacion</dt>
+              <dd>{{ shelfPositionLabel(box) }}</dd>
+            </div>
           </dl>
         </article>
 
@@ -243,6 +286,32 @@
         </article>
       </div>
 
+      <section class="shelf-location-card">
+        <div>
+          <p class="eyebrow">Ubicacion fisica</p>
+          <h4>Vista rapida de estanteria</h4>
+          <p>Estanteria de 5 filas por 6 columnas. La caja esta marcada en {{ shelfPositionLabel(box) }}.</p>
+        </div>
+
+        <div class="shelf-map" role="img" [attr.aria-label]="'Ubicacion de la caja ' + box.code + ' en ' + shelfPositionLabel(box)">
+          <span class="shelf-corner"></span>
+          @for (column of shelfColumns; track column) {
+            <span class="shelf-axis">C{{ column }}</span>
+          }
+
+          @for (row of shelfRows; track row) {
+            <span class="shelf-axis">F{{ row }}</span>
+            @for (column of shelfColumns; track column) {
+              <span class="shelf-cell" [class.selected]="isShelfCellSelected(box, row, column)">
+                @if (isShelfCellSelected(box, row, column)) {
+                  {{ shelfPositionLabel(box) }}
+                }
+              </span>
+            }
+          }
+        </div>
+      </section>
+
       <section class="products-section">
         <div class="section-top">
           <div>
@@ -254,7 +323,7 @@
 
         <div class="products-grid">
           @for (product of box.products; track product.id) {
-            <article class="product-card">
+            <article class="product-card" [class.low-stock]="isLowStock(product)">
               <img [src]="getProductImage(product)" [alt]="product.name">
 
               <div class="product-card__copy">
@@ -267,6 +336,9 @@
                   </div>
                   <div class="product-meta">
                     <span>{{ product.quantity }} unidades</span>
+                    @if (isLowStock(product)) {
+                      <span class="stock-warning">Stock bajo</span>
+                    }
                   </div>
                 </header>
 
@@ -380,6 +452,37 @@
             <small class="field-error">{{ error }}</small>
           }
         </label>
+
+        <div class="modal-grid">
+          <label>
+            <span>Fila</span>
+            <select formControlName="shelfRow">
+              @for (row of shelfRows; track row) {
+                <option [ngValue]="row">Fila {{ row }}</option>
+              }
+            </select>
+            @if (boxFieldError('shelfRow'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+
+          <label>
+            <span>Columna</span>
+            <select formControlName="shelfColumn">
+              @for (column of shelfColumns; track column) {
+                <option [ngValue]="column">Columna {{ column }}</option>
+              }
+            </select>
+            @if (boxFieldError('shelfColumn'); as error) {
+              <small class="field-error">{{ error }}</small>
+            }
+          </label>
+        </div>
+
+        <div class="modal-shelf-preview">
+          <span class="eyebrow">Previsualizacion</span>
+          <strong>Posicion {{ 'F' + boxForm.controls.shelfRow.value + '-C' + boxForm.controls.shelfColumn.value }}</strong>
+        </div>
 
         <div class="image-uploader">
           <div class="image-uploader__preview">

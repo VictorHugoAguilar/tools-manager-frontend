@@ -16,6 +16,8 @@ export interface StorageBox {
   name: string;
   description: string;
   imageUrl: string;
+  shelfRow: number;
+  shelfColumn: number;
   products: StorageBoxProduct[];
 }
 
@@ -37,6 +39,8 @@ export interface StorageBoxPayload {
   name: string;
   description: string;
   imageUrl?: string;
+  shelfRow: number;
+  shelfColumn: number;
 }
 
 export interface StorageProductPayload {
