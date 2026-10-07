@@ -7,6 +7,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import * as QRCode from 'qrcode';
 import { StorageBox, StorageBoxProduct, StorageProductState } from '../../models/storage-box.model';
 import { StorageBoxStoreService } from '../../services/storage-box-store.service';
+import { TagStoreService } from '../../services/tag-store.service';
+
+interface HighlightPart {
+  text: string;
+  highlight: boolean;
+}
 
 @Component({
   selector: 'app-storage-page',
@@ -17,6 +23,7 @@ import { StorageBoxStoreService } from '../../services/storage-box-store.service
 })
 export class StoragePageComponent implements OnDestroy {
   protected readonly store = inject(StorageBoxStoreService);
+  protected readonly tagStore = inject(TagStoreService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(FormBuilder);
@@ -30,9 +37,13 @@ export class StoragePageComponent implements OnDestroy {
   protected readonly productImagePreview = signal<string>(this.defaultImage);
   protected readonly boxImageError = signal<string | null>(null);
   protected readonly productImageError = signal<string | null>(null);
+  protected readonly storageSearchTerm = signal('');
+  protected readonly productTagInput = signal('');
+  protected readonly selectedProductTags = signal<string[]>([]);
   protected readonly qrPreview = signal<{ image: string; code: string; name: string } | null>(null);
   protected readonly imagePreview = signal<{ image: string; code: string; name: string } | null>(null);
   private readonly maxImageSizeMb = 20;
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly boxIdFromRoute = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('boxId'))),
@@ -42,6 +53,36 @@ export class StoragePageComponent implements OnDestroy {
   protected readonly expandedBox = computed(() =>
     this.store.boxes().find((box) => box.id === this.boxIdFromRoute()) ?? null
   );
+
+  protected readonly hasStorageSearch = computed(() => this.storageSearchTerm().trim().length > 0);
+  protected readonly storageSearchMatchTotal = computed(() =>
+    this.store.searchResults().reduce((total, result) => total + result.matchCount, 0)
+  );
+
+  protected readonly filteredProductTagOptions = computed(() => {
+    const search = this.normalizeTagName(this.productTagInput());
+    const selectedNames = new Set(this.selectedProductTags().map((tag) => this.normalizeTagName(tag)));
+
+    if (!search) {
+      return [];
+    }
+
+    return this.tagStore.tags()
+      .filter((tag) => !selectedNames.has(this.normalizeTagName(tag.name)))
+      .filter((tag) => this.normalizeTagName(tag.name).includes(search))
+      .slice(0, 6);
+  });
+
+  protected readonly canCreateProductTagFromInput = computed(() => {
+    const search = this.normalizeTagName(this.productTagInput());
+
+    if (!search) {
+      return false;
+    }
+
+    return !this.selectedProductTags().some((tag) => this.normalizeTagName(tag) === search)
+      && !this.tagStore.tags().some((tag) => this.normalizeTagName(tag.name) === search);
+  });
 
   protected readonly boxForm = this.formBuilder.nonNullable.group({
     code: [''],
@@ -58,6 +99,7 @@ export class StoragePageComponent implements OnDestroy {
 
   constructor() {
     this.store.ensureLoaded();
+    this.tagStore.ensureLoaded();
 
     effect(() => {
       const boxes = this.store.boxes();
@@ -114,6 +156,8 @@ export class StoragePageComponent implements OnDestroy {
       if (!this.store.productModalOpen()) {
         this.selectedProductImageFile.set(null);
         this.productImageError.set(null);
+        this.productTagInput.set('');
+        this.selectedProductTags.set([]);
         this.setPreview(this.productImagePreview, this.defaultImage);
         this.productForm.reset({
           name: '',
@@ -127,6 +171,8 @@ export class StoragePageComponent implements OnDestroy {
       if (editingProduct) {
         this.selectedProductImageFile.set(null);
         this.productImageError.set(null);
+        this.productTagInput.set('');
+        this.selectedProductTags.set([...(editingProduct.tags ?? [])]);
         this.setPreview(this.productImagePreview, this.getProductImage(editingProduct));
         this.productForm.reset({
           name: editingProduct.name,
@@ -139,6 +185,8 @@ export class StoragePageComponent implements OnDestroy {
 
       this.selectedProductImageFile.set(null);
       this.productImageError.set(null);
+      this.productTagInput.set('');
+      this.selectedProductTags.set([]);
       this.setPreview(this.productImagePreview, this.defaultImage);
       this.productForm.reset({
         name: '',
@@ -222,6 +270,91 @@ export class StoragePageComponent implements OnDestroy {
     await this.router.navigate(['/almacenamiento']);
   }
 
+  protected updateStorageSearch(value: string): void {
+    this.storageSearchTerm.set(value);
+
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+
+    if (!value.trim()) {
+      this.store.clearSearch();
+      return;
+    }
+
+    this.searchTimer = setTimeout(() => {
+      this.store.searchProducts(value);
+      this.searchTimer = null;
+    }, 300);
+  }
+
+  protected submitStorageSearch(event: Event): void {
+    event.preventDefault();
+
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+
+    this.store.searchProducts(this.storageSearchTerm());
+  }
+
+  protected clearStorageSearch(): void {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
+    }
+
+    this.storageSearchTerm.set('');
+    this.store.clearSearch();
+  }
+
+  protected highlightSearchText(value: string | number): HighlightPart[] {
+    const text = String(value ?? '');
+    const terms = this.store.lastSearchTerm()
+      .trim()
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter(Boolean)
+      .sort((left, right) => right.length - left.length);
+
+    if (!text || terms.length === 0) {
+      return [{ text, highlight: false }];
+    }
+
+    const expression = new RegExp(`(${terms.map((term) => this.escapeRegExp(term)).join('|')})`, 'gi');
+    const parts: HighlightPart[] = [];
+    let cursor = 0;
+
+    for (const match of text.matchAll(expression)) {
+      const matchText = match[0];
+      const index = match.index ?? 0;
+
+      if (index > cursor) {
+        parts.push({
+          text: text.slice(cursor, index),
+          highlight: false
+        });
+      }
+
+      parts.push({
+        text: matchText,
+        highlight: true
+      });
+      cursor = index + matchText.length;
+    }
+
+    if (cursor < text.length) {
+      parts.push({
+        text: text.slice(cursor),
+        highlight: false
+      });
+    }
+
+    return parts.length > 0 ? parts : [{ text, highlight: false }];
+  }
+
   protected openCreateProductModal(box: StorageBox, event?: Event): void {
     event?.stopPropagation();
     this.store.openCreateProductModal(box);
@@ -239,12 +372,15 @@ export class StoragePageComponent implements OnDestroy {
     }
 
     const raw = this.productForm.getRawValue();
+    const tags = await this.ensureProductTagsPersisted();
+
     await this.store.saveProduct({
       name: raw.name.trim(),
       description: raw.description.trim(),
       imageUrl: this.store.editingProduct()?.imageUrl ?? '',
       quantity: Number(raw.quantity),
-      state: raw.state
+      state: raw.state,
+      tags
     }, this.selectedProductImageFile());
   }
 
@@ -264,6 +400,48 @@ export class StoragePageComponent implements OnDestroy {
 
   protected getBoxImage(box: StorageBox): string {
     return box.imageUrl?.trim() ? box.imageUrl : this.defaultImage;
+  }
+
+  protected updateProductTagInput(value: string): void {
+    this.productTagInput.set(value);
+  }
+
+  protected handleProductTagKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' && event.key !== ',') {
+      return;
+    }
+
+    event.preventDefault();
+    this.addProductTag(this.productTagInput());
+  }
+
+  protected addSuggestedProductTag(tagName: string): void {
+    this.addProductTag(tagName);
+  }
+
+  protected addProductTag(value: string): void {
+    const tagName = value.trim();
+
+    if (!tagName) {
+      return;
+    }
+
+    const normalizedTagName = this.normalizeTagName(tagName);
+
+    if (this.selectedProductTags().some((tag) => this.normalizeTagName(tag) === normalizedTagName)) {
+      this.productTagInput.set('');
+      return;
+    }
+
+    this.selectedProductTags.update((tags) => [...tags, tagName]);
+    this.productTagInput.set('');
+  }
+
+  protected removeProductTag(tagName: string): void {
+    const normalizedTagName = this.normalizeTagName(tagName);
+    this.selectedProductTags.update((tags) =>
+      tags.filter((tag) => this.normalizeTagName(tag) !== normalizedTagName)
+    );
   }
 
   protected qrCodeFor(boxId: string): string {
@@ -426,6 +604,10 @@ export class StoragePageComponent implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.searchTimer) {
+      clearTimeout(this.searchTimer);
+    }
+
     this.revokePreviewIfNeeded(this.boxImagePreview());
     this.revokePreviewIfNeeded(this.productImagePreview());
   }
@@ -548,5 +730,41 @@ export class StoragePageComponent implements OnDestroy {
     if (value.startsWith('blob:')) {
       URL.revokeObjectURL(value);
     }
+  }
+
+  private async ensureProductTagsPersisted(): Promise<string[]> {
+    const typedTag = this.productTagInput().trim();
+    const tags = typedTag
+      ? [...this.selectedProductTags(), typedTag]
+      : this.selectedProductTags();
+    const normalizedTags = new Set<string>();
+    const cleanTags = tags
+      .map((tag) => tag.trim())
+      .filter((tag) => {
+        const normalizedTag = this.normalizeTagName(tag);
+
+        if (!normalizedTag || normalizedTags.has(normalizedTag)) {
+          return false;
+        }
+
+        normalizedTags.add(normalizedTag);
+        return true;
+      });
+
+    for (const tag of cleanTags) {
+      await this.tagStore.ensureTag(tag);
+    }
+
+    this.productTagInput.set('');
+    this.selectedProductTags.set(cleanTags);
+    return cleanTags;
+  }
+
+  private normalizeTagName(value: string): string {
+    return value.trim().toLowerCase();
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

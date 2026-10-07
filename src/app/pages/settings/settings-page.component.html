@@ -190,6 +190,71 @@
   </article>
 
   <article class="settings-card span-two">
+    <p class="eyebrow">Catalogos</p>
+    <h3>Gestion de Tags</h3>
+
+    <div class="locations-layout">
+      <form class="location-form" [formGroup]="tagForm" (ngSubmit)="saveTag()">
+        <label>
+          <span>Nombre</span>
+          <input formControlName="name" placeholder="Ej. Tornilleria, Electricidad, Repuesto">
+          @if (tagFieldError('name'); as error) {
+          <small class="field-error">{{ error }}</small>
+          }
+        </label>
+
+        <label>
+          <span>Descripcion</span>
+          <textarea rows="4" formControlName="description" placeholder="Uso o contexto opcional del tag"></textarea>
+        </label>
+
+        @if (tagStore.saveError()) {
+        <div class="form-alert">{{ tagStore.saveError() }}</div>
+        }
+
+        <div class="form-actions">
+          @if (editingTag()) {
+          <button type="button" class="secondary-button" (click)="cancelTagEdit()">Cancelar</button>
+          }
+          <button type="submit" class="primary-button" [disabled]="tagStore.saving()">
+            {{ tagStore.saving() ? 'Guardando...' : editingTag() ? 'Guardar cambios' : 'Anadir tag' }}
+          </button>
+        </div>
+      </form>
+
+      <div class="locations-panel">
+        <div class="panel-header">
+          <strong>Tags configurados</strong>
+          <span>{{ tags().length }} registrados</span>
+        </div>
+
+        @if (tagStore.loading()) {
+        <div class="empty-box">Cargando tags...</div>
+        } @else if (tags().length === 0) {
+        <div class="empty-box">Todavia no hay tags configurados.</div>
+        } @else {
+        <div class="locations-list">
+          @for (tag of tags(); track tag.id) {
+          <article class="location-item">
+            <div>
+              <strong>#{{ tag.name }}</strong>
+              <p>{{ tag.description || 'Sin descripcion adicional.' }}</p>
+            </div>
+
+            <div class="location-actions">
+              <button type="button" class="secondary-button" (click)="startEditTag(tag)">Editar</button>
+              <button type="button" class="danger-button"
+                (click)="tagStore.deleteTag(tag)">Eliminar</button>
+            </div>
+          </article>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </article>
+
+  <article class="settings-card span-two">
     <div class="catalog-header">
       <div>
         <p class="eyebrow">Catalogos</p>

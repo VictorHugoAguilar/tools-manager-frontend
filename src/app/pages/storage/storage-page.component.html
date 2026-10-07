@@ -19,6 +19,113 @@
       </div>
     </header>
 
+    <section class="storage-search-card">
+      <form class="storage-search-form" (submit)="submitStorageSearch($event)">
+        <label>
+          <span>Buscar productos</span>
+          <input
+            #storageSearchInput
+            type="search"
+            [value]="storageSearchTerm()"
+            placeholder="Nombre, descripcion, estado, cantidad o tag..."
+            (input)="updateStorageSearch(storageSearchInput.value)">
+        </label>
+
+        <div class="storage-search-actions">
+          @if (hasStorageSearch()) {
+            <button type="button" class="secondary-button" (click)="clearStorageSearch()">Limpiar</button>
+          }
+          <button type="submit" class="primary-button" [disabled]="!hasStorageSearch() || store.searchLoading()">
+            {{ store.searchLoading() ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </div>
+      </form>
+
+      @if (hasStorageSearch()) {
+        <div class="storage-search-results">
+          @if (store.searchLoading()) {
+            <div class="search-message">Buscando coincidencias...</div>
+          } @else if (store.searchError()) {
+            <div class="search-message search-message--error">{{ store.searchError() }}</div>
+          } @else if (store.searchResults().length === 0 && store.lastSearchTerm()) {
+            <div class="search-message">No hay productos que coincidan con "{{ store.lastSearchTerm() }}".</div>
+          } @else if (store.searchResults().length > 0) {
+            <div class="search-results-header">
+              <strong>{{ store.searchResults().length }} cajas encontradas</strong>
+              <span>{{ storageSearchMatchTotal() }} productos coinciden</span>
+            </div>
+
+            <div class="search-results-grid">
+              @for (result of store.searchResults(); track result.box.id) {
+                <article class="search-result-card" (click)="openBox(result.box)">
+                  <header>
+                    <div>
+                      <span class="code-pill">{{ result.box.code }}</span>
+                      <h3>{{ result.box.name }}</h3>
+                      <p>{{ result.box.description }}</p>
+                    </div>
+                    <span class="metric-pill metric-pill--soft">{{ result.matchCount }} coincidencias</span>
+                  </header>
+
+                  <div class="search-product-list">
+                    @for (product of result.matchingProducts; track product.id) {
+                      <div class="search-product">
+                        <img [src]="getProductImage(product)" [alt]="product.name">
+                        <div>
+                          <strong>
+                            @for (part of highlightSearchText(product.name); track $index) {
+                              @if (part.highlight) {
+                                <mark class="search-highlight">{{ part.text }}</mark>
+                              } @else {
+                                {{ part.text }}
+                              }
+                            }
+                          </strong>
+                          <span>
+                            @for (part of highlightSearchText(product.quantity + ' uds. · ' + product.state); track $index) {
+                              @if (part.highlight) {
+                                <mark class="search-highlight">{{ part.text }}</mark>
+                              } @else {
+                                {{ part.text }}
+                              }
+                            }
+                          </span>
+                          <p>
+                            @for (part of highlightSearchText(product.description); track $index) {
+                              @if (part.highlight) {
+                                <mark class="search-highlight">{{ part.text }}</mark>
+                              } @else {
+                                {{ part.text }}
+                              }
+                            }
+                          </p>
+                          @if (product.tags.length > 0) {
+                            <div class="product-tags">
+                              @for (tag of product.tags; track tag) {
+                                <span class="tag-pill">#
+                                  @for (part of highlightSearchText(tag); track $index) {
+                                    @if (part.highlight) {
+                                      <mark class="search-highlight">{{ part.text }}</mark>
+                                    } @else {
+                                      {{ part.text }}
+                                    }
+                                  }
+                                </span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+
     @if (store.boxes().length === 0) {
       <article class="empty-state">
         <h3>Aun no hay cajas registradas</h3>
@@ -164,6 +271,14 @@
                 </header>
 
                 <p>{{ product.description }}</p>
+
+                @if (product.tags.length > 0) {
+                  <div class="product-tags">
+                    @for (tag of product.tags; track tag) {
+                      <span class="tag-pill">#{{ tag }}</span>
+                    }
+                  </div>
+                }
               </div>
 
               <div class="product-card__actions">
@@ -345,7 +460,47 @@
               }
             </select>
           </label>
+
+          <div class="tag-field">
+            <label>
+              <span>Tags</span>
+              <input
+                #productTagInputControl
+                type="text"
+                [value]="productTagInput()"
+                placeholder="Ej. tornilleria, inox, repuesto"
+                (input)="updateProductTagInput(productTagInputControl.value)"
+                (keydown)="handleProductTagKeydown($event)">
+            </label>
+
+            @if (productTagInput().trim()) {
+              <div class="tag-suggestions">
+                @for (tag of filteredProductTagOptions(); track tag.id) {
+                  <button type="button" (click)="addSuggestedProductTag(tag.name)">
+                    #{{ tag.name }}
+                  </button>
+                }
+
+                @if (canCreateProductTagFromInput()) {
+                  <button type="button" class="tag-suggestions__create" (click)="addProductTag(productTagInput())">
+                    Crear #{{ productTagInput().trim() }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
         </div>
+
+        @if (selectedProductTags().length > 0) {
+          <div class="selected-tags" aria-label="Tags seleccionados">
+            @for (tag of selectedProductTags(); track tag) {
+              <span class="selected-tag">
+                #{{ tag }}
+                <button type="button" (click)="removeProductTag(tag)" [attr.aria-label]="'Quitar tag ' + tag">×</button>
+              </span>
+            }
+          </div>
+        }
 
         <div class="image-uploader">
           <div class="image-uploader__preview">

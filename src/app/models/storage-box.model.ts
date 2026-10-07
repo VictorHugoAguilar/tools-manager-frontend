@@ -7,6 +7,7 @@ export interface StorageBoxProduct {
   imageUrl: string;
   quantity: number;
   state: StorageProductState;
+  tags: string[];
 }
 
 export interface StorageBox {
@@ -16,6 +17,19 @@ export interface StorageBox {
   description: string;
   imageUrl: string;
   products: StorageBoxProduct[];
+}
+
+export interface StorageBoxSearchResult {
+  box: StorageBox;
+  matchingProducts: StorageBoxProduct[];
+  matchCount: number;
+}
+
+export interface StorageBoxSearchResponse {
+  query: string;
+  totalBoxes: number;
+  totalProducts: number;
+  boxes: StorageBoxSearchResult[];
 }
 
 export interface StorageBoxPayload {
@@ -31,4 +45,5 @@ export interface StorageProductPayload {
   imageUrl: string;
   quantity: number;
   state: StorageProductState;
+  tags: string[];
 }

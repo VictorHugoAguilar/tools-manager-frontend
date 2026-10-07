@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TechnicianFormModalComponent } from '../../components/technician-form-modal.component';
 import { ToolLocation } from '../../models/location.model';
+import { AppTag } from '../../models/tag.model';
 import { ToolType } from '../../models/tool-type.model';
 import { LocationStoreService } from '../../services/location-store.service';
+import { TagStoreService } from '../../services/tag-store.service';
 import { TechnicianStoreService } from '../../services/technician-store.service';
 import { ToolTypeStoreService } from '../../services/tool-type-store.service';
 import { PropertiesStorageService } from '../../services/properties-storage.service';
@@ -19,6 +21,7 @@ import { PropertiesStorageService } from '../../services/properties-storage.serv
 export class SettingsPageComponent {
   private readonly formBuilder = new FormBuilder();
   protected readonly locationStore = inject(LocationStoreService);
+  protected readonly tagStore = inject(TagStoreService);
   protected readonly technicianStore = inject(TechnicianStoreService);
   protected readonly toolTypeStore = inject(ToolTypeStoreService);
   protected readonly propertiesStorage = inject(PropertiesStorageService);
@@ -31,8 +34,10 @@ export class SettingsPageComponent {
   protected readonly showDemoFallback = signal(true);
   protected readonly editingLocation = signal<ToolLocation | null>(null);
   protected readonly editingToolType = signal<ToolType | null>(null);
+  protected readonly editingTag = signal<AppTag | null>(null);
   protected readonly locations = computed(() => this.locationStore.locations());
   protected readonly toolTypes = computed(() => this.toolTypeStore.toolTypes());
+  protected readonly tags = computed(() => this.tagStore.tags());
   protected readonly technicians = computed(() => this.technicianStore.technicians());
   protected readonly technicianTotals = computed(() => ({
     total: this.technicianStore.technicians().length,
@@ -47,9 +52,14 @@ export class SettingsPageComponent {
     name: ['', [Validators.required]],
     description: ['']
   });
+  protected readonly tagForm = this.formBuilder.nonNullable.group({
+    name: ['', [Validators.required]],
+    description: ['']
+  });
 
   constructor() {
     this.locationStore.ensureLoaded();
+    this.tagStore.ensureLoaded();
     this.technicianStore.ensureLoaded();
     this.toolTypeStore.ensureLoaded();
 
@@ -138,6 +148,44 @@ export class SettingsPageComponent {
     });
   }
 
+  protected startCreateTag(): void {
+    this.editingTag.set(null);
+    this.tagForm.reset({
+      name: '',
+      description: ''
+    });
+  }
+
+  protected startEditTag(tag: AppTag): void {
+    this.editingTag.set(tag);
+    this.tagForm.reset({
+      name: tag.name,
+      description: tag.description
+    });
+  }
+
+  protected cancelTagEdit(): void {
+    this.startCreateTag();
+  }
+
+  protected saveTag(): void {
+    if (this.tagForm.invalid) {
+      this.tagForm.markAllAsTouched();
+      return;
+    }
+
+    const editing = this.editingTag();
+
+    this.tagStore.saveTag(
+      this.tagForm.getRawValue(),
+      editing?.id
+    ).then(() => {
+      this.startCreateTag();
+    }).catch(() => {
+      return;
+    });
+  }
+
   protected locationFieldError(name: 'name' | 'description'): string | null {
     const control = this.locationForm.get(name);
 
@@ -154,6 +202,20 @@ export class SettingsPageComponent {
 
   protected toolTypeFieldError(name: 'name' | 'description'): string | null {
     const control = this.toolTypeForm.get(name);
+
+    if (!control || !control.invalid || !control.touched) {
+      return null;
+    }
+
+    if (control.errors?.['required']) {
+      return 'Este campo es obligatorio.';
+    }
+
+    return 'Valor no valido.';
+  }
+
+  protected tagFieldError(name: 'name' | 'description'): string | null {
+    const control = this.tagForm.get(name);
 
     if (!control || !control.invalid || !control.touched) {
       return null;

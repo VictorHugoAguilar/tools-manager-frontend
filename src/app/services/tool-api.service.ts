@@ -9,11 +9,13 @@ import {
   TechnicianPayload
 } from '../models/repair.model';
 import { LocationPayload, ToolLocation } from '../models/location.model';
+import { AppTag, TagPayload } from '../models/tag.model';
 import { ToolType, ToolTypePayload } from '../models/tool-type.model';
 import {
   StorageBox,
   StorageBoxPayload,
   StorageBoxProduct,
+  StorageBoxSearchResponse,
   StorageProductPayload
 } from '../models/storage-box.model';
 import { environment } from '../../environments/environment';
@@ -27,6 +29,7 @@ export class ToolApiService {
   private readonly techniciansUrl = environment.apiUrl + '/api/technicians';
   private readonly locationsUrl = environment.apiUrl + '/api/locations';
   private readonly toolTypesUrl = environment.apiUrl + '/api/tool-types';
+  private readonly tagsUrl = environment.apiUrl + '/api/tags';
   private readonly storageBoxesUrl = environment.apiUrl + '/api/storage-boxes';
 
   getTools(): Observable<Tool[] | ToolListResponse> {
@@ -127,8 +130,30 @@ export class ToolApiService {
     return this.http.delete<void>(`${this.toolTypesUrl}/${id}`);
   }
 
+  getTags(): Observable<AppTag[]> {
+    return this.http.get<AppTag[]>(this.tagsUrl);
+  }
+
+  createTag(payload: TagPayload): Observable<AppTag> {
+    return this.http.post<AppTag>(this.tagsUrl, payload);
+  }
+
+  updateTag(id: string, payload: TagPayload): Observable<AppTag> {
+    return this.http.put<AppTag>(`${this.tagsUrl}/${id}`, payload);
+  }
+
+  deleteTag(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.tagsUrl}/${id}`);
+  }
+
   getStorageBoxes(): Observable<StorageBox[]> {
     return this.http.get<StorageBox[]>(this.storageBoxesUrl);
+  }
+
+  searchStorageProducts(query: string): Observable<StorageBoxSearchResponse> {
+    return this.http.get<StorageBoxSearchResponse>(`${this.storageBoxesUrl}/search`, {
+      params: { q: query }
+    });
   }
 
   createStorageBox(payload: StorageBoxPayload): Observable<StorageBox> {

@@ -5,6 +5,7 @@ import {
   StorageBox,
   StorageBoxPayload,
   StorageBoxProduct,
+  StorageBoxSearchResult,
   StorageProductPayload
 } from '../models/storage-box.model';
 import { ConfirmService } from './confirm.service';
@@ -23,6 +24,10 @@ export class StorageBoxStoreService {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly saveError = signal<string | null>(null);
+  readonly searchResults = signal<StorageBoxSearchResult[]>([]);
+  readonly searchLoading = signal(false);
+  readonly searchError = signal<string | null>(null);
+  readonly lastSearchTerm = signal('');
   readonly boxModalOpen = signal(false);
   readonly productModalOpen = signal(false);
   readonly editingBox = signal<StorageBox | null>(null);
@@ -30,6 +35,7 @@ export class StorageBoxStoreService {
   readonly editingProduct = signal<StorageBoxProduct | null>(null);
 
   private initialized = false;
+  private searchRequestId = 0;
 
   readonly totalProducts = computed(() =>
     this.boxes().reduce((total, box) => total + box.products.length, 0)
@@ -46,6 +52,56 @@ export class StorageBoxStoreService {
 
   reload(): void {
     this.loadBoxes();
+  }
+
+  searchProducts(term: string): void {
+    const query = term.trim();
+    const requestId = ++this.searchRequestId;
+    this.lastSearchTerm.set(query);
+    this.searchError.set(null);
+
+    if (!query) {
+      this.searchLoading.set(false);
+      this.searchResults.set([]);
+      return;
+    }
+
+    this.searchLoading.set(true);
+
+    this.toolApi.searchStorageProducts(query).subscribe({
+      next: (response) => {
+        if (requestId !== this.searchRequestId) {
+          return;
+        }
+
+        this.searchResults.set(
+          response.boxes.map((result) => ({
+            ...result,
+            box: this.normalizeBox(result.box),
+            matchingProducts: result.matchingProducts.map((product) => this.normalizeProduct(product))
+          }))
+        );
+        this.searchLoading.set(false);
+      },
+      error: (error: unknown) => {
+        if (requestId !== this.searchRequestId) {
+          return;
+        }
+
+        const message = this.extractErrorMessage(error);
+        this.searchError.set(message);
+        this.searchResults.set([]);
+        this.searchLoading.set(false);
+      }
+    });
+  }
+
+  clearSearch(): void {
+    this.searchRequestId++;
+    this.lastSearchTerm.set('');
+    this.searchError.set(null);
+    this.searchLoading.set(false);
+    this.searchResults.set([]);
   }
 
   openCreateBoxModal(): void {
@@ -97,15 +153,15 @@ export class StorageBoxStoreService {
       : this.toolApi.createStorageBox(payload);
 
     try {
-      let box = await firstValueFrom(
+      let box = this.normalizeBox(await firstValueFrom(
         request$.pipe(finalize(() => undefined))
-      );
+      ));
 
       if (imageFile) {
         const uploadResponse = await firstValueFrom(
           this.toolApi.uploadStorageBoxImage(box.id, imageFile)
         );
-        box = uploadResponse.box;
+        box = this.normalizeBox(uploadResponse.box);
       }
 
       const nextBoxes = currentEditing
@@ -150,15 +206,15 @@ export class StorageBoxStoreService {
       : this.toolApi.createStorageProduct(box.id, payload);
 
     try {
-      let product = await firstValueFrom(
+      let product = this.normalizeProduct(await firstValueFrom(
         request$.pipe(finalize(() => undefined))
-      );
+      ));
 
       if (imageFile) {
         const uploadResponse = await firstValueFrom(
           this.toolApi.uploadStorageProductImage(box.id, product.id, imageFile)
         );
-        product = uploadResponse.product;
+        product = this.normalizeProduct(uploadResponse.product);
       }
 
       const nextBoxes = this.boxes().map((item) => {
@@ -277,7 +333,7 @@ export class StorageBoxStoreService {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (boxes) => {
-          this.boxes.set(this.sortBoxes(boxes));
+          this.boxes.set(this.sortBoxes(boxes.map((box) => this.normalizeBox(box))));
         },
         error: (error: unknown) => {
           this.toastService.show({
@@ -305,6 +361,20 @@ export class StorageBoxStoreService {
         numeric: true
       })
     );
+  }
+
+  private normalizeBox(box: StorageBox): StorageBox {
+    return {
+      ...box,
+      products: (box.products ?? []).map((product) => this.normalizeProduct(product))
+    };
+  }
+
+  private normalizeProduct(product: StorageBoxProduct): StorageBoxProduct {
+    return {
+      ...product,
+      tags: product.tags ?? []
+    };
   }
 
   private extractErrorMessage(error: unknown): string {
