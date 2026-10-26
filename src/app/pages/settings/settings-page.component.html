@@ -60,6 +60,49 @@
   </article>
 
   <article class="settings-card span-two">
+    <p class="eyebrow">Almacenamiento</p>
+    <h3>Estanteria de almacenamiento</h3>
+    <p class="shelf-config-intro">
+      Define las filas y columnas disponibles para ubicar cajas. Si reduces una dimension,
+      no se guardara mientras exista una caja fuera del nuevo limite.
+    </p>
+
+    @if (shelfConfigStore.loading()) {
+    <div class="empty-box">Cargando configuracion de la estanteria...</div>
+    } @else {
+    <form class="location-form shelf-config-form" [formGroup]="shelfConfigForm" (ngSubmit)="saveShelfConfig()">
+      <div class="shelf-dimensions">
+        <label>
+          <span>Filas</span>
+          <input type="number" min="1" max="10" step="1" formControlName="rows">
+          @if (shelfConfigFieldError('rows'); as error) {
+          <small class="field-error">{{ error }}</small>
+          }
+        </label>
+
+        <label>
+          <span>Columnas</span>
+          <input type="number" min="1" max="10" step="1" formControlName="columns">
+          @if (shelfConfigFieldError('columns'); as error) {
+          <small class="field-error">{{ error }}</small>
+          }
+        </label>
+      </div>
+
+      @if (shelfConfigStore.error()) {
+      <div class="form-alert">{{ shelfConfigStore.error() }}</div>
+      }
+
+      <div class="form-actions">
+        <button type="submit" class="primary-button" [disabled]="shelfConfigStore.saving()">
+          {{ shelfConfigStore.saving() ? 'Guardando...' : 'Guardar configuracion' }}
+        </button>
+      </div>
+    </form>
+    }
+  </article>
+
+  <article class="settings-card span-two">
     <p class="eyebrow">Catalogos</p>
     <h3>Gestion de Ubicaciones</h3>
 

@@ -8,6 +8,7 @@ import * as QRCode from 'qrcode';
 import { StorageBox, StorageBoxProduct, StorageBoxSearchResult, StorageProductState } from '../../models/storage-box.model';
 import { StorageBoxStoreService } from '../../services/storage-box-store.service';
 import { TagStoreService } from '../../services/tag-store.service';
+import { ShelfConfigService } from '../../services/shelf-config.service';
 
 interface HighlightPart {
   text: string;
@@ -26,6 +27,7 @@ type StorageFilterKey = 'new' | 'used' | 'withImage' | 'withoutImage' | 'withTag
 export class StoragePageComponent implements OnDestroy {
   protected readonly store = inject(StorageBoxStoreService);
   protected readonly tagStore = inject(TagStoreService);
+  protected readonly shelfConfigStore = inject(ShelfConfigService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(FormBuilder);
@@ -33,8 +35,14 @@ export class StoragePageComponent implements OnDestroy {
   protected readonly defaultImage = 'assets/no-image.svg';
   protected readonly qrCodes = signal<Record<string, string>>({});
   protected readonly productStates: StorageProductState[] = ['Nuevo', 'Usado'];
-  protected readonly shelfRows = [1, 2, 3, 4, 5];
-  protected readonly shelfColumns = [1, 2, 3, 4, 5, 6];
+  protected readonly shelfRows = computed(() => Array.from(
+    { length: this.shelfConfigStore.currentConfig().rows },
+    (_, index) => index + 1
+  ));
+  protected readonly shelfColumns = computed(() => Array.from(
+    { length: this.shelfConfigStore.currentConfig().columns },
+    (_, index) => index + 1
+  ));
   protected readonly selectedBoxImageFile = signal<File | null>(null);
   protected readonly selectedProductImageFile = signal<File | null>(null);
   protected readonly boxImagePreview = signal<string>(this.defaultImage);
@@ -128,8 +136,8 @@ export class StoragePageComponent implements OnDestroy {
     code: [''],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     description: ['', [Validators.required, Validators.maxLength(400)]],
-    shelfRow: [1, [Validators.required, Validators.min(1), Validators.max(5)]],
-    shelfColumn: [1, [Validators.required, Validators.min(1), Validators.max(6)]]
+    shelfRow: [1, [Validators.required, Validators.min(1)]],
+    shelfColumn: [1, [Validators.required, Validators.min(1)]]
   });
 
   protected readonly productForm = this.formBuilder.nonNullable.group({
@@ -142,6 +150,26 @@ export class StoragePageComponent implements OnDestroy {
   constructor() {
     this.store.ensureLoaded();
     this.tagStore.ensureLoaded();
+    this.shelfConfigStore.ensureLoaded();
+
+    effect(() => {
+      const config = this.shelfConfigStore.currentConfig();
+      const rowControl = this.boxForm.controls.shelfRow;
+      const columnControl = this.boxForm.controls.shelfColumn;
+
+      rowControl.setValidators([
+        Validators.required,
+        Validators.min(1),
+        Validators.max(config.rows)
+      ]);
+      columnControl.setValidators([
+        Validators.required,
+        Validators.min(1),
+        Validators.max(config.columns)
+      ]);
+      rowControl.updateValueAndValidity({ emitEvent: false });
+      columnControl.updateValueAndValidity({ emitEvent: false });
+    });
 
     effect(() => {
       const boxes = this.store.boxes();

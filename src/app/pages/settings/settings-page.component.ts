@@ -10,6 +10,7 @@ import { TagStoreService } from '../../services/tag-store.service';
 import { TechnicianStoreService } from '../../services/technician-store.service';
 import { ToolTypeStoreService } from '../../services/tool-type-store.service';
 import { PropertiesStorageService } from '../../services/properties-storage.service';
+import { ShelfConfigService } from '../../services/shelf-config.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -25,6 +26,7 @@ export class SettingsPageComponent {
   protected readonly technicianStore = inject(TechnicianStoreService);
   protected readonly toolTypeStore = inject(ToolTypeStoreService);
   protected readonly propertiesStorage = inject(PropertiesStorageService);
+  protected readonly shelfConfigStore = inject(ShelfConfigService);
 
   protected readonly showTechniciansAccessInMenu = signal(this.getShowTecnicosInitialValue());
   protected readonly showArreglosAccessInMenu = signal(this.getShowArreglosInitialValue());
@@ -56,12 +58,35 @@ export class SettingsPageComponent {
     name: ['', [Validators.required]],
     description: ['']
   });
+  protected readonly shelfConfigForm = this.formBuilder.nonNullable.group({
+    rows: [5, [
+      Validators.required,
+      Validators.min(1),
+      Validators.max(10),
+      Validators.pattern(/^\d+$/)
+    ]],
+    columns: [6, [
+      Validators.required,
+      Validators.min(1),
+      Validators.max(10),
+      Validators.pattern(/^\d+$/)
+    ]]
+  });
 
   constructor() {
     this.locationStore.ensureLoaded();
     this.tagStore.ensureLoaded();
     this.technicianStore.ensureLoaded();
     this.toolTypeStore.ensureLoaded();
+    this.shelfConfigStore.ensureLoaded();
+
+    effect(() => {
+      this.shelfConfigForm.patchValue(this.shelfConfigStore.currentConfig(), {
+        emitEvent: false
+      });
+      this.shelfConfigForm.markAsPristine();
+      this.shelfConfigForm.markAsUntouched();
+    });
 
     effect(() => {
       this.propertiesStorage.setValueOfLocalStorageByKey('show-access-to-technicians-menu', this.showTechniciansAccessInMenu());
@@ -186,6 +211,19 @@ export class SettingsPageComponent {
     });
   }
 
+  protected async saveShelfConfig(): Promise<void> {
+    if (this.shelfConfigForm.invalid) {
+      this.shelfConfigForm.markAllAsTouched();
+      return;
+    }
+
+    try {
+      await this.shelfConfigStore.saveConfig(this.shelfConfigForm.getRawValue());
+    } catch {
+      return;
+    }
+  }
+
   protected locationFieldError(name: 'name' | 'description'): string | null {
     const control = this.locationForm.get(name);
 
@@ -223,6 +261,32 @@ export class SettingsPageComponent {
 
     if (control.errors?.['required']) {
       return 'Este campo es obligatorio.';
+    }
+
+    return 'Valor no valido.';
+  }
+
+  protected shelfConfigFieldError(name: 'rows' | 'columns'): string | null {
+    const control = this.shelfConfigForm.get(name);
+
+    if (!control || !control.invalid || !control.touched) {
+      return null;
+    }
+
+    if (control.errors?.['required']) {
+      return 'Este campo es obligatorio.';
+    }
+
+    if (control.errors?.['min']) {
+      return 'El valor minimo es 1.';
+    }
+
+    if (control.errors?.['max']) {
+      return 'El valor maximo es 10.';
+    }
+
+    if (control.errors?.['pattern']) {
+      return 'Introduce un numero entero.';
     }
 
     return 'Valor no valido.';
