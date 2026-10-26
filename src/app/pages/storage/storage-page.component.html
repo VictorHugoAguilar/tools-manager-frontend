@@ -290,18 +290,23 @@
         <div>
           <p class="eyebrow">Ubicacion fisica</p>
           <h4>Vista rapida de estanteria</h4>
-          <p>Estanteria de 5 filas por 6 columnas. La caja esta marcada en {{ shelfPositionLabel(box) }}.</p>
+          <p>
+            Estanteria de {{ shelfRows().length }} filas por {{ shelfColumns().length }} columnas.
+            La caja esta marcada en {{ shelfPositionLabel(box) }}.
+          </p>
         </div>
 
-        <div class="shelf-map" role="img" [attr.aria-label]="'Ubicacion de la caja ' + box.code + ' en ' + shelfPositionLabel(box)">
+        <div class="shelf-map" role="img"
+          [style.--shelf-column-count]="shelfColumns().length"
+          [attr.aria-label]="'Ubicacion de la caja ' + box.code + ' en ' + shelfPositionLabel(box)">
           <span class="shelf-corner"></span>
-          @for (column of shelfColumns; track column) {
+          @for (column of shelfColumns(); track column) {
             <span class="shelf-axis">C{{ column }}</span>
           }
 
-          @for (row of shelfRows; track row) {
+          @for (row of shelfRows(); track row) {
             <span class="shelf-axis">F{{ row }}</span>
-            @for (column of shelfColumns; track column) {
+            @for (column of shelfColumns(); track column) {
               <span class="shelf-cell" [class.selected]="isShelfCellSelected(box, row, column)">
                 @if (isShelfCellSelected(box, row, column)) {
                   {{ shelfPositionLabel(box) }}
@@ -457,7 +462,7 @@
           <label>
             <span>Fila</span>
             <select formControlName="shelfRow">
-              @for (row of shelfRows; track row) {
+              @for (row of shelfRows(); track row) {
                 <option [ngValue]="row">Fila {{ row }}</option>
               }
             </select>
@@ -469,7 +474,7 @@
           <label>
             <span>Columna</span>
             <select formControlName="shelfColumn">
-              @for (column of shelfColumns; track column) {
+              @for (column of shelfColumns(); track column) {
                 <option [ngValue]="column">Columna {{ column }}</option>
               }
             </select>

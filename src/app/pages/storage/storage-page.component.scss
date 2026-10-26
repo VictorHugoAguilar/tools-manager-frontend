@@ -567,8 +567,9 @@ h5 {
 }
 
 .shelf-map {
+  --shelf-column-count: 6;
   display: grid;
-  grid-template-columns: 48px repeat(6, minmax(44px, 1fr));
+  grid-template-columns: 48px repeat(var(--shelf-column-count), minmax(44px, 1fr));
   gap: 0.45rem;
   align-items: stretch;
   padding: 0.85rem;
@@ -1207,7 +1208,7 @@ textarea {
 
   .shelf-map {
     overflow-x: auto;
-    grid-template-columns: 42px repeat(6, minmax(54px, 1fr));
+    grid-template-columns: 42px repeat(var(--shelf-column-count), minmax(54px, 1fr));
   }
 
   .search-result-card header,

@@ -18,6 +18,7 @@ import {
   StorageBoxSearchResponse,
   StorageProductPayload
 } from '../models/storage-box.model';
+import { ShelfConfig, ShelfConfigPayload } from '../models/shelf-config.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -31,6 +32,7 @@ export class ToolApiService {
   private readonly toolTypesUrl = environment.apiUrl + '/api/tool-types';
   private readonly tagsUrl = environment.apiUrl + '/api/tags';
   private readonly storageBoxesUrl = environment.apiUrl + '/api/storage-boxes';
+  private readonly shelfConfigUrl = environment.apiUrl + '/api/shelf-config';
 
   getTools(): Observable<Tool[] | ToolListResponse> {
     return this.http.get<Tool[] | ToolListResponse>(this.baseUrl);
@@ -148,6 +150,14 @@ export class ToolApiService {
 
   getStorageBoxes(): Observable<StorageBox[]> {
     return this.http.get<StorageBox[]>(this.storageBoxesUrl);
+  }
+
+  getShelfConfig(): Observable<ShelfConfig> {
+    return this.http.get<ShelfConfig>(this.shelfConfigUrl);
+  }
+
+  updateShelfConfig(payload: ShelfConfigPayload): Observable<ShelfConfig> {
+    return this.http.put<ShelfConfig>(this.shelfConfigUrl, payload);
   }
 
   searchStorageProducts(query: string): Observable<StorageBoxSearchResponse> {

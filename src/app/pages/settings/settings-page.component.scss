@@ -56,6 +56,13 @@ h3 {
   color: rgba(35, 52, 90, 0.72);
 }
 
+.shelf-config-intro {
+  max-width: 780px;
+  margin: -0.35rem 0 1rem;
+  color: rgba(35, 52, 90, 0.72);
+  line-height: 1.55;
+}
+
 label {
   display: grid;
   gap: 0.45rem;
@@ -178,6 +185,16 @@ textarea {
   display: grid;
   gap: 0.9rem;
   align-content: start;
+}
+
+.shelf-config-form {
+  max-width: 760px;
+}
+
+.shelf-dimensions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 .panel-header {
@@ -472,5 +489,9 @@ textarea {
 
   .toggle-row {
     align-items: start;
+  }
+
+  .shelf-dimensions {
+    grid-template-columns: 1fr;
   }
 }
