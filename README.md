@@ -64,3 +64,10 @@ By default, Render does not create PR previews. To create a preview for a specif
 - Change changelog header from H1 to H3
 
 <!-- CHANGELOG-PR-61-END -->
+
+<!-- CHANGELOG-PR-65-START -->
+### [3.2.3] - $(date +'%Y-%m-%d')
+
+- Fix formatting in bump-version-add-changelog.yml
+
+<!-- CHANGELOG-PR-65-END -->
