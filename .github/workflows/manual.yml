@@ -1,3 +1,4 @@
+
 name: Bump Version on PR Merge
 
 on:
@@ -5,54 +6,42 @@ on:
     types:
       - closed
     branches:
-      - main # Cambia a 'master' si es tu rama principal
+      - main
+
+permissions:
+  contents: write
+  pull-requests: read
 
 jobs:
   bump-version:
-    # Solo se ejecuta si la PR fue mergeada (no solo cerrada)
     if: github.event.pull_request.merged == true
-
-    runs-on: ubuntu-latest
-
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-    permissions:
-      contents: write # Necesario para hacer push del commit con la nueva versión
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
       - name: Detect bump type from PR title/body
         id: detect-bump
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        shell: bash
         run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_BODY="${{ github.event.pull_request.body }}"
           FULL_TEXT="$PR_TITLE $PR_BODY"
 
-          echo "Analizando: $FULL_TEXT"
-
           if echo "$FULL_TEXT" | grep -qi '\[major\]'; then
-            echo "bump_type=major" >> $GITHUB_OUTPUT
-            echo "✅ Tipo detectado: MAJOR"
+            echo "bump_type=major" >> "$GITHUB_OUTPUT"
           elif echo "$FULL_TEXT" | grep -qi '\[minor\]'; then
-            echo "bump_type=minor" >> $GITHUB_OUTPUT
-            echo "✅ Tipo detectado: MINOR"
+            echo "bump_type=minor" >> "$GITHUB_OUTPUT"
           elif echo "$FULL_TEXT" | grep -qi '\[patch\]'; then
-            echo "bump_type=patch" >> $GITHUB_OUTPUT
-            echo "✅ Tipo detectado: PATCH"
+            echo "bump_type=patch" >> "$GITHUB_OUTPUT"
           else
-            echo "bump_type=none" >> $GITHUB_OUTPUT
-            echo "⚠️  No se encontró etiqueta de versión ([major], [minor], [patch]). Se omite el bump."
+            echo "bump_type=none" >> "$GITHUB_OUTPUT"
+            echo "No se encontró [major], [minor] o [patch]."
           fi
 
       - name: Bump version in package.json
@@ -60,32 +49,133 @@ jobs:
         env:
           BUMP_TYPE: ${{ steps.detect-bump.outputs.bump_type }}
         run: |
-          node --input-type=module << 'EOF'
-          import { readFileSync, writeFileSync } from 'fs';
+          node --input-type=module <<'EOF'
+          import { readFileSync, writeFileSync } from 'node:fs';
+
           const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
           let [major, minor, patch] = pkg.version.split('.').map(Number);
-          const type = process.env.BUMP_TYPE;
-          if (type === 'major') { major++; minor = 0; patch = 0; }
-          else if (type === 'minor') { minor++; patch = 0; }
-          else if (type === 'patch') { patch++; }
+
+          switch (process.env.BUMP_TYPE) {
+            case 'major':
+              major++;
+              minor = 0;
+              patch = 0;
+              break;
+            case 'minor':
+              minor++;
+              patch = 0;
+              break;
+            case 'patch':
+              patch++;
+              break;
+          }
+
           pkg.version = `${major}.${minor}.${patch}`;
-          writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          console.log(`✅ Nueva versión: ${pkg.version}`);
+
+          writeFileSync(
+            'package.json',
+            JSON.stringify(pkg, null, 2) + '\n'
+          );
+
+          console.log(`Nueva versión: v${pkg.version}`);
           EOF
+
+      - name: Update README changelog
+        if: steps.detect-bump.outputs.bump_type != 'none'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('node:fs');
+            const pr = context.payload.pull_request;
+
+            if (!pr || !pr.merged) {
+              core.setFailed('No se ha encontrado una PR fusionada.');
+              return;
+            }
+
+            // Leer la versión que acaba de generar el paso anterior.
+            const pkg = JSON.parse(
+              fs.readFileSync('package.json', 'utf8')
+            );
+            const version = `v${pkg.version}`;
+
+            // Obtener los commits de la PR original.
+            const commits = await github.paginate(
+              github.rest.pulls.listCommits,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                per_page: 100
+              }
+            );
+
+            const titles = commits
+              .map(commit =>
+                commit.commit.message.split('\n')[0].trim()
+              )
+              .filter(Boolean);
+
+            const start = `<!-- CHANGELOG-PR-${pr.number}-START -->`;
+            const end = `<!-- CHANGELOG-PR-${pr.number}-END -->`;
+
+            const section = [
+              start,
+              `# ${version}`,
+              '',
+              ...titles.map(title => `- ${title}`),
+              '',
+              end
+            ].join('\n');
+
+            const file = 'README.md';
+
+            if (!fs.existsSync(file)) {
+              core.setFailed('No se encuentra README.md en la raíz.');
+              return;
+            }
+
+            let readme = fs.readFileSync(file, 'utf8');
+
+            const escapeRegex = value =>
+              value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const sectionRegex = new RegExp(
+              `${escapeRegex(start)}[\\s\\S]*?${escapeRegex(end)}`
+            );
+
+            // Si se reejecuta, retirar la sección anterior de esta PR.
+            readme = readme.replace(sectionRegex, '').trimEnd();
+
+            // Añadir la sección actualizada al final del README.
+            readme += `\n\n${section}\n`;
+
+            fs.writeFileSync(file, readme);
+
+            core.info(
+              `README actualizado: ${version}, PR #${pr.number}, ` +
+              `${titles.length} commits.`
+            );
 
       - name: Configure Git identity
         if: steps.detect-bump.outputs.bump_type != 'none'
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit and push new version
+      - name: Commit and push version and README
         if: steps.detect-bump.outputs.bump_type != 'none'
         run: |
-          NEW_VERSION=$(node -e "import('./package.json', {with:{type:'json'}}).then(m=>process.stdout.write(m.default.version))")
-          git add package.json
-          git commit -m "chore: bump version to v$NEW_VERSION [skip ci]"
-          git tag "v$NEW_VERSION"
+          NEW_VERSION=$(node -p \
+            "require('./package.json').version")
+
+          git add package.json README.md
+          git commit -m "chore: bump version to v${NEW_VERSION} [skip ci]"
+
+          git tag "v${NEW_VERSION}"
+
           git push origin HEAD
-          git push origin "v$NEW_VERSION"
-          echo "🚀 Nueva versión publicada: v$NEW_VERSION"
+          git push origin "v${NEW_VERSION}"
+
+          echo "Versión y README publicados: v${NEW_VERSION}"
