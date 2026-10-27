@@ -47,23 +47,10 @@ By default, Render does not create PR previews. To create a preview for a specif
 - Run `bump-version.js`, update `package.json`, and perform an automatic commit + tag (v1.2.3).
 - The commit includes `[skip ci]` to prevent infinite loops.
 
-# Features
-
-### [feature-31-automatice-change-version-app](https://github.com/VictorHugoAguilar/tools-manager-frontend/issues/31)
-- Add script bump-version.js for update version app
-
-### [feature-40-remove-of-sliderbar-the-option-technics](https://github.com/VictorHugoAguilar/tools-manager-frontend/issues/40)
-- A local storage access service is created for reading and saving, keeping everything centralized.
-- The slider bar is modified to read from localstorage, and some options are shown or hidden.
-- The options to show or hide the menu have been added to the settings page.
-
-### [feature-55-allow-the-administrator-to-define-the-physical-capacity-of-the-single-storage-shelving-unit](https://github.com/VictorHugoAguilar/tools-manager-frontend/issues/55)
-- Permitir que la persona administradora defina la capacidad física de la única estantería de almacenamiento. La configuración se guardará en Firebase Realtime Database y se reutilizará en el formulario de cajas y en el mapa de ubicación física.
-
-# CHANGELOG []
+## CHANGELOG 
 
 <!-- CHANGELOG-PR-59-START -->
-# v3.2.1
+### v3.2.1
 
 - Update README to include CHANGELOG section [patch]
 
