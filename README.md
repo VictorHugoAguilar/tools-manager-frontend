@@ -245,3 +245,12 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Añadida la sección de changelog al README.
 - Eliminado un workflow de GitHub y actualizado el nombre del workflow de versión.
 - Cambiado el encabezado del changelog de H1 a H3.
+
+<!-- CHANGELOG-PR-72-START -->
+### [3.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/72) - 2026-10-27
+
+- create image fallback service
+- feat: implantation service of image fallback
+- fix: An issue with icon loading is fixed.
+
+<!-- CHANGELOG-PR-72-END -->
