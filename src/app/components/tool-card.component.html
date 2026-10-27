@@ -22,7 +22,11 @@
 
   <section class="card-body">
     <div class="image-shell">
-      <img [src]="imageUrl()" [alt]="tool().name">
+      <img 
+        [src]="imageUrl()" 
+        [alt]="tool().name" 
+        (error)="imageFallback.onImageError($event)"
+      >
     </div>
 
     <dl class="details">
