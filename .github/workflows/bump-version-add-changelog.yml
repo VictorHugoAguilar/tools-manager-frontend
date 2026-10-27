@@ -97,7 +97,8 @@ jobs:
               fs.readFileSync('package.json', 'utf8')
             );
             // const version = `v${pkg.version}`;
-            const version = `[${pkg.version}] - $(date +'%Y-%m-%d')`;
+            const date = new Date().toISOString().slice(0, 10);
+            const version = `[${pkg.version}] - ${date}`;
 
             // Obtener los commits de la PR original.
             const commits = await github.paginate(
