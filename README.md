@@ -240,7 +240,7 @@ Los cambios relevantes de cada versión se documentan en esta sección.
 
 El formato sigue una estructura inspirada en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado sigue los principios de [Semantic Versioning](https://semver.org/lang/es/).
 
-### [3.2.8] - 2026-10-27
+### 3.2.8 - 2026-10-27
 
 - Añadida la sección de changelog al README.
 - Eliminado un workflow de GitHub y actualizado el nombre del workflow de versión.
