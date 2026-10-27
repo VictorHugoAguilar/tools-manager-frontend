@@ -47,34 +47,15 @@ By default, Render does not create PR previews. To create a preview for a specif
 - Run `bump-version.js`, update `package.json`, and perform an automatic commit + tag (v1.2.3).
 - The commit includes `[skip ci]` to prevent infinite loops.
 
-## CHANGELOG 
+## Changelog
 
-<!-- CHANGELOG-PR-59-START -->
-### v3.2.1
+All notable changes to this project will be documented in this file.
 
-- Update README to include CHANGELOG section [patch]
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- CHANGELOG-PR-59-END -->
 
-<!-- CHANGELOG-PR-61-START -->
-### v3.2.2
-
-- Add CHANGELOG section to README
-- delete file action github and change name action bump version
-- Change changelog header from H1 to H3
-
-<!-- CHANGELOG-PR-61-END -->
-
-<!-- CHANGELOG-PR-65-START -->
-### [3.2.3] - $(date +'%Y-%m-%d')
-
-- Fix formatting in bump-version-add-changelog.yml
-
-<!-- CHANGELOG-PR-65-END -->
-
-<!-- CHANGELOG-PR-66-START -->
 ### [3.2.4] - 2026-10-27
 
-- Fix version formatting in bump-version workflow
-
-<!-- CHANGELOG-PR-66-END -->
+- Add CHANGELOG section to README
+- Delete file action github and change name action bump version
+- Change changelog header from H1 to H3
