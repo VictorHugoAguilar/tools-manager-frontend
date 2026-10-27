@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Tool } from '../models/tool.model';
 import { DropdownMenuComponent } from '../components/app-dropdown-menu/dropdown-menu.component';
 import { StateColorPipe } from "../pipe/state-color-pipe";
+import { ImageFallbackService } from '../services/image-fallback.service';
 
 export type BoardColumnKey = 'available' | 'active' | 'maintenance';
 
@@ -23,6 +24,8 @@ export class ToolCardComponent {
   readonly delete = output<void>();
   readonly changeState = output<string>();
   readonly deleteImage = output<void>();
+  protected readonly imageFallback = inject(ImageFallbackService);
+
 
   readonly menuItems = [
     { label: 'Editar', value: 'edit' },
@@ -108,4 +111,3 @@ export class ToolCardComponent {
     }
   }
 }
-

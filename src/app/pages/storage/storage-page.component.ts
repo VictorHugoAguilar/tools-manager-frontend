@@ -9,6 +9,7 @@ import { StorageBox, StorageBoxProduct, StorageBoxSearchResult, StorageProductSt
 import { StorageBoxStoreService } from '../../services/storage-box-store.service';
 import { TagStoreService } from '../../services/tag-store.service';
 import { ShelfConfigService } from '../../services/shelf-config.service';
+import { ImageFallbackService } from '../../services/image-fallback.service';
 
 interface HighlightPart {
   text: string;
@@ -31,6 +32,8 @@ export class StoragePageComponent implements OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly formBuilder = inject(FormBuilder);
+  protected readonly imageFallback = inject(ImageFallbackService);
+
 
   protected readonly defaultImage = 'assets/no-image.svg';
   protected readonly qrCodes = signal<Record<string, string>>({});
@@ -181,7 +184,7 @@ export class StoragePageComponent implements OnDestroy {
 
         void this.generateQrCode(box.id);
       });
-    }, { allowSignalWrites: true });
+    });
 
     effect(() => {
       const editingBox = this.store.editingBox();
@@ -224,7 +227,7 @@ export class StoragePageComponent implements OnDestroy {
         shelfRow: 1,
         shelfColumn: 1
       });
-    }, { allowSignalWrites: true });
+    });
 
     effect(() => {
       const editingProduct = this.store.editingProduct();
@@ -270,7 +273,7 @@ export class StoragePageComponent implements OnDestroy {
         quantity: 1,
         state: 'Nuevo'
       });
-    }, { allowSignalWrites: true });
+    });
 
     effect(() => {
       const activeBoxId = this.boxIdFromRoute();
@@ -932,4 +935,5 @@ export class StoragePageComponent implements OnDestroy {
 
     return true;
   }
+
 }
