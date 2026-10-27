@@ -266,3 +266,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Fix markdown formatting for version link in workflow
 
 <!-- CHANGELOG-PR-69-END -->
+
+<!-- CHANGELOG-PR-70-START -->
+### [3.2.8](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/70) - 2026-10-27
+
+- Fix version formatting in workflow YAML
+
+<!-- CHANGELOG-PR-70-END -->
