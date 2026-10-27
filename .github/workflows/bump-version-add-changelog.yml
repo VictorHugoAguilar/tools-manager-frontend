@@ -124,7 +124,7 @@ jobs:
               `### ${version}`,
               '',
               ...titles.map(title => `- ${title}`),
-              ''
+              '',
               end
             ].join('\n');
 
