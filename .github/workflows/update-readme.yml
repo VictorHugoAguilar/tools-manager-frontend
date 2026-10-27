@@ -1,0 +1,137 @@
+
+name: Update README after version bump
+
+on:
+  workflow_run:
+    workflows:
+      - "Bump Version on PR Merge"
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  update-readme:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update README with generated version
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { execFileSync } = require('child_process');
+
+            // Recuperar la PR que originó el workflow anterior.
+            const run = context.payload.workflow_run;
+            const prs = run.pull_requests || [];
+
+            if (prs.length === 0) {
+              core.setFailed(
+                'No se ha podido identificar la Pull Request asociada.'
+              );
+              return;
+            }
+
+            const pr = prs[0];
+            const prNumber = pr.number;
+
+            // Leer la versión generada por la Action anterior.
+            const pkg = JSON.parse(
+              fs.readFileSync('package.json', 'utf8')
+            );
+
+            const version = `v${pkg.version}`;
+
+            // Obtener todos los commits de la PR.
+            const commits = await github.paginate(
+              github.rest.pulls.listCommits,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+                per_page: 100
+              }
+            );
+
+            const titles = commits
+              .map(commit =>
+                commit.commit.message.split('\n')[0].trim()
+              )
+              .filter(Boolean);
+
+            // Identificadores para evitar duplicar la sección
+            // si se vuelve a ejecutar este workflow.
+            const start = `<!-- CHANGELOG-PR-${prNumber}-START -->`;
+            const end = `<!-- CHANGELOG-PR-${prNumber}-END -->`;
+
+            const section = [
+              start,
+              `# ${version}`,
+              '',
+              ...titles.map(title => `- ${title}`),
+              '',
+              end
+            ].join('\n');
+
+            const file = 'README.md';
+
+            if (!fs.existsSync(file)) {
+              core.setFailed('No se encuentra README.md.');
+              return;
+            }
+
+            let readme = fs.readFileSync(file, 'utf8');
+
+            const escapeRegex = value =>
+              value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+            const regex = new RegExp(
+              `${escapeRegex(start)}[\\s\\S]*?${escapeRegex(end)}`
+            );
+
+            if (regex.test(readme)) {
+              readme = readme.replace(regex, section);
+            } else {
+              readme = readme.trimEnd() + '\n\n' + section + '\n';
+            }
+
+            fs.writeFileSync(file, readme);
+
+            // Crear un commit únicamente si hay cambios.
+            execFileSync('git', ['config', 'user.name',
+              'github-actions[bot]']);
+            execFileSync('git', ['config', 'user.email',
+              '41898282+github-actions[bot]@users.noreply.github.com']);
+            execFileSync('git', ['add', file]);
+
+            const status = execFileSync(
+              'git', ['status', '--porcelain'],
+              { encoding: 'utf8' }
+            ).trim();
+
+            if (!status) {
+              core.info('El README ya está actualizado.');
+              return;
+            }
+
+            execFileSync('git', [
+              'commit', '-m',
+              `docs: update README changelog for ${version} (PR #${prNumber}) [skip ci]`
+            ]);
+
+            execFileSync('git', ['push', 'origin', 'HEAD:main']);
+
+            core.info(
+              `README actualizado con ${version} y ${titles.length} commits.`
+            );
