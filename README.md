@@ -259,3 +259,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Link version to merged PR URL in workflow
 
 <!-- CHANGELOG-PR-68-END -->
+
+<!-- CHANGELOG-PR-69-START -->
+### [[3.2.7](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/69)] - 2026-10-27
+
+- Fix markdown formatting for version link in workflow
+
+<!-- CHANGELOG-PR-69-END -->
