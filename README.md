@@ -246,4 +246,9 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Eliminado un workflow de GitHub y actualizado el nombre del workflow de versión.
 - Cambiado el encabezado del changelog de H1 a H3.
 
+<!-- CHANGELOG-PR-67-START -->
+### [3.2.5]($PR_URL) - 2026-10-27
 
+- Include PR URL in version format for changelog
+
+<!-- CHANGELOG-PR-67-END -->
