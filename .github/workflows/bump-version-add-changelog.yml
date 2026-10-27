@@ -117,16 +117,16 @@ jobs:
               )
               .filter(Boolean);
 
-            // const start = `<!-- CHANGELOG-PR-${pr.number}-START -->`;
-            // const end = `<!-- CHANGELOG-PR-${pr.number}-END -->`;
+            const start = `<!-- CHANGELOG-PR-${pr.number}-START -->`;
+            const end = `<!-- CHANGELOG-PR-${pr.number}-END -->`;
 
             const section = [
-              // start,
+              start,
               `### ${version}`,
               '',
               ...titles.map(title => `- ${title}`),
               ''
-              // end
+              end
             ].join('\n');
 
             const file = 'README.md';
