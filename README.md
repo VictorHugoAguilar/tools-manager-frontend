@@ -61,3 +61,10 @@ By default, Render does not create PR previews. To create a preview for a specif
 - Permitir que la persona administradora defina la capacidad física de la única estantería de almacenamiento. La configuración se guardará en Firebase Realtime Database y se reutilizará en el formulario de cajas y en el mapa de ubicación física.
 
 # CHANGELOG []
+
+<!-- CHANGELOG-PR-59-START -->
+# v3.2.1
+
+- Update README to include CHANGELOG section [patch]
+
+<!-- CHANGELOG-PR-59-END -->
