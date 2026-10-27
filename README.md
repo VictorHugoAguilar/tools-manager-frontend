@@ -71,3 +71,10 @@ By default, Render does not create PR previews. To create a preview for a specif
 - Fix formatting in bump-version-add-changelog.yml
 
 <!-- CHANGELOG-PR-65-END -->
+
+<!-- CHANGELOG-PR-66-START -->
+### [3.2.4] - 2026-10-27
+
+- Fix version formatting in bump-version workflow
+
+<!-- CHANGELOG-PR-66-END -->
