@@ -121,7 +121,7 @@ jobs:
 
             const section = [
               start,
-              `# ${version}`,
+              `### ${version}`,
               '',
               ...titles.map(title => `- ${title}`),
               '',
