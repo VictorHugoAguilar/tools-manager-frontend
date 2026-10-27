@@ -248,7 +248,7 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 
 ### [3.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/72) - 2026-10-27
 
-- feat: create image fallback service
-- feat: implantation service of image fallback
-- fix: An issue with icon loading is fixed.
+- feat: Se crea un servicio para controlar las imagenes que no cargan
+- feat: Se implementa el servicio que se ha creado
+- fix: Se arregla el fallo de la carga del icono  
 
