@@ -60,4 +60,4 @@ By default, Render does not create PR previews. To create a preview for a specif
 ### [feature-55-allow-the-administrator-to-define-the-physical-capacity-of-the-single-storage-shelving-unit](https://github.com/VictorHugoAguilar/tools-manager-frontend/issues/55)
 - Permitir que la persona administradora defina la capacidad física de la única estantería de almacenamiento. La configuración se guardará en Firebase Realtime Database y se reutilizará en el formulario de cajas y en el mapa de ubicación física.
 
-# CHANGELOG
+# CHANGELOG []
