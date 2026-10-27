@@ -55,3 +55,12 @@ By default, Render does not create PR previews. To create a preview for a specif
 - Update README to include CHANGELOG section [patch]
 
 <!-- CHANGELOG-PR-59-END -->
+
+<!-- CHANGELOG-PR-61-START -->
+### v3.2.2
+
+- Add CHANGELOG section to README
+- delete file action github and change name action bump version
+- Change changelog header from H1 to H3
+
+<!-- CHANGELOG-PR-61-END -->
