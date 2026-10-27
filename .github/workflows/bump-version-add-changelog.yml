@@ -28,6 +28,7 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
         shell: bash
         run: |
           FULL_TEXT="$PR_TITLE $PR_BODY"
@@ -98,7 +99,7 @@ jobs:
             );
             // const version = `v${pkg.version}`;
             const date = new Date().toISOString().slice(0, 10);
-            const version = `[${pkg.version}] - ${date}`;
+            const version = `[${pkg.version}]($PR_URL) - ${date}`;
 
             // Obtener los commits de la PR original.
             const commits = await github.paginate(
