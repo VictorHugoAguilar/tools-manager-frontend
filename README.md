@@ -252,3 +252,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Include PR URL in version format for changelog
 
 <!-- CHANGELOG-PR-67-END -->
+
+<!-- CHANGELOG-PR-68-START -->
+### [3.2.6](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/68) - 2026-10-27
+
+- Link version to merged PR URL in workflow
+
+<!-- CHANGELOG-PR-68-END -->
