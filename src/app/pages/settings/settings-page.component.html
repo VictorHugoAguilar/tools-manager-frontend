@@ -103,6 +103,75 @@
   </article>
 
   <article class="settings-card span-two">
+    <p class="eyebrow">Inventario del taller</p>
+    <h3>Categorías de materiales</h3>
+    <p class="shelf-config-intro">
+      Administra las opciones disponibles al registrar materiales en los compartimentos.
+      Eliminar una categoría no modifica los materiales que ya la tienen asignada.
+    </p>
+
+    <div class="locations-layout">
+      <form class="location-form" [formGroup]="materialCategoryForm" (ngSubmit)="addWorkshopMaterialCategory()">
+        <label>
+          <span>Nueva categoría</span>
+          <input formControlName="name" maxlength="100" placeholder="Ej. Adhesivos, Abrazaderas">
+          @if (materialCategoryFieldError(); as error) {
+          <small class="field-error">{{ error }}</small>
+          }
+        </label>
+
+        @if (workshopMaterialCategoryStore.saveError()) {
+        <div class="form-alert" role="alert">{{ workshopMaterialCategoryStore.saveError() }}</div>
+        }
+
+        <div class="form-actions">
+          <button type="submit" class="primary-button"
+            [disabled]="materialCategoryForm.invalid || workshopMaterialCategoryStore.saving()">
+            {{ workshopMaterialCategoryStore.saving() ? 'Guardando...' : '＋ Añadir categoría' }}
+          </button>
+        </div>
+      </form>
+
+      <div class="locations-panel">
+        <div class="panel-header">
+          <strong>Categorías configuradas</strong>
+          <span>{{ workshopMaterialCategoryStore.categories().length }} registradas</span>
+        </div>
+
+        @if (workshopMaterialCategoryStore.loading()) {
+        <div class="empty-box">Cargando categorías...</div>
+        } @else if (workshopMaterialCategoryStore.error(); as error) {
+        <div class="form-alert" role="alert">
+          {{ error }}
+          <button type="button" class="secondary-button small-button"
+            (click)="workshopMaterialCategoryStore.load()">Reintentar</button>
+        </div>
+        } @else if (workshopMaterialCategoryStore.categories().length === 0) {
+        <div class="empty-box">No hay categorías configuradas. Añade una para poder registrar materiales.</div>
+        } @else {
+        <div class="locations-list">
+          @for (category of workshopMaterialCategoryStore.categories(); track category.id) {
+          <article class="location-item">
+            <div>
+              <strong>{{ category.name }}</strong>
+              <p>Disponible en el formulario de materiales del inventario del taller.</p>
+            </div>
+            <div class="location-actions">
+              <button type="button" class="danger-button small-button"
+                [disabled]="workshopMaterialCategoryStore.saving()"
+                (click)="workshopMaterialCategoryStore.removeCategory(category)">
+                Eliminar
+              </button>
+            </div>
+          </article>
+          }
+        </div>
+        }
+      </div>
+    </div>
+  </article>
+
+  <article class="settings-card span-two">
     <p class="eyebrow">Catalogos</p>
     <h3>Gestion de Ubicaciones</h3>
 
