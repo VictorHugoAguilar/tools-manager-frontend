@@ -250,5 +250,16 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 
 - feat: Se crea un servicio para controlar las imagenes que no cargan
 - feat: Se implementa el servicio que se ha creado
-- fix: Se arregla el fallo de la carga del icono  
+- fix: Se arregla el fallo de la carga del icono
 
+<!-- CHANGELOG-PR-74-START -->
+### [4.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/74) - 2026-10-29
+
+- feat: se crea la nueva pagina para controlar los consumibles del taller
+- feat: se introduce la confirmacion de la eliminacion de cualquier componente
+- feat: se añade nuevo sevicio para crear las categorias de los materiales
+- feat: se modifica la visual para cargar de la bd las categorias de los materiales
+- feat: cambio de nombre de la nueva pagina y sus rutas
+- fix: sincronizar los estilos de las paginas de almacenamiento
+
+<!-- CHANGELOG-PR-74-END -->
