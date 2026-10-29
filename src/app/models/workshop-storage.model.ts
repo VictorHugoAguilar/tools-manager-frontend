@@ -56,6 +56,11 @@ export interface WorkshopMaterial {
   notes?: string;
 }
 
+export interface WorkshopMaterialCategory {
+  id: string;
+  name: string;
+}
+
 export interface WorkshopStorageSnapshot {
   shelves: WorkshopShelf[];
   levels: WorkshopLevel[];

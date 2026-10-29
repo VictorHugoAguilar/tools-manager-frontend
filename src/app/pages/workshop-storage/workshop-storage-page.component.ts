@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -17,6 +17,7 @@ import {
   WorkshopStorageSnapshot
 } from '../../models/workshop-storage.model';
 import { ConfirmService } from '../../services/confirm.service';
+import { WorkshopMaterialCategoryStoreService } from '../../services/workshop-material-category-store.service';
 import { WorkshopStorageApiService } from '../../services/workshop-storage-api.service';
 
 type EntityType = 'shelf' | 'level' | 'organizer' | 'compartment' | 'material';
@@ -92,9 +93,10 @@ function createEmptyDraft(): WorkshopStorageDraft {
   styleUrl: './workshop-storage-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class WorkshopStoragePageComponent {
+export class WorkshopStoragePageComponent implements OnDestroy {
   private readonly api = inject(WorkshopStorageApiService);
   private readonly confirmService = inject(ConfirmService);
+  protected readonly categoryStore = inject(WorkshopMaterialCategoryStoreService);
 
   protected readonly data = signal(createEmptySnapshot());
   protected readonly loading = signal(true);
@@ -113,6 +115,7 @@ export class WorkshopStoragePageComponent {
   protected readonly editingId = signal('');
   protected readonly draft = createEmptyDraft();
   protected readonly imageFile = signal<File | null>(null);
+  protected readonly imagePreviewUrl = signal<string | null>(null);
 
   protected readonly activeShelf = computed(() =>
     this.data().shelves.find((shelf) => shelf.id === this.activeShelfId()) ?? null
@@ -142,7 +145,12 @@ export class WorkshopStoragePageComponent {
   });
 
   constructor() {
+    this.categoryStore.ensureLoaded();
     void this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.clearImagePreview();
   }
 
   protected async load(): Promise<void> {
@@ -282,6 +290,7 @@ export class WorkshopStoragePageComponent {
     this.editingId.set('');
     this.saveError.set('');
     this.imageFile.set(null);
+    this.clearImagePreview();
     Object.assign(this.draft, createEmptyDraft());
 
     if (type === 'shelf') this.draft.position = this.data().shelves.length + 1;
@@ -303,7 +312,13 @@ export class WorkshopStoragePageComponent {
       this.draft.column = (count % columns) + 1;
       this.draft.row = Math.floor(count / columns) + 1;
     }
-    if (type === 'material') this.draft.compartmentId = parentId || this.selectedCompartmentId();
+    if (type === 'material') {
+      this.draft.compartmentId = parentId || this.selectedCompartmentId();
+      const categories = this.categoryStore.categories();
+      this.draft.category = categories.find((category) => category.name === 'Tornillos')?.name
+        ?? categories[0]?.name
+        ?? '';
+    }
 
     this.dialogType.set(type);
   }
@@ -336,17 +351,34 @@ export class WorkshopStoragePageComponent {
     this.dialogType.set(null);
     this.saveError.set('');
     this.imageFile.set(null);
+    this.clearImagePreview();
   }
 
   protected onImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.imageFile.set(input.files?.[0] ?? null);
+    const file = input.files?.[0] ?? null;
+    this.clearImagePreview();
+    this.imageFile.set(file);
+    this.imagePreviewUrl.set(file ? URL.createObjectURL(file) : null);
+    input.value = '';
+  }
+
+  protected selectedImageSource(): string | null {
+    return this.imagePreviewUrl() || this.draft.imageUrl || null;
+  }
+
+  private clearImagePreview(): void {
+    const previewUrl = this.imagePreviewUrl();
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    this.imagePreviewUrl.set(null);
   }
 
   protected async saveDraft(): Promise<void> {
     const type = this.dialogType();
-    if (!type || !this.draft.name.trim()) {
-      this.saveError.set('El nombre es obligatorio.');
+    if (!type || !this.draft.name.trim() || (type === 'material' && !this.draft.category.trim())) {
+      this.saveError.set(type === 'material' && !this.draft.category.trim()
+        ? 'Selecciona una categoría configurada en Ajustes.'
+        : 'El nombre es obligatorio.');
       return;
     }
 
@@ -461,6 +493,7 @@ export class WorkshopStoragePageComponent {
       if (type === 'shelf') this.activeShelfId.set(savedEntityId);
       this.dialogType.set(null);
       this.imageFile.set(null);
+      this.clearImagePreview();
       await this.load();
     } catch (error: unknown) {
       this.saveError.set(this.errorMessage(error, 'No se pudo guardar el cambio.'));

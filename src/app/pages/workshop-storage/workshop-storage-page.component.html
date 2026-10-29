@@ -354,11 +354,25 @@
 
           @if (type === 'material') {
             <label class="field">Categoría
-              <input name="category" list="material-categories" [(ngModel)]="draft.category" placeholder="Tornillos, arandelas…" required />
-              <datalist id="material-categories">
-                <option value="Tornillos"><option value="Tuercas"><option value="Arandelas">
-                <option value="Tacos"><option value="Piezas eléctricas"><option value="Otros">
-              </datalist>
+              <select name="category" [(ngModel)]="draft.category" required
+                [disabled]="categoryStore.loading() || categoryStore.categories().length === 0">
+                <option value="" disabled>
+                  {{ categoryStore.loading() ? 'Cargando categorías…' : 'Selecciona una categoría' }}
+                </option>
+                @for (category of categoryStore.categories(); track category.id) {
+                  <option [value]="category.name">{{ category.name }}</option>
+                }
+                @if (editingId() && draft.category && !categoryStore.categories().some(category => category.name === draft.category)) {
+                  <option [value]="draft.category">{{ draft.category }} (ya asignada, no configurada)</option>
+                }
+              </select>
+              @if (categoryStore.error()) {
+                <small class="field-error" role="alert">{{ categoryStore.error() }}</small>
+              } @else if (categoryStore.categories().length === 0 && !categoryStore.loading()) {
+                <small class="field-error">Configura al menos una categoría en Ajustes.</small>
+              } @else {
+                <small>Las opciones se administran desde Ajustes → Categorías de materiales.</small>
+              }
             </label>
             <label class="field">Referencia
               <input name="reference" [(ngModel)]="draft.reference" placeholder="Ej. M8 x 40" />
@@ -395,10 +409,35 @@
             <label class="field">Cantidad
               <input name="quantity" type="number" min="0" step="any" [(ngModel)]="draft.quantity" />
             </label>
-            <label class="field field-wide">Fotografía del material
-              <input name="image" type="file" accept="image/*" (change)="onImageSelected($event)" />
-              @if (draft.imageUrl) { <small>Ya hay una fotografía guardada; selecciona otra para reemplazarla.</small> }
-            </label>
+            <section class="workshop-image-uploader field-wide" aria-label="Fotografía del material">
+              <div class="workshop-image-uploader__preview">
+                @if (selectedImageSource(); as imageSource) {
+                  <img [src]="imageSource" [alt]="'Vista previa de ' + (draft.name || 'material')" />
+                } @else {
+                  <svg viewBox="0 0 120 90" role="img" aria-label="Sin fotografía seleccionada">
+                    <rect x="8" y="8" width="104" height="74" rx="12" fill="none" stroke="currentColor"
+                      stroke-width="4" stroke-dasharray="7 6" />
+                    <path d="M27 67 48 46l14 13 14-18 20 26Z" fill="#8edfc0"
+                      stroke="currentColor" stroke-width="3" stroke-linejoin="round" />
+                    <circle cx="40" cy="33" r="8" fill="#f6d768" stroke="currentColor" stroke-width="3" />
+                  </svg>
+                }
+              </div>
+
+              <div class="workshop-image-uploader__control">
+                <span class="eyebrow">Fotografía del material</span>
+                <p>Puedes tomar una foto o elegirla desde tus archivos.</p>
+                <label class="workshop-image-uploader__picker">
+                  <span>{{ imageFile()?.name || 'Seleccionar imagen' }}</span>
+                  <input name="image" type="file" accept="image/*" (change)="onImageSelected($event)" />
+                </label>
+                @if (imageFile()) {
+                  <small>La imagen se subirá al guardar el material.</small>
+                } @else if (draft.imageUrl) {
+                  <small>Selecciona otra imagen para reemplazar la fotografía actual.</small>
+                }
+              </div>
+            </section>
             <label class="field field-wide">Observaciones
               <textarea name="notes" [(ngModel)]="draft.notes" rows="2"></textarea>
             </label>

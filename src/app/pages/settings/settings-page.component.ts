@@ -11,6 +11,7 @@ import { TechnicianStoreService } from '../../services/technician-store.service'
 import { ToolTypeStoreService } from '../../services/tool-type-store.service';
 import { PropertiesStorageService } from '../../services/properties-storage.service';
 import { ShelfConfigService } from '../../services/shelf-config.service';
+import { WorkshopMaterialCategoryStoreService } from '../../services/workshop-material-category-store.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -27,6 +28,7 @@ export class SettingsPageComponent {
   protected readonly toolTypeStore = inject(ToolTypeStoreService);
   protected readonly propertiesStorage = inject(PropertiesStorageService);
   protected readonly shelfConfigStore = inject(ShelfConfigService);
+  protected readonly workshopMaterialCategoryStore = inject(WorkshopMaterialCategoryStoreService);
 
   protected readonly showTechniciansAccessInMenu = signal(this.getShowTecnicosInitialValue());
   protected readonly showArreglosAccessInMenu = signal(this.getShowArreglosInitialValue());
@@ -72,6 +74,9 @@ export class SettingsPageComponent {
       Validators.pattern(/^\d+$/)
     ]]
   });
+  protected readonly materialCategoryForm = this.formBuilder.nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(100)]]
+  });
 
   constructor() {
     this.locationStore.ensureLoaded();
@@ -79,6 +84,7 @@ export class SettingsPageComponent {
     this.technicianStore.ensureLoaded();
     this.toolTypeStore.ensureLoaded();
     this.shelfConfigStore.ensureLoaded();
+    this.workshopMaterialCategoryStore.ensureLoaded();
 
     effect(() => {
       this.shelfConfigForm.patchValue(this.shelfConfigStore.currentConfig(), {
@@ -222,6 +228,28 @@ export class SettingsPageComponent {
     } catch {
       return;
     }
+  }
+
+  protected async addWorkshopMaterialCategory(): Promise<void> {
+    if (this.materialCategoryForm.invalid) {
+      this.materialCategoryForm.markAllAsTouched();
+      return;
+    }
+
+    const added = await this.workshopMaterialCategoryStore.addCategory(
+      this.materialCategoryForm.controls.name.value
+    );
+    if (added) {
+      this.materialCategoryForm.reset({ name: '' });
+    }
+  }
+
+  protected materialCategoryFieldError(): string | null {
+    const control = this.materialCategoryForm.controls.name;
+    if (!control.invalid || !control.touched) return null;
+    if (control.errors?.['required']) return 'El nombre es obligatorio.';
+    if (control.errors?.['maxlength']) return 'El nombre no puede superar los 100 caracteres.';
+    return 'Nombre no válido.';
   }
 
   protected locationFieldError(name: 'name' | 'description'): string | null {
