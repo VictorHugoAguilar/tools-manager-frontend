@@ -8,8 +8,7 @@
   <header class="storage-toolbar">
     <div>
       <p class="eyebrow">Organizacion fisica</p>
-      <h2>Almacenamiento</h2>
-      <p class="intro">Agrupa productos por caja, genera QR directos y consulta el contenido de cada unidad.</p>
+      <p class="summary-copy">Agrupa productos por caja, genera QR directos y consulta el contenido de cada unidad.</p>
     </div>
 
     <div class="toolbar-actions">
@@ -282,11 +281,7 @@
         <span class="eyebrow">Imagen de la caja</span>
         <button type="button" class="summary-image-button" (click)="openImagePreview(box, $event)"
           aria-label="Ampliar imagen de la caja">
-          <img 
-            [src]="getBoxImage(box)" 
-            [alt]="'Imagen de ' + box.name" 
-            (error)="imageFallback.onImageError($event)"
-            >
+          <img [src]="getBoxImage(box)" [alt]="'Imagen de ' + box.name" (error)="imageFallback.onImageError($event)">
         </button>
         <p>Si la caja no tiene foto, se muestra una imagen por defecto.</p>
       </article>
