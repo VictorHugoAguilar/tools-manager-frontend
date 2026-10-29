@@ -7,6 +7,7 @@ import {
   WorkshopLevel,
   WorkshopLevelPayload,
   WorkshopMaterial,
+  WorkshopMaterialCategory,
   WorkshopMaterialPayload,
   WorkshopMaterialSearchResult,
   WorkshopOrganizer,
@@ -28,6 +29,18 @@ export class WorkshopStorageApiService {
   search(query: string): Observable<WorkshopMaterialSearchResult[]> {
     const params = new HttpParams().set('q', query);
     return this.http.get<WorkshopMaterialSearchResult[]>(`${this.baseUrl}/search`, { params });
+  }
+
+  getMaterialCategories(): Observable<WorkshopMaterialCategory[]> {
+    return this.http.get<WorkshopMaterialCategory[]>(`${this.baseUrl}/categories`);
+  }
+
+  createMaterialCategory(name: string): Observable<WorkshopMaterialCategory> {
+    return this.http.post<WorkshopMaterialCategory>(`${this.baseUrl}/categories`, { name });
+  }
+
+  deleteMaterialCategory(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/categories/${id}`);
   }
 
   createShelf(payload: WorkshopShelfPayload): Observable<WorkshopShelf> {
