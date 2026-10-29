@@ -65,7 +65,7 @@ export const appRoutes: Routes = [
         component: WorkshopStoragePageComponent,
         data: {
           eyebrow: 'Logística',
-          title: 'Almacenamiento del taller',
+          title: 'Inventario del taller',
           description: 'Configuración física de estanterías y localización de materiales por compartimento.',
           showCreateAction: false
         }

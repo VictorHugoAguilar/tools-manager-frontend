@@ -197,6 +197,7 @@
 .sidebar-footer {
   display: grid;
   gap: 1rem;
+  align-content: end;
 }
 
 .line {
@@ -206,7 +207,10 @@
 }
 
 .footer-item {
-  justify-self: start;
+  width: 100%;
+  justify-self: stretch;
+  min-height: 3.25rem;
+  justify-content: center;
 }
 
 .workspace {
@@ -216,7 +220,7 @@
   padding: 1.5rem 1.4rem 2rem;
 }
 
-.sidebar.open ~ .workspace {
+.sidebar.open~.workspace {
   padding-left: 332px;
 }
 
@@ -447,8 +451,7 @@
   }
 }
 
-@media (max-width: 1180px) {
-}
+@media (max-width: 1180px) {}
 
 @media (max-width: 760px) {
   .sidebar {
@@ -457,7 +460,7 @@
     border-radius: 0 24px 24px 0;
   }
 
-  .sidebar.open ~ .workspace {
+  .sidebar.open~.workspace {
     padding-left: 1rem;
   }
 
