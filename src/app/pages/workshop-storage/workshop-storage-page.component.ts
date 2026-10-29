@@ -16,6 +16,7 @@ import {
   WorkshopShelfPayload,
   WorkshopStorageSnapshot
 } from '../../models/workshop-storage.model';
+import { ConfirmService } from '../../services/confirm.service';
 import { WorkshopStorageApiService } from '../../services/workshop-storage-api.service';
 
 type EntityType = 'shelf' | 'level' | 'organizer' | 'compartment' | 'material';
@@ -93,6 +94,7 @@ function createEmptyDraft(): WorkshopStorageDraft {
 })
 export class WorkshopStoragePageComponent {
   private readonly api = inject(WorkshopStorageApiService);
+  private readonly confirmService = inject(ConfirmService);
 
   protected readonly data = signal(createEmptySnapshot());
   protected readonly loading = signal(true);
@@ -468,7 +470,15 @@ export class WorkshopStoragePageComponent {
   }
 
   protected async remove(type: EntityType, id: string): Promise<void> {
-    if (!window.confirm('¿Eliminar este elemento? Esta acción no se puede deshacer.')) return;
+    const entityName = this.entityName(type, id);
+    const confirmed = await this.confirmService.confirm({
+      title: `¿Eliminar ${this.entityLabel(type)}?`,
+      message: `Vas a eliminar «${entityName}». Esta acción no se puede deshacer.`,
+      confirmLabel: 'Eliminar',
+      cancelLabel: 'Rectificar',
+      tone: 'danger'
+    });
+    if (!confirmed) return;
 
     try {
       switch (type) {
@@ -485,6 +495,29 @@ export class WorkshopStoragePageComponent {
     } catch (error: unknown) {
       this.error.set(this.errorMessage(error, 'No se pudo eliminar. Comprueba que no contiene elementos asociados.'));
     }
+  }
+
+  private entityName(type: EntityType, id: string): string {
+    const collections = {
+      shelf: this.data().shelves,
+      level: this.data().levels,
+      organizer: this.data().organizers,
+      compartment: this.data().compartments,
+      material: this.data().materials
+    };
+
+    return collections[type].find((entity) => entity.id === id)?.name ?? this.entityLabel(type);
+  }
+
+  private entityLabel(type: EntityType): string {
+    const labels: Record<EntityType, string> = {
+      shelf: 'estantería',
+      level: 'balda',
+      organizer: 'organizador',
+      compartment: 'compartimento',
+      material: 'material'
+    };
+    return labels[type];
   }
 
   protected titleForDialog(): string {
