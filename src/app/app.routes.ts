@@ -8,6 +8,7 @@ import { RepairsPageComponent } from './pages/repairs/repairs-page.component';
 import { SettingsPageComponent } from './pages/settings/settings-page.component';
 import { TechniciansPageComponent } from './pages/technicians/technicians-page.component';
 import { StoragePageComponent } from './pages/storage/storage-page.component';
+import { WorkshopStoragePageComponent } from './pages/workshop-storage/workshop-storage-page.component';
 
 export const appRoutes: Routes = [
   {
@@ -56,6 +57,16 @@ export const appRoutes: Routes = [
           eyebrow: 'Logistica',
           title: 'Almacenamiento',
           description: 'Gestion visual de cajas, productos almacenados y acceso rapido por QR.',
+          showCreateAction: false
+        }
+      },
+      {
+        path: 'almacenamiento-taller',
+        component: WorkshopStoragePageComponent,
+        data: {
+          eyebrow: 'Logística',
+          title: 'Almacenamiento del taller',
+          description: 'Configuración física de estanterías y localización de materiales por compartimento.',
           showCreateAction: false
         }
       },

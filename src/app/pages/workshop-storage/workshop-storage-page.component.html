@@ -1,0 +1,424 @@
+<div class="workshop-storage">
+  <section class="summary-bar">
+    <div>
+      <p class="eyebrow">Logística · Inventario físico</p>
+      <p class="summary-copy">Localiza tornillería y otros materiales por sus características y ubicación real.</p>
+    </div>
+    <div class="summary-stats">
+      <span><strong>{{ data().shelves.length }}</strong> estanterías</span>
+      <span><strong>{{ data().organizers.length }}</strong> organizadores</span>
+      <span><strong>{{ occupiedCompartments() }}</strong> compartimentos ocupados</span>
+    </div>
+    <button type="button" class="button button-primary" (click)="openCreate('shelf')">＋ Añadir estantería</button>
+  </section>
+
+  <section class="search-panel">
+    <label class="eyebrow" for="material-search">Buscar materiales</label>
+    <div class="search-row">
+      <span aria-hidden="true">⌕</span>
+      <input id="material-search" type="search" placeholder="Ej. tornillo M8 x 40, arandela interior 8 mm…"
+        [ngModel]="searchQuery()" (ngModelChange)="updateSearchQuery($event)"
+        (keydown.enter)="search()" />
+      @if (searchQuery()) {
+        <button type="button" class="clear-search" aria-label="Limpiar búsqueda" (click)="clearSearch()">×</button>
+      }
+      <button type="button" class="button button-primary" [disabled]="searchLoading()" (click)="search()">
+        {{ searchLoading() ? 'Buscando…' : 'Buscar' }}
+      </button>
+    </div>
+    @if (searchResults().length) {
+      <p class="search-count">{{ searchResults().length }} coincidencia(s). Se resaltan en la distribución.</p>
+    } @else if (searchQuery().trim() && !searchComplete() && !searchLoading() && !error()) {
+      <p class="search-count">Pulsa «Buscar» para localizar coincidencias.</p>
+    }
+  </section>
+
+  @if (error()) {
+    <div class="notice notice-error" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" class="button button-small" (click)="load()">Reintentar</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="empty-state"><span class="loader"></span><p>Cargando la configuración del taller…</p></div>
+  } @else if (!data().shelves.length) {
+    <div class="empty-state">
+      <span class="empty-icon">▤</span>
+      <h3>Empieza configurando el espacio</h3>
+      <p>Añade una estantería y define sus baldas y organizadores. El contenido se guarda de forma independiente.</p>
+      <button type="button" class="button button-primary" (click)="openCreate('shelf')">＋ Crear primera estantería</button>
+    </div>
+  } @else {
+    <div class="storage-layout">
+      <section class="shelf-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Organización física</p>
+            <h3>Estanterías</h3>
+          </div>
+          <span class="section-hint">Selecciona un organizador para ver sus compartimentos</span>
+        </div>
+
+        <div class="shelf-tabs" role="tablist" aria-label="Estanterías">
+          @for (shelf of data().shelves; track shelf.id) {
+            <button type="button" role="tab" [attr.aria-selected]="activeShelfId() === shelf.id"
+              [class.active]="activeShelfId() === shelf.id" (click)="selectShelf(shelf)">
+              {{ shelf.name }}
+            </button>
+          }
+        </div>
+
+        @if (activeShelf(); as shelf) {
+          <div class="shelf-heading">
+            <div>
+              <h4>{{ shelf.name }}</h4>
+              @if (shelf.description) { <p>{{ shelf.description }}</p> }
+            </div>
+            <div class="action-row">
+              <button type="button" class="button button-small" (click)="openEdit('shelf', shelf)">Editar</button>
+              <button type="button" class="button button-small button-danger"
+                (click)="remove('shelf', shelf.id)">Eliminar</button>
+              <button type="button" class="button button-small button-primary"
+                (click)="openCreate('level', shelf.id)">＋ Añadir balda</button>
+            </div>
+          </div>
+
+          <div class="shelf-frame">
+            @for (level of levelsForShelf(shelf.id); track level.id) {
+              <section class="shelf-level">
+                <header class="level-heading">
+                  <div class="level-label">
+                    <span class="level-marker">{{ level.position }}</span>
+                    <strong>{{ level.name }}</strong>
+                    <span class="muted">Balda {{ level.position }}</span>
+                  </div>
+                  <div class="action-row">
+                    <button type="button" class="text-button" (click)="openEdit('level', level)">Editar</button>
+                    <button type="button" class="text-button danger-text"
+                      (click)="remove('level', level.id)">Eliminar</button>
+                    <button type="button" class="text-button" (click)="openCreate('organizer', level.id)">＋ Organizador</button>
+                  </div>
+                </header>
+
+                @if (organizersForLevel(level.id).length) {
+                  <div class="organizer-row">
+                    @for (organizer of organizersForLevel(level.id); track organizer.id) {
+                      <article class="organizer-card" [class.large]="organizer.type === 'large'"
+                        [class.compact]="organizer.type !== 'large'"
+                        [class.selected]="selectedOrganizerId() === organizer.id"
+                        [class.match]="isOrganizerHighlighted(organizer.id)">
+                        <button type="button" class="organizer-open" (click)="selectOrganizer(organizer)">
+                          <span class="organizer-lid"><i></i><i></i><i></i></span>
+                          <span class="organizer-name">{{ organizer.name }}</span>
+                          <span class="organizer-meta">
+                            <span class="status-dot"
+                              [class.filled]="hasMaterials(organizer.id)"></span>
+                            {{ hasMaterials(organizer.id) ? 'Con contenido' : 'Vacío' }} ·
+                            {{ organizerTypeLabel(organizer.type) }} · Posición {{ organizer.position }} ·
+                            {{ compartmentsForOrganizer(organizer.id).length }} compartimentos
+                          </span>
+                        </button>
+                        <div class="organizer-actions">
+                          <button type="button" aria-label="Editar organizador"
+                            (click)="openEdit('organizer', organizer)">Editar</button>
+                          <button type="button" aria-label="Eliminar organizador"
+                            (click)="remove('organizer', organizer.id)">Eliminar</button>
+                        </div>
+                      </article>
+                    }
+                  </div>
+                } @else {
+                  <p class="level-empty">Esta balda todavía no tiene organizadores.</p>
+                }
+              </section>
+            } @empty {
+              <div class="level-empty">
+                Esta estantería aún no tiene baldas.
+                <button type="button" class="text-button" (click)="openCreate('level', shelf.id)">Añadir la primera</button>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <aside class="detail-panel">
+        @if (selectedOrganizer(); as organizer) {
+          <header class="detail-heading">
+            <div class="detail-icon">▣</div>
+            <div class="detail-title">
+              <p class="eyebrow">Detalle del organizador</p>
+              <h3>{{ organizer.name }}</h3>
+              <p class="location-line">
+                {{ organizerShelf()?.name }} <span>›</span> {{ organizerLevel()?.name }} <span>›</span> Posición {{ organizer.position }}
+              </p>
+            </div>
+            <div class="action-row">
+              <button type="button" class="button button-small"
+                (click)="openEdit('organizer', organizer)">Editar</button>
+              <button type="button" class="button button-small button-primary"
+                (click)="openCreate('compartment', organizer.id)">＋ Compartimento</button>
+            </div>
+          </header>
+
+          <p class="organizer-description">{{ organizer.description || 'Selecciona un compartimento para consultar o actualizar su contenido.' }}</p>
+          <div class="compartment-grid" [style.grid-template-columns]="'repeat(' + organizer.columns + ', minmax(0, 1fr))'">
+            @for (compartment of compartmentsForOrganizer(organizer.id); track compartment.id) {
+              <button type="button" class="compartment-card"
+                [class.selected]="selectedCompartmentId() === compartment.id"
+                [class.match]="isCompartmentHighlighted(compartment.id)"
+                [style.grid-row]="compartment.row"
+                [style.grid-column]="compartment.column"
+                (click)="selectCompartment(compartment)">
+                <span class="compartment-number">{{ compartment.position }}</span>
+                <strong>{{ compartment.name }}</strong>
+                <span>{{ materialsForCompartment(compartment.id).length }} material(es)</span>
+              </button>
+            } @empty {
+              <div class="level-empty compartment-empty">
+                No hay compartimentos configurados.
+                <button type="button" class="text-button" (click)="openCreate('compartment', organizer.id)">Añadir compartimento</button>
+              </div>
+            }
+          </div>
+
+          @if (selectedCompartment(); as compartment) {
+            <section class="compartment-detail">
+              <header class="compartment-heading">
+                <div>
+                  <p class="eyebrow">Contenido</p>
+                  <h4>{{ compartment.name }}</h4>
+                </div>
+                <div class="action-row">
+                  <button type="button" class="text-button" (click)="openEdit('compartment', compartment)">Editar</button>
+                  <button type="button" class="text-button danger-text"
+                    (click)="remove('compartment', compartment.id)">Eliminar</button>
+                  <button type="button" class="button button-small button-primary"
+                    (click)="openCreate('material', compartment.id)">＋ Material</button>
+                </div>
+              </header>
+
+              @for (material of materialsForCompartment(compartment.id); track material.id) {
+                <article class="material-card" [class.match]="selectedMaterialId() === material.id">
+                  @if (material.imageUrl) {
+                    <img [src]="material.imageUrl" [alt]="'Fotografía de ' + material.name" />
+                  } @else {
+                    <div class="material-placeholder" aria-label="Sin fotografía">◇</div>
+                  }
+                  <div class="material-copy">
+                    <div class="material-title-line">
+                      <strong>{{ material.name }}</strong>
+                      <span class="category-chip">{{ material.category }}</span>
+                    </div>
+                    <p>
+                      @if (material.reference) { <span>{{ material.reference }} · </span> }
+                      @if (material.diameter !== null && material.diameter !== undefined) { <span>Ø {{ material.diameter }} mm · </span> }
+                      @if (material.length !== null && material.length !== undefined) { <span>{{ material.length }} mm · </span> }
+                      @if (material.innerDiameter !== null && material.innerDiameter !== undefined) { <span>Interior {{ material.innerDiameter }} mm · </span> }
+                      @if (material.outerDiameter !== null && material.outerDiameter !== undefined) { <span>Exterior {{ material.outerDiameter }} mm · </span> }
+                      @if (material.material) { <span>{{ material.material }} · </span> }
+                      @if (material.quantity !== null && material.quantity !== undefined) { <span>{{ material.quantity }} uds.</span> }
+                    </p>
+                    @if (material.notes) { <p class="material-notes">{{ material.notes }}</p> }
+                  </div>
+                  <div class="material-actions">
+                    <button type="button" class="text-button" (click)="openEdit('material', material)">Editar</button>
+                    <button type="button" class="text-button danger-text"
+                      (click)="remove('material', material.id)">Eliminar</button>
+                  </div>
+                </article>
+              } @empty {
+                <p class="level-empty">Este compartimento está vacío.</p>
+              }
+            </section>
+          }
+        } @else {
+          <div class="detail-empty">
+            <span class="empty-icon">▣</span>
+            <h3>Selecciona un organizador</h3>
+            <p>Su distribución y los materiales de cada compartimento aparecerán aquí.</p>
+          </div>
+        }
+      </aside>
+    </div>
+  }
+
+  @if (searchComplete() && searchQuery().trim() && searchResults().length === 0 && !searchLoading() && !error()) {
+    <div class="search-empty" role="status">No se encontraron materiales con esos criterios. Prueba con otro nombre o característica.</div>
+  }
+  @if (searchResults().length) {
+    <section class="results-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">Resultados de búsqueda</p><h3>{{ searchResults().length }} coincidencia(s)</h3></div>
+      </div>
+      <div class="result-list">
+        @for (result of searchResults(); track result.material.id) {
+          <button type="button" class="result-card" (click)="selectSearchResult(result)">
+            @if (result.material.imageUrl) {
+              <img [src]="result.material.imageUrl" [alt]="result.material.name" />
+            } @else {
+              <span class="material-placeholder">◇</span>
+            }
+            <span class="result-copy">
+              <strong>{{ result.material.name }}</strong>
+              <span>{{ result.material.category }}{{ result.material.reference ? ' · ' + result.material.reference : '' }}</span>
+             @if (formatMaterialCharacteristics(result.material); as characteristics) {
+               <small class="result-features">{{ characteristics }}</small>
+             }
+             <small>{{ formatLocation(result) }}</small>
+            </span>
+            <span class="result-arrow" aria-hidden="true">›</span>
+          </button>
+        }
+      </div>
+    </section>
+  }
+</div>
+
+@if (dialogType(); as type) {
+  <div class="modal-backdrop">
+    <button type="button" class="modal-scrim" aria-label="Cerrar diálogo" (click)="closeDialog()"></button>
+    <section class="edit-dialog" role="dialog" aria-modal="true" [attr.aria-label]="titleForDialog()"
+      tabindex="-1">
+      <header class="dialog-heading">
+        <div><p class="eyebrow">Almacenamiento del taller</p><h3>{{ titleForDialog() }}</h3></div>
+        <button type="button" class="close-button" aria-label="Cerrar" (click)="closeDialog()">×</button>
+      </header>
+
+      <form (ngSubmit)="saveDraft()">
+        <div class="form-grid">
+          <label class="field field-wide">Nombre
+            <input name="name" [(ngModel)]="draft.name" required maxlength="100" />
+          </label>
+
+          @if (type === 'shelf') {
+            <label class="field field-wide">Descripción
+              <textarea name="description" [(ngModel)]="draft.description" rows="2"></textarea>
+            </label>
+          }
+
+          @if (type === 'level') {
+            <label class="field field-wide">Estantería
+              <select name="shelfId" [(ngModel)]="draft.shelfId" required>
+                @for (shelf of data().shelves; track shelf.id) { <option [value]="shelf.id">{{ shelf.name }}</option> }
+              </select>
+            </label>
+            <label class="field">Ancho disponible (mm)
+              <input name="width" type="number" min="0.1" step="any" [(ngModel)]="draft.width" />
+            </label>
+            <label class="field">Fondo disponible (mm)
+              <input name="depth" type="number" min="0.1" step="any" [(ngModel)]="draft.depth" />
+            </label>
+          }
+
+          @if (type === 'organizer') {
+            <label class="field field-wide">Balda
+              <select name="levelId" [(ngModel)]="draft.levelId" required>
+                @for (level of data().levels; track level.id) {
+                  <option [value]="level.id">{{ shelfNameForLevel(level.id) }} · {{ level.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">Formato
+              <input name="type" list="organizer-types" [(ngModel)]="draft.type" required />
+              <datalist id="organizer-types"><option value="compact">Compacto</option><option value="large">Grande</option></datalist>
+            </label>
+            <label class="field">Columnas de compartimentos
+              <input name="columns" type="number" min="1" step="1" [(ngModel)]="draft.columns" required />
+            </label>
+            <label class="field">Ancho del organizador (mm)
+              <input name="width" type="number" min="0.1" step="any" [(ngModel)]="draft.width" />
+            </label>
+            <label class="field">Fondo del organizador (mm)
+              <input name="depth" type="number" min="0.1" step="any" [(ngModel)]="draft.depth" />
+            </label>
+            <label class="field field-wide">Descripción
+              <textarea name="description" [(ngModel)]="draft.description" rows="2"></textarea>
+            </label>
+          }
+
+          @if (type === 'compartment') {
+            <label class="field">Posición en la fila
+              <input name="column" type="number" min="1" step="1" [(ngModel)]="draft.column" required />
+            </label>
+            <label class="field">Fila
+              <input name="row" type="number" min="1" step="1" [(ngModel)]="draft.row" required />
+            </label>
+            <label class="field">Orden
+              <input name="position" type="number" min="1" step="1" [(ngModel)]="draft.position" required />
+            </label>
+            <label class="field">Tamaño / formato
+              <input name="size" [(ngModel)]="draft.size" placeholder="Ej. pequeño, doble…" />
+            </label>
+          }
+
+          @if (type === 'material') {
+            <label class="field">Categoría
+              <input name="category" list="material-categories" [(ngModel)]="draft.category" placeholder="Tornillos, arandelas…" required />
+              <datalist id="material-categories">
+                <option value="Tornillos"><option value="Tuercas"><option value="Arandelas">
+                <option value="Tacos"><option value="Piezas eléctricas"><option value="Otros">
+              </datalist>
+            </label>
+            <label class="field">Referencia
+              <input name="reference" [(ngModel)]="draft.reference" placeholder="Ej. M8 x 40" />
+            </label>
+            @if (usesScrewSpecs() || usesGenericSpecs()) {
+              <label class="field">Diámetro (mm)
+                <input name="diameter" type="number" min="0" step="any" [(ngModel)]="draft.diameter" />
+              </label>
+            }
+            @if (usesLengthSpec() || usesGenericSpecs()) {
+              <label class="field">Longitud (mm)
+                <input name="length" type="number" min="0" step="any" [(ngModel)]="draft.length" />
+              </label>
+            }
+            @if (usesWasherSpecs() || usesGenericSpecs()) {
+              <label class="field">Diámetro interior (mm)
+                <input name="innerDiameter" type="number" min="0" step="any" [(ngModel)]="draft.innerDiameter" />
+              </label>
+              <label class="field">Diámetro exterior (mm)
+                <input name="outerDiameter" type="number" min="0" step="any" [(ngModel)]="draft.outerDiameter" />
+              </label>
+            }
+            <label class="field">Material de fabricación
+              <input name="material" [(ngModel)]="draft.material" />
+            </label>
+            @if (usesScrewSpecs() || usesGenericSpecs()) {
+              <label class="field">Tipo de cabeza
+                <input name="headType" [(ngModel)]="draft.headType" />
+              </label>
+              <label class="field">Rosca / tipo
+                <input name="threadType" [(ngModel)]="draft.threadType" />
+              </label>
+            }
+            <label class="field">Cantidad
+              <input name="quantity" type="number" min="0" step="any" [(ngModel)]="draft.quantity" />
+            </label>
+            <label class="field field-wide">Fotografía del material
+              <input name="image" type="file" accept="image/*" (change)="onImageSelected($event)" />
+              @if (draft.imageUrl) { <small>Ya hay una fotografía guardada; selecciona otra para reemplazarla.</small> }
+            </label>
+            <label class="field field-wide">Observaciones
+              <textarea name="notes" [(ngModel)]="draft.notes" rows="2"></textarea>
+            </label>
+          }
+
+          @if (type === 'shelf' || type === 'level' || type === 'organizer') {
+            <label class="field">Orden / posición
+              <input name="position" type="number" min="1" step="1" [(ngModel)]="draft.position" required />
+            </label>
+          }
+        </div>
+
+        @if (saveError()) { <p class="form-error" role="alert">{{ saveError() }}</p> }
+        <footer class="dialog-actions">
+          <button type="button" class="button" [disabled]="saving()" (click)="closeDialog()">Cancelar</button>
+          <button type="submit" class="button button-primary" [disabled]="saving()">
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
