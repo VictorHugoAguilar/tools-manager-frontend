@@ -33,6 +33,15 @@
   }
 }
 
+.eyebrow {
+  margin: 0 0 0.28rem;
+  color: #344a76 !important;
+  font-size: 0.69rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .profile-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);

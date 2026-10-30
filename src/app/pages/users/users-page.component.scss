@@ -34,6 +34,15 @@
   }
 }
 
+.eyebrow {
+  margin: 0 0 0.28rem;
+  color: #344a76 !important;
+  font-size: 0.69rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .user-panel {
   display: grid;
   gap: 1rem;
@@ -235,13 +244,13 @@
   font-size: 1.2rem;
 }
 
-.permission-panel > div:first-child > p:last-child {
+.permission-panel>div:first-child>p:last-child {
   margin: 0.3rem 0 0;
   color: var(--muted);
   font-size: 0.82rem;
 }
 
-.permission-panel > label {
+.permission-panel>label {
   display: grid;
   max-width: 360px;
   gap: 0.4rem;
@@ -420,6 +429,7 @@
 }
 
 @media (max-width: 560px) {
+
   .user-filters,
   .user-form-grid {
     grid-template-columns: 1fr;
@@ -441,7 +451,7 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .user-modal-actions > * {
+  .user-modal-actions>* {
     width: 100%;
   }
 }

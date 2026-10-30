@@ -116,12 +116,12 @@ h2 {
 }
 
 .eyebrow {
-  margin: 0;
-  color: rgba(35, 52, 90, 0.72);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.72rem;
+  margin: 0 0 0.28rem;
+  color: #344a76 !important;
+  font-size: 0.69rem;
   font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 h3 {
@@ -316,6 +316,7 @@ h3 {
 }
 
 @media (max-width: 560px) {
+
   .categories-toolbar,
   .categories-grid,
   .category-card,
