@@ -4,6 +4,37 @@
   max-width: 470px;
 }
 
+.identity-password .password-visibility-toggle {
+  display: grid;
+  flex: 0 0 2.7rem;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  padding: 0;
+  border-radius: 12px;
+  color: var(--primary);
+  cursor: pointer;
+
+  svg {
+    width: 1.35rem;
+    height: 1.35rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  &:hover {
+    background: var(--accent-yellow);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(142, 223, 192, 0.95);
+    outline-offset: 2px;
+  }
+}
+
 .identity-links .identity-link-button {
   padding: 0;
   border: 0;
