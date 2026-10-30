@@ -1,0 +1,95 @@
+<section class="profile-page">
+  <header class="profile-heading">
+    <div>
+      <p class="eyebrow">Cuenta</p>
+      <h2>Mi perfil</h2>
+      <p>Gestiona tu información personal y la seguridad de tu cuenta.</p>
+    </div>
+  </header>
+
+  @if (avatarUploadNotice()) {
+    <p class="profile-notice profile-notice--error" role="alert">{{ avatarUploadNotice() }}</p>
+  }
+
+  <div class="profile-grid">
+    <section class="profile-card">
+      <p class="eyebrow">Información del usuario</p>
+      <div class="profile-identity">
+        <div class="profile-avatar">
+          @if (avatarSource()) {
+            <img [src]="avatarSource()" alt="Foto de perfil" />
+          } @else {
+            <span>{{ initials() }}</span>
+          }
+        </div>
+        <label class="profile-upload">
+          <strong>Foto de perfil</strong>
+          <span>JPEG, PNG o WebP · máximo 3 MB</span>
+          <input type="file" accept="image/jpeg,image/png,image/webp"
+            (change)="onImageSelected($event)" />
+        </label>
+      </div>
+
+      <form class="profile-form" (ngSubmit)="saveProfile()" #profileForm="ngForm">
+        <label>Nombre
+          <input name="firstName" required maxlength="80" [(ngModel)]="firstName" />
+        </label>
+        <label>Apellido
+          <input name="lastName" required maxlength="80" [(ngModel)]="lastName" />
+        </label>
+        <label>Correo electrónico
+          <input type="email" [value]="user()?.email" readonly />
+          <small>El correo de acceso solo puede cambiarlo un administrador.</small>
+        </label>
+        <div class="profile-readonly">
+          <span>Rol</span>
+          <strong>{{ user()?.roleName }}</strong>
+        </div>
+        <div class="profile-readonly">
+          <span>Estado</span>
+          <strong [class.status-active]="user()?.isActive">{{ user()?.isActive ? 'Activo' : 'Inactivo' }}</strong>
+        </div>
+
+        @if (error()) { <p class="profile-notice profile-notice--error" role="alert">{{ error() }}</p> }
+        @if (success()) { <p class="profile-notice profile-notice--success" role="status">{{ success() }}</p> }
+
+        <div class="profile-actions">
+          <button type="button" class="secondary-button" (click)="cancelChanges()">Cancelar</button>
+          <button type="submit" class="primary-button" [disabled]="profileForm.invalid || saving()">
+            {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="profile-card password-card">
+      <p class="eyebrow">Seguridad</p>
+      <h3>Cambiar contraseña</h3>
+      <p class="profile-copy">Confirma tu contraseña actual para establecer una nueva.</p>
+      <form class="profile-form" (ngSubmit)="savePassword()" #passwordForm="ngForm">
+        <label>Contraseña actual
+          <input name="currentPassword" type="password" autocomplete="current-password"
+            required [(ngModel)]="currentPassword" />
+        </label>
+        <label>Nueva contraseña
+          <input name="newPassword" type="password" autocomplete="new-password" minlength="10"
+            required [(ngModel)]="newPassword" />
+          <small>Mínimo 10 caracteres, con letras y números.</small>
+        </label>
+        <label>Repetir nueva contraseña
+          <input name="confirmPassword" type="password" autocomplete="new-password" minlength="10"
+            required [(ngModel)]="confirmPassword" />
+        </label>
+        @if (passwordError()) {
+          <p class="profile-notice profile-notice--error" role="alert">{{ passwordError() }}</p>
+        }
+        @if (passwordSuccess()) {
+          <p class="profile-notice profile-notice--success" role="status">{{ passwordSuccess() }}</p>
+        }
+        <button type="submit" class="primary-button" [disabled]="passwordForm.invalid || changingPassword()">
+          {{ changingPassword() ? 'Actualizando…' : 'Cambiar contraseña' }}
+        </button>
+      </form>
+    </section>
+  </div>
+</section>
