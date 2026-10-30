@@ -16,11 +16,12 @@ import {
   WorkshopShelfPayload,
   WorkshopStorageSnapshot
 } from '../models/workshop-storage.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class WorkshopStorageApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/workshop-storage';
+  private readonly baseUrl = environment.apiUrl + '/api/workshop-storage';
 
   load(): Observable<WorkshopStorageSnapshot> {
     return this.http.get<WorkshopStorageSnapshot>(this.baseUrl);
