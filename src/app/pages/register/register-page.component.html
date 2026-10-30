@@ -1,0 +1,73 @@
+<main class="identity-page">
+  <section class="identity-card" aria-labelledby="register-title">
+    <header class="identity-brand">
+      <img src="assets/brand-shield.svg" alt="" />
+      <p class="eyebrow">Logística</p>
+      <p class="identity-brand__name">Crear cuenta</p>
+      <p class="identity-brand__copy">Completa tus datos para registrarte</p>
+    </header>
+
+    <h1 id="register-title">Nueva cuenta</h1>
+    <form class="identity-form" (ngSubmit)="submit(registerForm.valid)" #registerForm="ngForm">
+      <div class="identity-fields">
+        <label class="identity-field">Nombre
+          <input name="firstName" autocomplete="given-name" required maxlength="80"
+            [(ngModel)]="firstName" />
+        </label>
+        <label class="identity-field">Apellido
+          <input name="lastName" autocomplete="family-name" required maxlength="80"
+            [(ngModel)]="lastName" />
+        </label>
+        <label class="identity-field identity-field--wide">Correo electrónico
+          <input name="email" type="email" autocomplete="email" required email maxlength="254"
+            [(ngModel)]="email" placeholder="tu@email.com" />
+        </label>
+        <label class="identity-field">Contraseña
+          <span class="identity-password">
+            <input name="password" [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="new-password" required minlength="10" maxlength="128"
+              [(ngModel)]="password" />
+            <button type="button" (click)="showPassword.update(value => !value)">
+              {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </span>
+        </label>
+        <label class="identity-field">Confirmar contraseña
+          <input name="confirmPassword" [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="new-password" required minlength="10" maxlength="128"
+            [(ngModel)]="confirmPassword" />
+        </label>
+      </div>
+
+      <section class="avatar-upload">
+        <div class="avatar-preview">
+          @if (previewUrl(); as preview) {
+            <img [src]="preview" alt="Vista previa de la foto de perfil" />
+          } @else {
+            <span>{{ firstName.charAt(0) || 'U' }}</span>
+          }
+        </div>
+        <div>
+          <p>Foto de perfil opcional</p>
+          <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Subir foto de perfil"
+            (change)="onImageSelected($event)" />
+          <small>JPEG, PNG o WebP. Máximo 3 MB.</small>
+        </div>
+      </section>
+
+      @if (error()) {
+        <p class="identity-notice" role="alert">{{ error() }}</p>
+      }
+
+      <button class="identity-primary" type="submit"
+        [disabled]="registerForm.invalid || loading()">
+        {{ loading() ? 'Creando cuenta…' : 'Crear cuenta' }}
+      </button>
+    </form>
+
+    <footer class="identity-links">
+      <span>¿Ya tienes una cuenta?</span>
+      <a routerLink="/login">Volver al inicio de sesión</a>
+    </footer>
+  </section>
+</main>
