@@ -101,7 +101,7 @@ jobs:
             const date = new Date().toISOString().slice(0, 10);
 
             // Enlazar la versión directamente con la URL de la PR.
-            const version = `[${pkg.version}](${pr.html_url}) - ${date}`;
+            const version = `[${pkg.version}](${pr.html_url}) (${date})`;
 
             // Obtener los commits de la PR original.
             const commits = await github.paginate(
