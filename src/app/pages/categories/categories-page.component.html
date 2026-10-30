@@ -2,10 +2,10 @@
   <article class="categories-toolbar">
     <div>
       <p class="eyebrow">Organizacion</p>
-      <h2>Orden dentro de cada categoria</h2>
+      <p class="summary-copy">Orden dentro de cada categoria</p>
     </div>
 
-    <div class="toolbar-controls">
+    <div class=" toolbar-controls">
       <label class="toolbar-field">
         <span>Ordenar por</span>
         <select [ngModel]="sortField()" (ngModelChange)="sortField.set($event)">
@@ -26,14 +26,10 @@
   </article>
 
   <section class="categories-grid">
-  @for (category of categories(); track category.name) {
+    @for (category of categories(); track category.name) {
     <article class="category-card">
-      <button
-        type="button"
-        class="card-top"
-        [class.card-top--expanded]="isExpanded(category.name)"
-        (click)="toggleCategory(category.name)"
-        [attr.aria-expanded]="isExpanded(category.name)">
+      <button type="button" class="card-top" [class.card-top--expanded]="isExpanded(category.name)"
+        (click)="toggleCategory(category.name)" [attr.aria-expanded]="isExpanded(category.name)">
         <div>
           <p class="eyebrow">Categoria</p>
           <h3>{{ category.name }}</h3>
@@ -55,34 +51,32 @@
           </div>
 
           @for (tool of category.tools; track tool.id) {
-            <div class="category-table__row">
-              <div class="tool-image">
-                <img [src]="store.getImage(tool)" [alt]="tool.name">
-              </div>
-              <div class="tool-copy">
-                <strong>{{ tool.name }}</strong>
-                <span>{{ tool.type }}</span>
-              </div>
-              <span class="tool-meta">{{ tool.brand || 'Sin marca' }}</span>
-              <span class="tool-meta">{{ tool.model || 'Sin modelo' }}</span>
-              <span
-                class="tool-state"
-                [class.tool-state--available]="getStateTone(tool.state) === 'available'"
-                [class.tool-state--active]="getStateTone(tool.state) === 'active'"
-                [class.tool-state--maintenance]="getStateTone(tool.state) === 'maintenance'">
-                {{ tool.state }}
-              </span>
+          <div class="category-table__row">
+            <div class="tool-image">
+              <img [src]="store.getImage(tool)" [alt]="tool.name">
             </div>
+            <div class="tool-copy">
+              <strong>{{ tool.name }}</strong>
+              <span>{{ tool.type }}</span>
+            </div>
+            <span class="tool-meta">{{ tool.brand || 'Sin marca' }}</span>
+            <span class="tool-meta">{{ tool.model || 'Sin modelo' }}</span>
+            <span class="tool-state" [class.tool-state--available]="getStateTone(tool.state) === 'available'"
+              [class.tool-state--active]="getStateTone(tool.state) === 'active'"
+              [class.tool-state--maintenance]="getStateTone(tool.state) === 'maintenance'">
+              {{ tool.state }}
+            </span>
+          </div>
           } @empty {
-            <div class="category-table__empty">No hay herramientas en esta categoria.</div>
+          <div class="category-table__empty">No hay herramientas en esta categoria.</div>
           }
         </div>
       </div>
     </article>
-  } @empty {
+    } @empty {
     <article class="empty-card">
       <p>No hay categorias para mostrar con el filtro actual.</p>
     </article>
-  }
+    }
   </section>
 </section>

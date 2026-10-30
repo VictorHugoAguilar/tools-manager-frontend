@@ -1,0 +1,405 @@
+<section class="task-board-page">
+  <header class="task-board-intro">
+    <div>
+      <p class="eyebrow">Listas de tareas</p>
+      <p class="summary-copy">Organiza y controla tus tareas de forma visual.</p>
+    </div>
+    <div class="task-board-intro__actions">
+      <label class="board-search" aria-label="Buscar tareas">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" placeholder="Buscar tareas..." [(ngModel)]="searchTerm" />
+      </label>
+      <button type="button" class="task-secondary" [class.is-active]="filtersOpen()"
+        (click)="filtersOpen.update(value => !value)" [attr.aria-expanded]="filtersOpen()">
+        <span aria-hidden="true">▽</span> Filtros
+        @if (hasActiveFilters()) { <span class="active-filter-dot" aria-label="Filtros activos"></span> }
+      </button>
+      <button type="button" class="task-icon-button" aria-label="Gestionar etiquetas"
+        title="Gestionar etiquetas" (click)="openLabelDialog()">•••</button>
+      <button type="button" class="task-primary" (click)="openNewTask()">＋ Nueva tarea</button>
+    </div>
+  </header>
+
+  @if (loadError()) {
+    <p class="task-notice task-notice--error" role="alert">{{ loadError() }}</p>
+  }
+
+  <section class="task-toolbar" aria-label="Controles del tablero">
+    <div class="task-toolbar__summary">
+      <strong>{{ visibleTasks().length }} tareas</strong>
+      <span>{{ columns().length }} listas configuradas</span>
+      @if (hasActiveFilters()) {
+        <button type="button" class="clear-filters" (click)="clearFilters()">Limpiar filtros</button>
+      }
+    </div>
+    <div class="task-toolbar__actions">
+      <div class="view-switch" role="group" aria-label="Vista de tareas">
+        <button type="button" [class.is-active]="viewMode() === 'kanban'" (click)="setView('kanban')">Tablero</button>
+        <button type="button" [class.is-active]="viewMode() === 'list'" (click)="setView('list')">Lista</button>
+      </div>
+      <button type="button" class="task-secondary" (click)="openColumnDialog()">＋ Añadir lista</button>
+    </div>
+  </section>
+
+  @if (filtersOpen()) {
+    <section class="task-filter-panel" aria-label="Filtros de tareas">
+      <label>Lista
+        <select [(ngModel)]="filterColumnId">
+          <option value="">Todas las listas</option>
+          @for (column of columns(); track column.id) {
+            <option [value]="column.id">{{ column.name }}</option>
+          }
+        </select>
+      </label>
+      <label>Etiqueta
+        <select [(ngModel)]="filterLabelId">
+          <option value="">Todas las etiquetas</option>
+          @for (label of labels(); track label.id) {
+            <option [value]="label.id">{{ label.name }}</option>
+          }
+        </select>
+      </label>
+      <label>Prioridad
+        <select [(ngModel)]="filterPriority">
+          <option value="">Todas</option>
+          <option value="low">Baja</option>
+          <option value="medium">Media</option>
+          <option value="high">Alta</option>
+        </select>
+      </label>
+      <label>Responsable
+        <select [(ngModel)]="filterAssigneeId">
+          <option value="">Cualquier persona</option>
+          @for (person of members(); track person.id) {
+            <option [value]="person.id">{{ person.firstName }} {{ person.lastName }}</option>
+          }
+        </select>
+      </label>
+      <label>Vencimiento
+        <input type="date" [(ngModel)]="filterDueDate" />
+      </label>
+      <label class="overdue-filter">
+        <input type="checkbox" [(ngModel)]="overdueOnly" />
+        Solo tareas vencidas
+      </label>
+    </section>
+  }
+
+  @if (loading() && columns().length === 0) {
+    <div class="task-empty-state"><strong>Cargando listas...</strong><span>Preparando tu tablero de tareas.</span></div>
+  } @else if (loadError() && columns().length === 0) {
+    <div class="task-empty-state task-empty-state--error">
+      <strong>No se pudo cargar el tablero</strong>
+      <button type="button" class="task-primary" (click)="loadBoard()">Reintentar</button>
+    </div>
+  } @else if (viewMode() === 'kanban') {
+    <div class="task-columns" cdkDropList cdkDropListOrientation="horizontal"
+      [cdkDropListData]="columns()" (cdkDropListDropped)="dropColumn($event)">
+      @for (column of columns(); track column.id) {
+        <article class="task-column" cdkDrag [cdkDragData]="column"
+          [class.task-column--blue]="column.color === 'blue'"
+          [class.task-column--mint]="column.color === 'mint'"
+          [class.task-column--yellow]="column.color === 'yellow'"
+          [class.task-column--rose]="column.color === 'rose'">
+          <header class="task-column__header">
+            <span class="column-status" aria-hidden="true"></span>
+            <h3>{{ column.name }}</h3>
+            <span class="column-count">{{ taskCount(column.id) }}</span>
+            <div class="column-actions">
+              <button type="button" title="Cambiar nombre" [attr.aria-label]="'Cambiar nombre de ' + column.name"
+                (click)="renameColumn(column)">✎</button>
+              <button type="button" title="Eliminar lista" [attr.aria-label]="'Eliminar lista ' + column.name"
+                (click)="deleteColumn(column)">···</button>
+            </div>
+          </header>
+
+          <div class="task-column__cards" cdkDropList [id]="'tasks-' + column.id"
+            [cdkDropListData]="tasksForColumn(column.id)" [cdkDropListConnectedTo]="columnDropIds()"
+            [cdkDropListDisabled]="hasActiveFilters() || saving()"
+            (cdkDropListDropped)="dropTask($event, column.id)">
+            @for (task of tasksForColumn(column.id); track task.id) {
+              <article class="task-card" cdkDrag [cdkDragData]="task"
+                [cdkDragDisabled]="hasActiveFilters() || saving()" (click)="openTask(task)"
+                (keydown)="openTaskFromKeyboard($event, task)" tabindex="0" role="button"
+                [attr.aria-label]="'Abrir tarea ' + task.title">
+                <div class="task-card__heading">
+                  <h4>{{ task.title }}</h4>
+                  <span class="task-card__options" aria-hidden="true">···</span>
+                </div>
+                @if (task.description) { <p class="task-card__description">{{ task.description }}</p> }
+                @if (task.labelIds.length) {
+                  <div class="task-labels">
+                    @for (labelId of task.labelIds; track labelId) {
+                      @if (taskLabel(labelId); as label) {
+                        <span class="task-label" [style.backgroundColor]="label.color">{{ label.name }}</span>
+                      }
+                    }
+                  </div>
+                }
+                <footer class="task-card__meta">
+                  <div class="task-card__indicators">
+                    @if (task.dueDate) {
+                      <span class="task-date" [class.is-overdue]="isOverdue(task)">▢ {{ dueDateLabel(task.dueDate) }}</span>
+                    }
+                    @if (task.comments.length) { <span title="Comentarios">☏ {{ task.comments.length }}</span> }
+                    @if (task.attachments.length) { <span title="Archivos adjuntos">▧ {{ task.attachments.length }}</span> }
+                    <span class="priority-marker" [class.priority-marker--high]="task.priority === 'high'"
+                      [class.priority-marker--low]="task.priority === 'low'">{{ priorityLabel(task.priority) }}</span>
+                  </div>
+                  @if (member(task.assigneeId); as person) {
+                    <span class="member-avatar" [title]="person.firstName + ' ' + person.lastName">
+                      @if (person.profileImage) { <img [src]="person.profileImage" alt="" /> }
+                      @else { {{ memberInitials(person) }} }
+                    </span>
+                  }
+                </footer>
+              </article>
+            } @empty {
+              <p class="column-empty">{{ hasActiveFilters() ? 'No hay coincidencias.' : 'Suelta una tarea aquí o añade una nueva.' }}</p>
+            }
+          </div>
+          <button type="button" class="add-task-button" (click)="openNewTask(column.id)">＋ Añadir tarea</button>
+        </article>
+      }
+      <button type="button" class="add-column-card" (click)="openColumnDialog()">＋ Añadir lista</button>
+    </div>
+  } @else {
+    <div class="task-table-wrap">
+      <table class="task-table">
+        <thead><tr><th>Tarea</th><th>Lista</th><th>Prioridad</th><th>Responsable</th><th>Vencimiento</th></tr></thead>
+        <tbody>
+          @for (task of visibleTasks(); track task.id) {
+            <tr tabindex="0" (click)="openTask(task)" (keydown.enter)="openTask(task)">
+              <td><strong>{{ task.title }}</strong><small>{{ task.description }}</small></td>
+              <td>{{ currentColumnName(task.columnId) }}</td>
+              <td><span class="priority-marker" [class.priority-marker--high]="task.priority === 'high'"
+                [class.priority-marker--low]="task.priority === 'low'">{{ priorityLabel(task.priority) }}</span></td>
+              <td>
+                @if (member(task.assigneeId); as person) { {{ person.firstName }} {{ person.lastName }} }
+                @else { <span class="muted-copy">Sin asignar</span> }
+              </td>
+              <td [class.is-overdue]="isOverdue(task)">{{ task.dueDate ? dueDateLabel(task.dueDate) : 'Sin fecha' }}</td>
+            </tr>
+          } @empty {
+            <tr><td class="table-empty" colspan="5">No hay tareas que coincidan con los filtros.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+@if (dialogOpen()) {
+  <button type="button" class="task-modal-backdrop" aria-label="Cerrar detalle de tarea"
+    (click)="closeTaskDialog()"></button>
+  <section class="task-modal" role="dialog" aria-modal="true"
+    [attr.aria-label]="editorOpen() ? 'Editar tarea' : 'Detalle de tarea'">
+    <header class="task-modal__header">
+      <div>
+        <p class="eyebrow">{{ editorOpen() ? 'Organización · Tarea' : 'Detalle de tarea' }}</p>
+        <h2>{{ editorOpen() ? (selectedTaskId() ? 'Editar tarea' : 'Nueva tarea') : activeTask()?.title }}</h2>
+      </div>
+      <button type="button" class="task-close-button" aria-label="Cerrar" (click)="closeTaskDialog()">×</button>
+    </header>
+
+    @if (saveError()) { <p class="task-notice task-notice--error" role="alert">{{ saveError() }}</p> }
+
+    <div class="task-modal__body">
+      <div class="task-modal__main">
+        @if (editorOpen()) {
+          <form class="task-form" (ngSubmit)="saveTask()" #taskForm="ngForm">
+            <label>Título
+              <input name="title" required maxlength="120" [(ngModel)]="draft.title" placeholder="Nombre de la tarea" />
+            </label>
+            <label>Descripción
+              <textarea name="description" rows="4" maxlength="5000" [(ngModel)]="draft.description"
+                placeholder="Describe qué hay que hacer..."></textarea>
+            </label>
+            <div class="task-form__row">
+              <label>Lista
+                <select name="columnId" required [(ngModel)]="draft.columnId">
+                  @for (column of columns(); track column.id) { <option [value]="column.id">{{ column.name }}</option> }
+                </select>
+              </label>
+              <label>Prioridad
+                <select name="priority" [(ngModel)]="draft.priority">
+                  <option value="low">Baja</option><option value="medium">Media</option><option value="high">Alta</option>
+                </select>
+              </label>
+            </div>
+            <div class="task-form__row">
+              <label>Fecha de vencimiento
+                <input name="dueDate" type="date" [(ngModel)]="draft.dueDate" />
+              </label>
+              <label>Responsable
+                <select name="assigneeId" [(ngModel)]="draft.assigneeId">
+                  <option value="">Sin asignar</option>
+                  @for (person of members(); track person.id) {
+                    <option [value]="person.id">{{ person.firstName }} {{ person.lastName }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <fieldset class="label-selector">
+              <legend>Etiquetas</legend>
+              @for (label of labels(); track label.id) {
+                <label class="label-option">
+                  <input type="checkbox" [checked]="draft.labelIds.includes(label.id)"
+                    (change)="toggleDraftLabel(label.id)" />
+                  <span class="task-label" [style.backgroundColor]="label.color">{{ label.name }}</span>
+                </label>
+              } @empty {
+                <span class="muted-copy">Todavía no hay etiquetas. Puedes crear una desde el tablero.</span>
+              }
+            </fieldset>
+            <footer class="task-modal__actions">
+              @if (selectedTaskId()) {
+                <button type="button" class="task-danger" [disabled]="saving()" (click)="deleteTask()">Eliminar tarea</button>
+              }
+              <span class="actions-spacer"></span>
+              <button type="button" class="task-secondary" [disabled]="saving()" (click)="closeTaskDialog()">Cancelar</button>
+              <button type="submit" class="task-primary" [disabled]="taskForm.invalid || saving()">
+                {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+              </button>
+            </footer>
+          </form>
+        } @else if (activeTask(); as task) {
+          <div class="task-detail">
+            <div class="task-detail__summary">
+              <span class="detail-list-pill">{{ currentColumnName(task.columnId) }}</span>
+              <span class="priority-marker" [class.priority-marker--high]="task.priority === 'high'"
+                [class.priority-marker--low]="task.priority === 'low'">{{ priorityLabel(task.priority) }}</span>
+              @if (task.dueDate) {
+                <span class="task-date" [class.is-overdue]="isOverdue(task)">Vence {{ dueDateLabel(task.dueDate) }}</span>
+              }
+            </div>
+            <p class="task-detail__description">{{ task.description || 'Sin descripción.' }}</p>
+            <div class="task-labels">
+              @for (labelId of task.labelIds; track labelId) {
+                @if (taskLabel(labelId); as label) { <span class="task-label" [style.backgroundColor]="label.color">{{ label.name }}</span> }
+              }
+            </div>
+            <p class="assigned-member">
+              <strong>Responsable</strong>
+              @if (member(task.assigneeId); as person) { {{ person.firstName }} {{ person.lastName }} }
+              @else { <span class="muted-copy">Sin asignar</span> }
+            </p>
+            <div class="task-detail__actions">
+              <button type="button" class="task-secondary" (click)="editTask()">Editar tarea</button>
+              <button type="button" class="task-danger task-danger--compact" (click)="deleteTask()">Eliminar</button>
+            </div>
+            <section class="task-history">
+              <h3>Historial</h3>
+              @for (entry of task.history; track entry.id) {
+                <p><strong>{{ entry.actorName }}</strong> · {{ entry.text }}<time>{{ formatDate(entry.createdAt) }}</time></p>
+              }
+            </section>
+          </div>
+        } @else {
+          <div class="task-empty-state"><strong>La tarea ya no está disponible.</strong></div>
+        }
+      </div>
+
+      @if (!editorOpen() && activeTask(); as task) {
+        <aside class="task-modal__side">
+          <section class="task-comments">
+            <header><h3>Comentarios</h3><span class="column-count">{{ task.comments.length }}</span></header>
+            <div class="task-comments__list">
+              @for (comment of task.comments; track comment.id) {
+                <article class="task-comment">
+                  <span class="member-avatar member-avatar--small">{{ comment.authorName.charAt(0).toUpperCase() }}</span>
+                  <div><strong>{{ comment.authorName }}</strong><time>{{ formatDate(comment.createdAt) }}</time><p>{{ comment.text }}</p></div>
+                </article>
+              } @empty {
+                <p class="muted-copy">Todavía no hay comentarios.</p>
+              }
+            </div>
+            <form class="comment-form" (ngSubmit)="addComment()">
+              <input name="comment" required maxlength="120" [ngModel]="commentDraft()"
+                (ngModelChange)="commentDraft.set($event)" placeholder="Escribe un comentario..." />
+              <button type="submit" class="task-primary task-send-button" aria-label="Enviar comentario"
+                [disabled]="!commentDraft().trim() || commentBusy()">➤</button>
+            </form>
+          </section>
+
+          <section class="task-attachments">
+            <header><h3>Archivos</h3><span class="column-count">{{ task.attachments.length }}</span></header>
+            @for (attachment of task.attachments; track attachment.id) {
+              <article class="attachment-row">
+                <span class="attachment-icon" aria-hidden="true">▤</span>
+                <div class="attachment-row__copy">
+                  <a [href]="attachment.url" target="_blank" rel="noopener noreferrer">{{ attachment.name }}</a>
+                  <small>{{ formatFileSize(attachment.size) }} · {{ attachment.uploadedByName }}</small>
+                </div>
+                <button type="button" class="remove-attachment" aria-label="Eliminar archivo"
+                  (click)="removeAttachment(attachment.id)">×</button>
+              </article>
+            } @empty {
+              <p class="muted-copy">No hay archivos adjuntos.</p>
+            }
+            <label class="attachment-picker">
+              <input type="file" (change)="onAttachmentSelected($event)" [disabled]="attachmentBusy()" />
+              {{ attachmentBusy() ? 'Subiendo…' : '＋ Añadir archivo' }}
+            </label>
+            <small class="attachment-hint">Tamaño máximo: 15 MB.</small>
+          </section>
+        </aside>
+      }
+    </div>
+  </section>
+}
+
+@if (columnDialogOpen() || labelDialogOpen()) {
+  <button type="button" class="task-modal-backdrop task-modal-backdrop--nested" aria-label="Cerrar configuración"
+    (click)="columnDialogOpen.set(false); labelDialogOpen.set(false)"></button>
+  <section class="small-task-modal" role="dialog" aria-modal="true"
+    [attr.aria-label]="columnDialogOpen() ? 'Añadir lista' : 'Gestionar etiquetas'">
+    <header class="task-modal__header">
+      <div>
+        <p class="eyebrow">Configuración</p>
+        <h2>{{ columnDialogOpen() ? 'Añadir lista' : 'Gestionar etiquetas' }}</h2>
+      </div>
+      <button type="button" class="task-close-button" aria-label="Cerrar"
+        (click)="columnDialogOpen.set(false); labelDialogOpen.set(false)">×</button>
+    </header>
+    @if (saveError()) { <p class="task-notice task-notice--error" role="alert">{{ saveError() }}</p> }
+    @if (columnDialogOpen()) {
+      <form class="task-form" (ngSubmit)="createColumn()">
+        <label>Nombre de la lista
+          <input name="columnName" required maxlength="120" [ngModel]="columnName()"
+            (ngModelChange)="columnName.set($event)" />
+        </label>
+        <label>Color
+          <select name="columnColor" [ngModel]="columnColor()" (ngModelChange)="columnColor.set($event)">
+            <option value="blue">Azul claro</option><option value="mint">Verde menta</option>
+            <option value="yellow">Amarillo</option><option value="rose">Rosa</option>
+          </select>
+        </label>
+        <footer class="task-modal__actions">
+          <button type="button" class="task-secondary" (click)="columnDialogOpen.set(false)">Cancelar</button>
+          <button type="submit" class="task-primary" [disabled]="!columnName().trim() || saving()">Crear lista</button>
+        </footer>
+      </form>
+    } @else {
+      <div class="label-manager">
+        @for (label of labels(); track label.id) {
+          <div class="label-manager__row">
+            <span class="task-label" [style.backgroundColor]="label.color">{{ label.name }}</span>
+            <button type="button" class="remove-attachment" [attr.aria-label]="'Eliminar etiqueta ' + label.name"
+              (click)="deleteLabel(label)">×</button>
+          </div>
+        }
+      </div>
+      <form class="task-form label-create-form" (ngSubmit)="createLabel()">
+        <label>Nueva etiqueta
+          <input name="labelName" required maxlength="120" [ngModel]="labelName()"
+            (ngModelChange)="labelName.set($event)" />
+        </label>
+        <label>Color
+          <input name="labelColor" type="color" [ngModel]="labelColor()" (ngModelChange)="labelColor.set($event)" />
+        </label>
+        <button type="submit" class="task-primary" [disabled]="!labelName().trim() || saving()">＋ Crear etiqueta</button>
+      </form>
+    }
+  </section>
+}

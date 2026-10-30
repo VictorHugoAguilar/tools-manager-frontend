@@ -1,14 +1,13 @@
 <section class="profile-page">
   <header class="profile-heading">
     <div>
-      <p class="eyebrow">Cuenta</p>
-      <h2>Mi perfil</h2>
-      <p>Gestiona tu información personal y la seguridad de tu cuenta.</p>
+      <p class="eyebrow">Mi perfil</p>
+      <p class="summary-copy">Gestiona tu información personal y la seguridad de tu cuenta.</p>
     </div>
   </header>
 
   @if (avatarUploadNotice()) {
-    <p class="profile-notice profile-notice--error" role="alert">{{ avatarUploadNotice() }}</p>
+  <p class="profile-notice profile-notice--error" role="alert">{{ avatarUploadNotice() }}</p>
   }
 
   <div class="profile-grid">
@@ -18,9 +17,9 @@
         <div class="avatar-upload__preview">
           <div class="avatar-preview">
             @if (avatarSource()) {
-              <img [src]="avatarSource()" alt="Foto de perfil" />
+            <img [src]="avatarSource()" alt="Foto de perfil" />
             } @else {
-              <span>{{ initials() }}</span>
+            <span>{{ initials() }}</span>
             }
           </div>
         </div>
@@ -29,8 +28,7 @@
           <p>Selecciona una imagen para actualizar tu foto de perfil.</p>
           <label class="avatar-upload__picker">
             <span>{{ imageFile()?.name || 'Seleccionar imagen' }}</span>
-            <input type="file" accept="image/jpeg,image/png,image/webp"
-              aria-label="Seleccionar foto de perfil"
+            <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Seleccionar foto de perfil"
               (change)="onImageSelected($event)" />
           </label>
           <small>JPEG, PNG o WebP · máximo 3 MB</small>
@@ -75,23 +73,23 @@
       <p class="profile-copy">Confirma tu contraseña actual para establecer una nueva.</p>
       <form class="profile-form" (ngSubmit)="savePassword()" #passwordForm="ngForm">
         <label>Contraseña actual
-          <input name="currentPassword" type="password" autocomplete="current-password"
-            required [(ngModel)]="currentPassword" />
+          <input name="currentPassword" type="password" autocomplete="current-password" required
+            [(ngModel)]="currentPassword" />
         </label>
         <label>Nueva contraseña
-          <input name="newPassword" type="password" autocomplete="new-password" minlength="10"
-            required [(ngModel)]="newPassword" />
+          <input name="newPassword" type="password" autocomplete="new-password" minlength="10" required
+            [(ngModel)]="newPassword" />
           <small>Mínimo 10 caracteres, con letras y números.</small>
         </label>
         <label>Repetir nueva contraseña
-          <input name="confirmPassword" type="password" autocomplete="new-password" minlength="10"
-            required [(ngModel)]="confirmPassword" />
+          <input name="confirmPassword" type="password" autocomplete="new-password" minlength="10" required
+            [(ngModel)]="confirmPassword" />
         </label>
         @if (passwordError()) {
-          <p class="profile-notice profile-notice--error" role="alert">{{ passwordError() }}</p>
+        <p class="profile-notice profile-notice--error" role="alert">{{ passwordError() }}</p>
         }
         @if (passwordSuccess()) {
-          <p class="profile-notice profile-notice--success" role="status">{{ passwordSuccess() }}</p>
+        <p class="profile-notice profile-notice--success" role="status">{{ passwordSuccess() }}</p>
         }
         <button type="submit" class="primary-button" [disabled]="passwordForm.invalid || changingPassword()">
           {{ changingPassword() ? 'Actualizando…' : 'Cambiar contraseña' }}

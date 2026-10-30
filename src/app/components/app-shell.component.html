@@ -31,6 +31,10 @@
         <span class="nav-icon">▤</span>
         <span>Inventario Taller</span>
       </a>
+      <a routerLink="/listas-tareas" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+        <span class="nav-icon">☷</span>
+        <span>Listas de tareas</span>
+      </a>
       <a routerLink="/categorias" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">◫</span>
         <span>Categorias</span>
@@ -115,11 +119,13 @@
       </div>
 
       <div class="topbar-tools">
+        @if (showPageHeader()) {
         <label class="search-box">
           <span>⌕</span>
           <input type="search" placeholder="Buscar..." [value]="store.searchTerm()"
             (input)="store.updateSearch($any($event.target).value)">
         </label>
+        }
 
         <button type="button" class="icon-button" aria-label="Notificaciones">🔔</button>
         <div class="account-menu">
@@ -149,17 +155,19 @@
       </div>
     </header>
 
-    <section class="hero-strip">
-      <div>
-        <p class="eyebrow">{{ currentRoute.eyebrow }}</p>
-        <h2>{{ currentRoute.title }}</h2>
-      </div>
+    @if (showPageHeader()) {
+      <section class="hero-strip">
+        <div>
+          <p class="eyebrow">{{ currentRoute.eyebrow }}</p>
+          <h2>{{ currentRoute.title }}</h2>
+        </div>
 
-      <div class="hero-copy">
-        <p class="page-description">{{ currentRoute.description }}</p>
-        <p class="banner">{{ store.bannerMessage() }}</p>
-      </div>
-    </section>
+        <div class="hero-copy">
+          <p class="page-description">{{ currentRoute.description }}</p>
+          <p class="banner">{{ store.bannerMessage() }}</p>
+        </div>
+      </section>
+    }
 
     <router-outlet></router-outlet>
   </main>

@@ -77,6 +77,18 @@ export const appRoutes: Routes = [
         }
       },
       {
+        path: 'listas-tareas',
+        loadComponent: () => import('./pages/task-board/task-board-page.component')
+          .then((module) => module.TaskBoardPageComponent),
+        data: {
+          eyebrow: 'Organización',
+          title: 'Listas de tareas',
+          description: 'Organiza y controla tus tareas de forma visual.',
+          showCreateAction: false,
+          showPageHeader: false
+        }
+      },
+      {
         path: 'categorias',
         component: CategoriesPageComponent,
         data: {
