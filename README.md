@@ -265,27 +265,24 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 
 ### [4.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/74) (2026-10-29)
 
-- Added: se crea la nueva pagina para controlar los consumibles del taller
+- Added: se crea la nueva página para controlar los consumibles del taller
 - Added: se introduce la confirmacion de la eliminacion de cualquier componente
 - Added: se añade nuevo sevicio para crear las categorias de los materiales
 - Added: se modifica la visual para cargar de la bd las categorias de los materiales
-- Added: cambio de nombre de la nueva pagina y sus rutas
-- Fixed: sincronizar los estilos de las paginas de almacenamiento
+- Added: cambio de nombre de la nueva página y sus rutas
+- Fixed: sincronizar los estilos de las páginas de almacenamiento
 
-<!-- CHANGELOG-PR-76-START -->
 ### [5.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/76) (2026-10-30)
 
-- feat: se crean los servicios para consumir los nuevos endpoint de autenticación
-- feat: se crea el nuevo modelo para usuarios
-- feat: se añade pagina de login
-- feat: se añade la pagina del perfil del usuario
-- feat: se añade la pagina de registro de usuario
-- feat: se añade la pagina de usuario
-- feat: se añade la pagina de reset password
-- feat: se crea un guard para el uso de los permisos del usuario
-- feat: se añade las rutas nuevas y se enlaza las nuevas funcionalidad en el menu
-- Changed: se cambia como se muestra la fecha en los changelog de los titulos
+- Added: se crean los servicios para consumir los nuevos endpoint de autenticación
+- Added: se crea el nuevo modelo para usuarios
+- Added: se añade página de login
+- Added: se añade la página del perfil del usuario
+- Added: se añade la página de registro de usuario
+- Added: se añade la página de usuario
+- Added: se añade la página de reset password
+- Added: se crea un guard para el uso de los permisos del usuario
+- Added: se añade las rutas nuevas y se enlaza las nuevas funcionalidad en el menu
+- Changed: se cambia como se muestra la fecha en los changelog de los títulos
 - Changed: se modifica los estilos visuales de la subida de avatar de usuarios
-- Changed: se modifican los changelog para que cumplan la nueva semantica
-
-<!-- CHANGELOG-PR-76-END -->
+- Changed: se modifican los changelog para que cumplan la nueva semántica
