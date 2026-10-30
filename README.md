@@ -272,3 +272,20 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: cambio de nombre de la nueva pagina y sus rutas
 - Fixed: sincronizar los estilos de las paginas de almacenamiento
 
+<!-- CHANGELOG-PR-76-START -->
+### [5.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/76) (2026-10-30)
+
+- feat: se crean los servicios para consumir los nuevos endpoint de autenticación
+- feat: se crea el nuevo modelo para usuarios
+- feat: se añade pagina de login
+- feat: se añade la pagina del perfil del usuario
+- feat: se añade la pagina de registro de usuario
+- feat: se añade la pagina de usuario
+- feat: se añade la pagina de reset password
+- feat: se crea un guard para el uso de los permisos del usuario
+- feat: se añade las rutas nuevas y se enlaza las nuevas funcionalidad en el menu
+- Changed: se cambia como se muestra la fecha en los changelog de los titulos
+- Changed: se modifica los estilos visuales de la subida de avatar de usuarios
+- Changed: se modifican los changelog para que cumplan la nueva semantica
+
+<!-- CHANGELOG-PR-76-END -->
