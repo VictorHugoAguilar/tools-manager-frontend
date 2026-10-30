@@ -50,8 +50,8 @@ export class AuthService {
     return user;
   }
 
-  async register(payload: UserProfilePayload & { email: string; password: string }): Promise<AuthUser> {
-    const { user } = await firstValueFrom(this.api.register(payload));
+  async register(payload: UserProfilePayload & { email: string; password: string }, image?: File): Promise<AuthUser> {
+    const { user } = await firstValueFrom(this.api.register(payload, image));
     this.setUser(user);
     return user;
   }

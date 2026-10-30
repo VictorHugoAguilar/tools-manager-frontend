@@ -3,8 +3,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
-import { AuthApiService } from '../../services/auth-api.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -16,7 +14,6 @@ import { AuthService } from '../../services/auth.service';
 })
 export class RegisterPageComponent implements OnDestroy {
   private readonly auth = inject(AuthService);
-  private readonly authApi = inject(AuthApiService);
   private readonly router = inject(Router);
 
   protected firstName = '';
@@ -62,20 +59,7 @@ export class RegisterPageComponent implements OnDestroy {
         lastName: this.lastName,
         email: this.email,
         password: this.password
-      });
-
-      const image = this.imageFile();
-      if (image) {
-        try {
-          const { user } = await firstValueFrom(this.authApi.uploadMyAvatar(image));
-          this.auth.setUser(user);
-        } catch {
-          await this.router.navigate(['/mi-perfil'], {
-            state: { avatarUploadError: 'La cuenta se creó, pero no se pudo guardar la foto. Puedes intentarlo de nuevo en Mi perfil.' }
-          });
-          return;
-        }
-      }
+      }, this.imageFile() ?? undefined);
       await this.router.navigateByUrl('/tablero');
     } catch (error: unknown) {
       this.error.set(this.errorMessage(error));
