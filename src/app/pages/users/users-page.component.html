@@ -1,0 +1,200 @@
+<section class="users-page">
+  <header class="users-heading">
+    <div>
+      <p class="eyebrow">Administración</p>
+      <h2>Gestión de usuarios</h2>
+      <p>Administra las cuentas, los roles y sus permisos de acceso.</p>
+    </div>
+    <button type="button" class="user-primary" (click)="openCreate()">＋ Nuevo usuario</button>
+  </header>
+
+  @if (error()) { <p class="user-notice user-notice--error" role="alert">{{ error() }}</p> }
+
+  <section class="user-panel">
+    <form class="user-filters" (ngSubmit)="loadUsers(1)">
+      <label class="user-search">Buscar por nombre, apellido o correo
+        <input name="search" type="search" [(ngModel)]="search"
+          placeholder="Buscar usuario…" />
+      </label>
+      <label>Rol
+        <select name="roleFilter" [(ngModel)]="roleFilter" (change)="loadUsers(1)">
+          <option value="">Todos los roles</option>
+          @for (role of roles(); track role.id) { <option [value]="role.id">{{ role.name }}</option> }
+        </select>
+      </label>
+      <label>Estado
+        <select name="statusFilter" [(ngModel)]="statusFilter" (change)="loadUsers(1)">
+          <option value="">Todos los estados</option>
+          <option value="active">Activo</option>
+          <option value="inactive">Inactivo</option>
+        </select>
+      </label>
+      <button type="submit" class="user-primary" [disabled]="loading()">Buscar</button>
+    </form>
+
+    <div class="user-table-wrap">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th><button type="button" (click)="toggleSort('firstName')">Nombre ↕</button></th>
+            <th><button type="button" (click)="toggleSort('lastName')">Apellido ↕</button></th>
+            <th><button type="button" (click)="toggleSort('email')">Correo ↕</button></th>
+            <th><button type="button" (click)="toggleSort('roleId')">Rol ↕</button></th>
+            <th><button type="button" (click)="toggleSort('isActive')">Estado ↕</button></th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>
+                <span class="user-avatar">
+                  @if (user.profileImage) { <img [src]="user.profileImage" [alt]="'Foto de ' + user.firstName" /> }
+                  @else { {{ initials(user) }} }
+                </span>
+              </td>
+              <td>{{ user.firstName }}</td>
+              <td>{{ user.lastName }}</td>
+              <td>{{ user.email }}</td>
+              <td><span class="role-badge" [class.role-badge--admin]="user.roleId === 'admin'">{{ user.roleName }}</span></td>
+              <td><span class="status-badge" [class.status-badge--inactive]="!user.isActive">
+                {{ user.isActive ? 'Activo' : 'Inactivo' }}
+              </span></td>
+              <td>
+                <div class="user-actions">
+                  <button type="button" class="user-secondary" (click)="openEdit(user)" aria-label="Editar usuario">Editar</button>
+                  @if (!isCurrentUser(user)) {
+                    <button type="button" class="user-secondary" (click)="toggleStatus(user)">
+                      {{ user.isActive ? 'Desactivar' : 'Activar' }}
+                    </button>
+                    <button type="button" class="user-danger" (click)="deleteUser(user)">Eliminar</button>
+                  }
+                </div>
+              </td>
+            </tr>
+          } @empty {
+            @if (!loading()) {
+              <tr><td class="user-empty" colspan="7">No hay usuarios que coincidan con la búsqueda.</td></tr>
+            }
+          }
+        </tbody>
+      </table>
+      @if (loading()) { <p class="user-loading">Cargando usuarios…</p> }
+    </div>
+
+    <footer class="user-pagination">
+      <span>{{ total() }} usuario(s) · Página {{ page() }} de {{ pages() }}</span>
+      <div>
+        <button type="button" class="user-secondary" [disabled]="page() <= 1 || loading()"
+          (click)="loadUsers(page() - 1)">Anterior</button>
+        <button type="button" class="user-secondary" [disabled]="page() >= pages() || loading()"
+          (click)="loadUsers(page() + 1)">Siguiente</button>
+      </div>
+    </footer>
+  </section>
+
+  <section class="user-panel permission-panel">
+    <div>
+      <p class="eyebrow">Acceso por rol</p>
+      <h3>Permisos disponibles</h3>
+      <p>Los permisos se validan en el backend antes de atender cada solicitud protegida.</p>
+    </div>
+    <label>Rol a configurar
+      <select [ngModel]="selectedPermissionRole()" (ngModelChange)="selectPermissionRole($event)">
+        @for (role of roles(); track role.id) { <option [value]="role.id">{{ role.name }}</option> }
+      </select>
+    </label>
+    <div class="permission-list">
+      @for (permission of permissions(); track permission.id) {
+        <label class="permission-option">
+          <input type="checkbox" [checked]="hasPermission(permission.id)"
+            [disabled]="selectedPermissionRole() === 'admin' &&
+              ['app:access', 'users:manage', 'roles:manage'].includes(permission.id)"
+            (change)="togglePermission(permission.id)" />
+          <span><strong>{{ permission.id }}</strong><small>{{ permission.description }}</small></span>
+        </label>
+      }
+    </div>
+    @if (permissionMessage()) { <p class="user-notice" role="status">{{ permissionMessage() }}</p> }
+    <button type="button" class="user-primary" [disabled]="savingPermissions() || !selectedPermissionRole()"
+      (click)="savePermissions()">
+      {{ savingPermissions() ? 'Guardando…' : 'Guardar permisos' }}
+    </button>
+  </section>
+</section>
+
+@if (modalOpen()) {
+  <div class="user-modal-backdrop">
+    <section class="user-modal" role="dialog" aria-modal="true"
+      [attr.aria-label]="editingUser() ? 'Editar usuario' : 'Crear usuario'">
+      <header class="user-modal-heading">
+        <div>
+          <p class="eyebrow">{{ editingUser() ? 'Cuenta existente' : 'Nueva cuenta' }}</p>
+          <h3>{{ editingUser() ? 'Editar usuario' : 'Crear usuario' }}</h3>
+        </div>
+        <button type="button" class="user-close" aria-label="Cerrar" (click)="closeModal()">×</button>
+      </header>
+
+      <form class="user-modal-form" (ngSubmit)="saveUser()" #userForm="ngForm">
+        <div class="user-form-grid">
+          <label>Nombre
+            <input name="firstName" required maxlength="80" [(ngModel)]="draft.firstName" />
+          </label>
+          <label>Apellido
+            <input name="lastName" required maxlength="80" [(ngModel)]="draft.lastName" />
+          </label>
+          <label class="field-wide">Correo electrónico
+            <input name="email" type="email" required email maxlength="254" [(ngModel)]="draft.email" />
+          </label>
+          @if (!editingUser()) {
+            <label class="field-wide">Contraseña inicial
+              <input name="password" type="password" required minlength="10" maxlength="128"
+                [(ngModel)]="draft.password" />
+              <small>Mínimo 10 caracteres, con letras y números.</small>
+            </label>
+          } @else {
+            <label class="field-wide">Nueva contraseña (opcional)
+              <input name="password" type="password" minlength="10" maxlength="128"
+                [disabled]="editingSelf()" [(ngModel)]="draft.password" />
+              <small>Al guardarla, se cerrarán las sesiones activas de este usuario.</small>
+            </label>
+          }
+          <label>Rol
+            <select name="roleId" [(ngModel)]="draft.roleId" [disabled]="editingSelf()">
+              @for (role of roles(); track role.id) { <option [value]="role.id">{{ role.name }}</option> }
+            </select>
+          </label>
+          <label>Estado
+            <select name="isActive" [(ngModel)]="draft.isActive"
+              [disabled]="editingSelf()">
+              <option [ngValue]="true">Activo</option>
+              <option [ngValue]="false">Inactivo</option>
+            </select>
+          </label>
+          <label class="field-wide">Foto de perfil (opcional)
+            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onImageSelected($event)" />
+            <small>{{ selectedImage()?.name || 'JPEG, PNG o WebP · máximo 3 MB' }}</small>
+          </label>
+          @if (imagePreviewUrl(); as preview) {
+            <div class="user-image-preview field-wide">
+              <img [src]="preview" alt="Vista previa de la foto de perfil" />
+            </div>
+          } @else if (editingUser()?.profileImage) {
+            <div class="user-image-preview field-wide">
+              <img [src]="editingUser()?.profileImage" alt="Foto de perfil actual" />
+            </div>
+          }
+        </div>
+        @if (saveError()) { <p class="user-notice user-notice--error" role="alert">{{ saveError() }}</p> }
+        <footer class="user-modal-actions">
+          <button type="button" class="user-secondary" [disabled]="saving()" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="user-primary"
+            [disabled]="userForm.invalid || saving()">
+            {{ saving() ? 'Guardando…' : editingUser() ? 'Guardar cambios' : 'Crear usuario' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
