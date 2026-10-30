@@ -1,0 +1,16 @@
+@use '../identity-pages';
+
+.identity-card {
+  max-width: 470px;
+}
+
+.identity-links .identity-link-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 900;
+  text-decoration: underline;
+  cursor: pointer;
+}

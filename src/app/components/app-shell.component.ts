@@ -5,6 +5,7 @@ import { filter } from 'rxjs';
 import { ToolFormModalComponent } from './tool-form-modal.component';
 import { ToolStoreService } from '../services/tool-store.service';
 import { PropertiesStorageService } from '../services/properties-storage.service';
+import { AuthService } from '../services/auth.service';
 import packageInfo from '../../../package.json';
 
 interface ShellRouteData {
@@ -26,6 +27,9 @@ export class AppShellComponent {
   private readonly router = inject(Router);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly propertiesStorage = inject(PropertiesStorageService);
+  protected readonly auth = inject(AuthService);
+  protected readonly userMenuOpen = signal(false);
+  protected readonly logoutError = signal('');
 
   protected readonly sidebarOpen = signal(this.getInitialSidebarState());
   protected readonly appVersion = packageInfo.version;
@@ -72,21 +76,30 @@ export class AppShellComponent {
       return next;
     });
 
-    this.showTecnicos.update((current) => {
-      const next = this.getShowTecnicosInitialValue();
-      return next;
-    });
-
-    this.showArreglos.update((current) => {
-      const next = this.getShowArreglosInitialValue();
-      return next;
-    });
+    this.showTecnicos.set(this.getShowTecnicosInitialValue());
+    this.showArreglos.set(this.getShowArreglosInitialValue());
 
   }
 
   protected closeSidebar(): void {
     this.sidebarOpen.set(false);
     this.propertiesStorage.setValueOfLocalStorageByKey('tool-frontend-sidebar-open', false);
+  }
+
+  protected userInitials(): string {
+    const user = this.auth.user();
+    return `${user?.firstName.charAt(0) || ''}${user?.lastName.charAt(0) || ''}`.toUpperCase() || 'U';
+  }
+
+  protected async logout(): Promise<void> {
+    this.logoutError.set('');
+    try {
+      await this.auth.logout();
+      this.userMenuOpen.set(false);
+      await this.router.navigateByUrl('/login');
+    } catch {
+      this.logoutError.set('No se pudo cerrar la sesión. Inténtalo de nuevo.');
+    }
   }
 
   private syncRouteData(): void {

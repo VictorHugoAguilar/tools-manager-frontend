@@ -1,0 +1,11 @@
+@use '../identity-pages';
+
+.identity-card {
+  max-width: 650px;
+}
+
+.avatar-upload small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+}

@@ -240,26 +240,35 @@ Los cambios relevantes de cada versión se documentan en esta sección.
 
 El formato sigue una estructura inspirada en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el versionado sigue los principios de [Semantic Versioning](https://semver.org/lang/es/).
 
-### 3.2.8 - 2026-10-27
+### Tipos de cambios
 
-- feat: Añadida la sección de changelog al README.
-- fix: Eliminado un workflow de GitHub y actualizado el nombre del workflow de versión.
-- fix: Cambiado el encabezado del changelog de H1 a H3.
+- `Added` para funcionalidades nuevas.
+- `Changed` para los cambios en las funcionalidades existentes.
+- `Deprecated` para indicar que una característica o funcionalidad está obsoleta y que se eliminará en las próximas versiones.
+- `Removed` para las características en desuso que se eliminaron en esta versión.
+- `Fixed` para corrección de errores.
+- `Security` en caso de vulnerabilidades.
 
-### [3.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/72) - 2026-10-27
+---
 
-- feat: Se crea un servicio para controlar las imagenes que no cargan
-- feat: Se implementa el servicio que se ha creado
-- fix: Se arregla el fallo de la carga del icono
+### [3.2.8](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/58) (2026-10-27)
 
-<!-- CHANGELOG-PR-74-START -->
-### [4.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/74) - 2026-10-29
+- Added: Añadida la sección de changelog al README.
+- Fixed: Eliminado un workflow de GitHub y actualizado el nombre del workflow de versión.
+- Fixed: Cambiado el encabezado del changelog de H1 a H3.
 
-- feat: se crea la nueva pagina para controlar los consumibles del taller
-- feat: se introduce la confirmacion de la eliminacion de cualquier componente
-- feat: se añade nuevo sevicio para crear las categorias de los materiales
-- feat: se modifica la visual para cargar de la bd las categorias de los materiales
-- feat: cambio de nombre de la nueva pagina y sus rutas
-- fix: sincronizar los estilos de las paginas de almacenamiento
+### [3.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/72) (2026-10-27)
 
-<!-- CHANGELOG-PR-74-END -->
+- Added: Se crea un servicio para controlar las imagenes que no cargan
+- Added: Se implementa el servicio que se ha creado
+- Fixed: Se arregla el fallo de la carga del icono
+
+### [4.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/74) (2026-10-29)
+
+- Added: se crea la nueva pagina para controlar los consumibles del taller
+- Added: se introduce la confirmacion de la eliminacion de cualquier componente
+- Added: se añade nuevo sevicio para crear las categorias de los materiales
+- Added: se modifica la visual para cargar de la bd las categorias de los materiales
+- Added: cambio de nombre de la nueva pagina y sus rutas
+- Fixed: sincronizar los estilos de las paginas de almacenamiento
+

@@ -1,0 +1,74 @@
+<main class="identity-page">
+  <section class="identity-card" aria-labelledby="login-title">
+    <header class="identity-brand">
+      <img src="assets/brand-shield.svg" alt="" />
+      <p class="eyebrow">Logística</p>
+      <p class="identity-brand__name">Almacenamiento</p>
+      <p class="identity-brand__copy">Accede a tu cuenta para continuar</p>
+    </header>
+
+    @if (passwordResetMode()) {
+      <h1 id="login-title">Recuperar contraseña</h1>
+      <p class="identity-copy">Te enviaremos instrucciones al correo asociado a tu cuenta.</p>
+      <form class="identity-form" (ngSubmit)="requestPasswordReset()" #resetForm="ngForm">
+        <label class="identity-field">Correo electrónico
+          <input name="resetEmail" type="email" autocomplete="email" required email
+            [(ngModel)]="email" placeholder="tu@email.com" />
+        </label>
+
+        @if (resetError()) {
+          <p class="identity-notice" role="alert">{{ resetError() }}</p>
+        }
+        @if (resetMessage()) {
+          <p class="identity-notice identity-notice--success" role="status">{{ resetMessage() }}</p>
+        }
+
+        <button class="identity-primary" type="submit"
+          [disabled]="resetForm.invalid || resetLoading()">
+          {{ resetLoading() ? 'Enviando…' : 'Enviar instrucciones' }}
+        </button>
+      </form>
+      <footer class="identity-links">
+        <button class="identity-link-button" type="button" (click)="closePasswordReset()">
+          Volver a iniciar sesión
+        </button>
+      </footer>
+    } @else {
+      <h1 id="login-title">Iniciar sesión</h1>
+      <form class="identity-form" (ngSubmit)="submit()" #loginForm="ngForm">
+        <label class="identity-field">Correo electrónico
+          <input name="email" type="email" autocomplete="username" required email
+            [(ngModel)]="email" placeholder="tu@email.com" />
+        </label>
+
+        <label class="identity-field">Contraseña
+          <span class="identity-password">
+            <input name="password" [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="current-password" required [(ngModel)]="password" />
+            <button type="button" (click)="showPassword.update(value => !value)"
+              [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </span>
+        </label>
+
+        @if (error()) {
+          <p class="identity-notice" role="alert">{{ error() }}</p>
+        }
+
+        <button class="identity-primary" type="submit"
+          [disabled]="loginForm.invalid || loading()">
+          {{ loading() ? 'Iniciando sesión…' : 'Iniciar sesión' }}
+        </button>
+      </form>
+
+      <footer class="identity-links">
+        <span>¿No tienes cuenta?</span>
+        <a routerLink="/registro">Crear una cuenta nueva</a>
+        <button class="identity-link-button" type="button" (click)="openPasswordReset()">
+          ¿Has olvidado tu contraseña?
+        </button>
+      </footer>
+    }
+  </section>
+</main>

@@ -55,6 +55,16 @@
         <span class="nav-icon">⚙</span>
         <span>Configuracion</span>
       </a>
+      <a routerLink="/mi-perfil" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+        <span class="nav-icon">●</span>
+        <span>Mi perfil</span>
+      </a>
+      @if (auth.user()?.permissions?.includes('users:manage')) {
+      <a routerLink="/usuarios" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+        <span class="nav-icon">♙</span>
+        <span>Gestión de usuarios</span>
+      </a>
+      }
     </nav>
     <!-- 
     <section class="sidebar-card">
@@ -112,10 +122,30 @@
         </label>
 
         <button type="button" class="icon-button" aria-label="Notificaciones">🔔</button>
-        <button type="button" class="avatar-button" aria-label="Perfil">
-          <span class="avatar">V</span>
-          <span class="caret">⌄</span>
-        </button>
+        <div class="account-menu">
+          <button type="button" class="avatar-button" aria-label="Menú de cuenta"
+            [attr.aria-expanded]="userMenuOpen()" (click)="userMenuOpen.update(open => !open)">
+            <span class="avatar">
+              @if (auth.user()?.profileImage) {
+                <img [src]="auth.user()?.profileImage" alt="" />
+              } @else {
+                {{ userInitials() }}
+              }
+            </span>
+            <span class="caret">⌄</span>
+          </button>
+          @if (userMenuOpen()) {
+          <div class="account-dropdown">
+            <strong>{{ auth.user()?.firstName }} {{ auth.user()?.lastName }}</strong>
+            <a routerLink="/mi-perfil" (click)="userMenuOpen.set(false)">Mi perfil</a>
+            @if (auth.user()?.permissions?.includes('users:manage')) {
+              <a routerLink="/usuarios" (click)="userMenuOpen.set(false)">Gestión de usuarios</a>
+            }
+            <button type="button" (click)="logout()">Cerrar sesión</button>
+            @if (logoutError()) { <small role="alert">{{ logoutError() }}</small> }
+          </div>
+          }
+        </div>
       </div>
     </header>
 
