@@ -22,6 +22,7 @@ export class RegisterPageComponent implements OnDestroy {
   protected password = '';
   protected confirmPassword = '';
   protected readonly showPassword = signal(false);
+  protected readonly showConfirmPassword = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly imageFile = signal<File | null>(null);
