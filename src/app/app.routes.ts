@@ -9,11 +9,17 @@ import { SettingsPageComponent } from './pages/settings/settings-page.component'
 import { TechniciansPageComponent } from './pages/technicians/technicians-page.component';
 import { StoragePageComponent } from './pages/storage/storage-page.component';
 import { WorkshopStoragePageComponent } from './pages/workshop-storage/workshop-storage-page.component';
+import { adminGuard, authGuard } from './guards/auth.guard';
 
 export const appRoutes: Routes = [
+  { path: 'login', loadComponent: () => import('./pages/login/login-page.component').then((module) => module.LoginPageComponent) },
+  { path: 'registro', loadComponent: () => import('./pages/register/register-page.component').then((module) => module.RegisterPageComponent) },
+  { path: 'restablecer-contrasena', loadComponent: () => import('./pages/reset-password/reset-password-page.component').then((module) => module.ResetPasswordPageComponent) },
+  { path: 'acceso-denegado', loadComponent: () => import('./pages/access-denied/access-denied-page.component').then((module) => module.AccessDeniedPageComponent) },
   {
     path: '',
     component: AppShellComponent,
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -117,6 +123,27 @@ export const appRoutes: Routes = [
           eyebrow: 'Entorno',
           title: 'Configuracion',
           description: 'Preferencias del frontend y recordatorios del entorno actual.',
+          showCreateAction: false
+        }
+      },
+      {
+        path: 'mi-perfil',
+        loadComponent: () => import('./pages/profile/profile-page.component').then((module) => module.ProfilePageComponent),
+        data: {
+          eyebrow: 'Cuenta',
+          title: 'Mi perfil',
+          description: 'Consulta y actualiza tu información personal y de seguridad.',
+          showCreateAction: false
+        }
+      },
+      {
+        path: 'usuarios',
+        loadComponent: () => import('./pages/users/users-page.component').then((module) => module.UsersPageComponent),
+        canActivate: [adminGuard],
+        data: {
+          eyebrow: 'Administración',
+          title: 'Gestión de usuarios',
+          description: 'Administra cuentas, roles y permisos de acceso.',
           showCreateAction: false
         }
       }
