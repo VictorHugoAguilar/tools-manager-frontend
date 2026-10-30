@@ -13,6 +13,7 @@ interface ShellRouteData {
   title: string;
   description: string;
   showCreateAction: boolean;
+  showPageHeader?: boolean;
 }
 
 @Component({
@@ -53,6 +54,7 @@ export class AppShellComponent {
   });
 
   protected readonly showCreateAction = computed(() => this.routeData().showCreateAction);
+  protected readonly showPageHeader = computed(() => this.routeData().showPageHeader ?? true);
 
   constructor() {
     this.store.ensureLoaded();
