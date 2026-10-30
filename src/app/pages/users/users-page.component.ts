@@ -177,11 +177,13 @@ export class UsersPageComponent implements OnDestroy {
           }
         }
       } else {
-        await firstValueFrom(this.api.updateUser(original.id, {
-          firstName: this.draft.firstName,
-          lastName: this.draft.lastName,
-          email: this.draft.email
-        }));
+        const profileChanges: { firstName?: string; lastName?: string; email?: string } = {};
+        if (this.draft.firstName !== original.firstName) profileChanges.firstName = this.draft.firstName;
+        if (this.draft.lastName !== original.lastName) profileChanges.lastName = this.draft.lastName;
+        if (this.draft.email !== original.email) profileChanges.email = this.draft.email;
+        if (Object.keys(profileChanges).length) {
+          await firstValueFrom(this.api.updateUser(original.id, profileChanges));
+        }
         if (this.draft.roleId !== original.roleId) {
           await firstValueFrom(this.api.updateUserRole(original.id, this.draft.roleId));
         }
