@@ -286,3 +286,12 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se cambia como se muestra la fecha en los changelog de los títulos
 - Changed: se modifica los estilos visuales de la subida de avatar de usuarios
 - Changed: se modifican los changelog para que cumplan la nueva semántica
+
+<!-- CHANGELOG-PR-78-START -->
+### [5.1.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/78) (2026-10-30)
+
+- Fixed: cambio del flujo guardado de dato modificados
+- Changed: añadimos en la pagina del login un icono en lugar de texto
+- Changed: se modifica y añade los iconos para ver la contraseña o para ocultarla en la pagina de crear nuevo perfil
+
+<!-- CHANGELOG-PR-78-END -->
