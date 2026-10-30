@@ -14,21 +14,28 @@
   <div class="profile-grid">
     <section class="profile-card">
       <p class="eyebrow">Información del usuario</p>
-      <div class="profile-identity">
-        <div class="profile-avatar">
-          @if (avatarSource()) {
-            <img [src]="avatarSource()" alt="Foto de perfil" />
-          } @else {
-            <span>{{ initials() }}</span>
-          }
+      <section class="avatar-upload" aria-label="Foto de perfil">
+        <div class="avatar-upload__preview">
+          <div class="avatar-preview">
+            @if (avatarSource()) {
+              <img [src]="avatarSource()" alt="Foto de perfil" />
+            } @else {
+              <span>{{ initials() }}</span>
+            }
+          </div>
         </div>
-        <label class="profile-upload">
+        <div class="avatar-upload__content">
           <strong>Foto de perfil</strong>
-          <span>JPEG, PNG o WebP · máximo 3 MB</span>
-          <input type="file" accept="image/jpeg,image/png,image/webp"
-            (change)="onImageSelected($event)" />
-        </label>
-      </div>
+          <p>Selecciona una imagen para actualizar tu foto de perfil.</p>
+          <label class="avatar-upload__picker">
+            <span>{{ imageFile()?.name || 'Seleccionar imagen' }}</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp"
+              aria-label="Seleccionar foto de perfil"
+              (change)="onImageSelected($event)" />
+          </label>
+          <small>JPEG, PNG o WebP · máximo 3 MB</small>
+        </div>
+      </section>
 
       <form class="profile-form" (ngSubmit)="saveProfile()" #profileForm="ngForm">
         <label>Nombre

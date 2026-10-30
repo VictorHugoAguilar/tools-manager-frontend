@@ -172,19 +172,33 @@
               <option [ngValue]="false">Inactivo</option>
             </select>
           </label>
-          <label class="field-wide">Foto de perfil (opcional)
-            <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onImageSelected($event)" />
-            <small>{{ selectedImage()?.name || 'JPEG, PNG o WebP · máximo 3 MB' }}</small>
-          </label>
-          @if (imagePreviewUrl(); as preview) {
-            <div class="user-image-preview field-wide">
-              <img [src]="preview" alt="Vista previa de la foto de perfil" />
+          <section class="avatar-upload field-wide" aria-label="Foto de perfil">
+            <div class="avatar-upload__preview">
+              <div class="avatar-preview">
+                @if (imagePreviewUrl(); as preview) {
+                  <img [src]="preview" alt="Vista previa de la foto de perfil" />
+                } @else if (editingUser(); as user) {
+                  @if (user.profileImage) {
+                    <img [src]="user.profileImage" alt="Foto de perfil actual" />
+                  } @else {
+                    <span>{{ initials(user) }}</span>
+                  }
+                } @else {
+                  <span>{{ draft.firstName.charAt(0) || 'U' }}</span>
+                }
+              </div>
             </div>
-          } @else if (editingUser()?.profileImage) {
-            <div class="user-image-preview field-wide">
-              <img [src]="editingUser()?.profileImage" alt="Foto de perfil actual" />
+            <div class="avatar-upload__content">
+              <strong>Foto de perfil opcional</strong>
+              <p>Selecciona una imagen para personalizar la cuenta.</p>
+              <label class="avatar-upload__picker">
+                <span>{{ selectedImage()?.name || 'Seleccionar imagen' }}</span>
+                <input type="file" accept="image/jpeg,image/png,image/webp"
+                  aria-label="Seleccionar foto de perfil" (change)="onImageSelected($event)" />
+              </label>
+              <small>JPEG, PNG o WebP · máximo 3 MB</small>
             </div>
-          }
+          </section>
         </div>
         @if (saveError()) { <p class="user-notice user-notice--error" role="alert">{{ saveError() }}</p> }
         <footer class="user-modal-actions">
