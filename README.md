@@ -295,3 +295,15 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se modifica y añade los iconos para ver la contraseña o para ocultarla en la pagina de crear nuevo perfil
 
 <!-- CHANGELOG-PR-78-END -->
+
+<!-- CHANGELOG-PR-80-START -->
+### [6.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/80) (2026-10-30)
+
+- Added: se añaden la nueva pagina para la lista de tareas
+- Added: se añaden los servicios para las lista de tareas
+- Changed: se añaden en la rutas la nueva página de lista de tareas
+- Added: se añade en la barra de navegacion la nueva pagina
+- Added: se crea un nuevo modelo de datos para las lista de tareas
+- Changed: se modifican los subpaneles para que mantengan el mismo estilo en todas las páginas
+
+<!-- CHANGELOG-PR-80-END -->
