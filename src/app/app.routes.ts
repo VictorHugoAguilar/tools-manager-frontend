@@ -89,6 +89,19 @@ export const appRoutes: Routes = [
         }
       },
       {
+        path: 'todo-list',
+        loadComponent: () => import('./pages/todo-list/todo-list-page.component')
+          .then((module) => module.TodoListPageComponent),
+        data: {
+          eyebrow: 'ORGANIZACIÓN',
+          title: 'Tareas',
+          description: 'Organiza, planifica y gestiona todas tus tareas de forma sencilla y eficiente.',
+          showCreateAction: false,
+          showPageHeader: false,
+          showGlobalSearch: true
+        }
+      },
+      {
         path: 'categorias',
         component: CategoriesPageComponent,
         data: {

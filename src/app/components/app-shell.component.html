@@ -35,6 +35,10 @@
         <span class="nav-icon">☷</span>
         <span>Listas de tareas</span>
       </a>
+      <a routerLink="/todo-list" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
+        <span class="nav-icon">✓</span>
+        <span>Tareas</span>
+      </a>
       <a routerLink="/categorias" routerLinkActive="active" class="nav-item" (click)="closeSidebar()">
         <span class="nav-icon">◫</span>
         <span>Categorias</span>
@@ -119,7 +123,7 @@
       </div>
 
       <div class="topbar-tools">
-        @if (showPageHeader()) {
+        @if (showGlobalSearch()) {
         <label class="search-box">
           <span>⌕</span>
           <input type="search" placeholder="Buscar..." [value]="store.searchTerm()"
