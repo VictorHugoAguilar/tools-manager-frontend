@@ -16,7 +16,6 @@ import { Injectable, isDevMode } from '@angular/core';
  * @version 1.0.0
  * @license MIT
  * @since 2026-05-04
- * @deprecated This service is intended for use in development and may not be suitable for production environments due to potential performance implications of logging and localStorage usage. Consider using a more robust state management solution for production applications.
  * @remarks This service is designed to be simple and focused on managing properties in localStorage, with an emphasis on logging for development purposes. It is not intended to be a comprehensive solution for state management or localStorage interactions in production applications. Use with caution and consider the implications of using localStorage in your application, especially regarding performance and security.
  * @example
  * import { Component } from '@angular/core'; 
