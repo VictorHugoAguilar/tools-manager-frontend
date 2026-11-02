@@ -1,5 +1,5 @@
 export type TaskPriority = 'low' | 'medium' | 'high';
-export type TaskColumnColor = 'blue' | 'mint' | 'yellow' | 'rose';
+export type TaskColumnColor = string;
 
 export interface TaskBoardColumn {
   id: string;

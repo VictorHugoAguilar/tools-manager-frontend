@@ -39,6 +39,14 @@
     line-height: 1.1;
   }
 
+  h1 {
+    margin: 0.28rem 0 0;
+    color: var(--text);
+    font-size: clamp(1.7rem, 3vw, 2.25rem);
+    letter-spacing: -0.055em;
+    line-height: 1.1;
+  }
+
   p:not(.eyebrow) {
     margin: 0.45rem 0 0;
     color: var(--muted);
@@ -268,6 +276,7 @@
 }
 
 .task-column {
+  position: relative;
   display: flex;
   flex: 0 0 min(290px, 84vw);
   flex-direction: column;
@@ -276,24 +285,12 @@
   min-height: 250px;
   padding: 0.75rem;
   border-color: rgba(35, 52, 90, 0.15);
-  background: #f7f8fb;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--column-color, #9fc9ff) 20%, white),
+    #f8f9fc 180px
+  );
   box-shadow: 0 2px 7px rgba(35, 52, 90, 0.07);
-}
-
-.task-column--blue {
-  background: linear-gradient(180deg, #edf3ff 0, #f8f9fc 180px);
-}
-
-.task-column--mint {
-  background: linear-gradient(180deg, #eaf8f1 0, #f8f9fc 180px);
-}
-
-.task-column--yellow {
-  background: linear-gradient(180deg, #fff8df 0, #f8f9fc 180px);
-}
-
-.task-column--rose {
-  background: linear-gradient(180deg, #fff0f2 0, #f8f9fc 180px);
 }
 
 .task-column__header {
@@ -322,19 +319,7 @@
   flex: 0 0 0.65rem;
   border: 2px solid rgba(35, 52, 90, 0.5);
   border-radius: 50%;
-  background: var(--accent-sky);
-
-  .task-column--mint & {
-    background: var(--accent-mint);
-  }
-
-  .task-column--yellow & {
-    background: var(--accent-yellow);
-  }
-
-  .task-column--rose & {
-    background: #ffb5c5;
-  }
+  background: var(--column-color, #9fc9ff);
 }
 
 .column-count {
@@ -352,8 +337,9 @@
 }
 
 .column-actions {
-  display: flex;
-  gap: 0.12rem;
+  position: relative;
+  display: grid;
+  place-items: center;
   margin-left: auto;
 
   button {
@@ -365,12 +351,52 @@
     border: 0;
     border-radius: 7px;
     background: transparent;
-    color: #68748e;
-    font-size: 0.9rem;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 900;
 
     &:hover {
       background: rgba(35, 52, 90, 0.08);
       color: var(--primary);
+    }
+  }
+}
+
+.column-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  display: grid;
+  min-width: 9rem;
+  padding: 0.3rem;
+  border: 1.5px solid rgba(35, 52, 90, 0.18);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 3px 4px 0 rgba(35, 52, 90, 0.18);
+
+  button {
+    display: flex;
+    width: 100%;
+    height: auto;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 750;
+    text-align: left;
+
+    &:hover {
+      background: #f0f2f7;
+    }
+  }
+
+  .column-menu__danger {
+    color: #a93d31;
+
+    &:hover {
+      background: #fff0ed;
     }
   }
 }
@@ -467,30 +493,51 @@
   line-height: 1.15;
 }
 
-.task-card__meta,
-.task-card__indicators {
-  display: flex;
+.task-card__meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 1.7rem;
   align-items: center;
   gap: 0.42rem;
-}
-
-.task-card__meta {
-  justify-content: space-between;
   min-height: 1.4rem;
   padding-top: 0.12rem;
 }
 
-.task-card__indicators {
-  flex-wrap: wrap;
+.task-comment-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   color: #718098;
   font-size: 0.68rem;
+  font-weight: 750;
+  white-space: nowrap;
+
+  svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
 }
 
 .task-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
   color: #68758d;
   font-size: 0.72rem;
   font-weight: 750;
   white-space: nowrap;
+
+  svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+  }
 }
 
 .is-overdue {
@@ -540,6 +587,13 @@
     height: 100%;
     object-fit: cover;
   }
+}
+
+.member-avatar--unassigned {
+  border-style: dashed;
+  background: #f2f3f6;
+  color: #7b879a;
+  box-shadow: none;
 }
 
 .member-avatar--small {
@@ -1186,6 +1240,28 @@
     border: 1.5px solid rgba(35, 52, 90, 0.2);
     border-radius: 10px;
     background: #fff;
+  }
+}
+
+.color-picker-control {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+
+  input[type='color'] {
+    width: 3.2rem;
+    height: 2.55rem;
+    padding: 0.25rem;
+    border: 1.5px solid rgba(35, 52, 90, 0.2);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  span {
+    color: #66738a;
+    font-family: monospace;
+    font-size: 0.82rem;
+    text-transform: uppercase;
   }
 }
 

@@ -47,7 +47,9 @@ export class TaskBoardPageComponent implements OnInit {
   protected readonly columnDialogOpen = signal(false);
   protected readonly labelDialogOpen = signal(false);
   protected readonly columnName = signal('');
-  protected readonly columnColor = signal<TaskBoardColumn['color']>('blue');
+  protected readonly columnColor = signal<TaskBoardColumn['color']>('#9fc9ff');
+  protected readonly editingColumnId = signal<string | null>(null);
+  protected readonly openColumnMenuId = signal<string | null>(null);
   protected readonly labelName = signal('');
   protected readonly labelColor = signal('#8edfc0');
   protected readonly activeTask = computed(() =>
@@ -240,18 +242,44 @@ export class TaskBoardPageComponent implements OnInit {
   }
 
   protected openColumnDialog(): void {
+    this.editingColumnId.set(null);
     this.columnName.set('');
-    this.columnColor.set('blue');
+    this.columnColor.set('#9fc9ff');
     this.saveError.set('');
     this.columnDialogOpen.set(true);
   }
 
-  protected async createColumn(): Promise<void> {
+  protected openColumnMenu(columnId: string): void {
+    this.openColumnMenuId.update((current) => current === columnId ? null : columnId);
+  }
+
+  protected editColumn(column: TaskBoardColumn): void {
+    this.editingColumnId.set(column.id);
+    this.columnName.set(column.name);
+    this.columnColor.set(this.columnColorValue(column.color));
+    this.openColumnMenuId.set(null);
+    this.saveError.set('');
+    this.columnDialogOpen.set(true);
+  }
+
+  protected async saveColumn(): Promise<void> {
     this.saving.set(true);
     this.saveError.set('');
     try {
-      await firstValueFrom(this.api.createColumn(this.columnName(), this.columnColor()));
+      const editingColumnId = this.editingColumnId();
+      if (editingColumnId) {
+        await firstValueFrom(this.api.updateColumn(editingColumnId, {
+          name: this.columnName().trim(),
+          color: this.columnColorValue(this.columnColor())
+        }));
+      } else {
+        await firstValueFrom(this.api.createColumn(
+          this.columnName(),
+          this.columnColorValue(this.columnColor())
+        ));
+      }
       this.columnDialogOpen.set(false);
+      this.editingColumnId.set(null);
       await this.loadBoard();
     } catch (error: unknown) {
       this.saveError.set(this.errorMessage(error));
@@ -260,18 +288,8 @@ export class TaskBoardPageComponent implements OnInit {
     }
   }
 
-  protected async renameColumn(column: TaskBoardColumn): Promise<void> {
-    const name = window.prompt('Nombre de la lista', column.name);
-    if (name === null || !name.trim()) return;
-    try {
-      await firstValueFrom(this.api.updateColumn(column.id, { name: name.trim() }));
-      await this.loadBoard();
-    } catch (error: unknown) {
-      this.loadError.set(this.errorMessage(error));
-    }
-  }
-
   protected async deleteColumn(column: TaskBoardColumn): Promise<void> {
+    this.openColumnMenuId.set(null);
     const count = this.taskCount(column.id);
     if (count) {
       this.loadError.set(`La lista «${column.name}» contiene tareas. Muévelas o elimínalas antes de borrarla.`);
@@ -398,6 +416,21 @@ export class TaskBoardPageComponent implements OnInit {
 
   protected taskLabel(labelId: string): TaskBoardLabel | undefined {
     return this.labels().find((label) => label.id === labelId);
+  }
+
+  protected columnColorValue(color: string): string {
+    const legacyColors: Record<string, string> = {
+      blue: '#9fc9ff',
+      mint: '#8edfc0',
+      yellow: '#ffe59a',
+      rose: '#ffb5c5'
+    };
+    return /^#[0-9a-f]{6}$/i.test(color) ? color : legacyColors[color] ?? '#9fc9ff';
+  }
+
+  protected updateColumnColor(event: Event): void {
+    const color = (event.target as HTMLInputElement).value;
+    this.columnColor.set(this.columnColorValue(color));
   }
 
   protected member(memberId: string): TaskBoardMember | undefined {

@@ -1,7 +1,8 @@
-<section class="task-board-page">
+<section class="task-board-page" (click)="openColumnMenuId.set(null)">
   <header class="task-board-intro">
     <div>
-      <p class="eyebrow">Listas de tareas</p>
+      <p class="eyebrow">ORGANIZACIÓN</p>
+      <h1>Listas de tareas</h1>
       <p class="summary-copy">Organiza y controla tus tareas de forma visual.</p>
     </div>
     <div class="task-board-intro__actions">
@@ -97,19 +98,24 @@
       [cdkDropListData]="columns()" (cdkDropListDropped)="dropColumn($event)">
       @for (column of columns(); track column.id) {
         <article class="task-column" cdkDrag [cdkDragData]="column"
-          [class.task-column--blue]="column.color === 'blue'"
-          [class.task-column--mint]="column.color === 'mint'"
-          [class.task-column--yellow]="column.color === 'yellow'"
-          [class.task-column--rose]="column.color === 'rose'">
+          [style.--column-color]="columnColorValue(column.color)">
           <header class="task-column__header">
             <span class="column-status" aria-hidden="true"></span>
             <h3>{{ column.name }}</h3>
             <span class="column-count">{{ taskCount(column.id) }}</span>
             <div class="column-actions">
-              <button type="button" title="Cambiar nombre" [attr.aria-label]="'Cambiar nombre de ' + column.name"
-                (click)="renameColumn(column)">✎</button>
-              <button type="button" title="Eliminar lista" [attr.aria-label]="'Eliminar lista ' + column.name"
-                (click)="deleteColumn(column)">···</button>
+              <button type="button" class="column-menu-toggle" title="Opciones de la lista"
+                [attr.aria-label]="'Opciones de ' + column.name"
+                [attr.aria-expanded]="openColumnMenuId() === column.id"
+                (click)="$event.stopPropagation(); openColumnMenu(column.id)">•••</button>
+              @if (openColumnMenuId() === column.id) {
+                <div class="column-menu" role="menu" [attr.aria-label]="'Opciones de ' + column.name"
+                  (click)="$event.stopPropagation()">
+                  <button type="button" role="menuitem" (click)="editColumn(column)">Modificar</button>
+                  <button type="button" role="menuitem" class="column-menu__danger"
+                    (click)="deleteColumn(column)">Eliminar</button>
+                </div>
+              }
             </div>
           </header>
 
@@ -137,20 +143,23 @@
                   </div>
                 }
                 <footer class="task-card__meta">
-                  <div class="task-card__indicators">
-                    @if (task.dueDate) {
-                      <span class="task-date" [class.is-overdue]="isOverdue(task)">▢ {{ dueDateLabel(task.dueDate) }}</span>
-                    }
-                    @if (task.comments.length) { <span title="Comentarios">☏ {{ task.comments.length }}</span> }
-                    @if (task.attachments.length) { <span title="Archivos adjuntos">▧ {{ task.attachments.length }}</span> }
-                    <span class="priority-marker" [class.priority-marker--high]="task.priority === 'high'"
-                      [class.priority-marker--low]="task.priority === 'low'">{{ priorityLabel(task.priority) }}</span>
-                  </div>
+                  <span class="task-date" [class.is-overdue]="isOverdue(task)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4m8-4v4M4 10h16" /></svg>
+                    {{ task.dueDate ? dueDateLabel(task.dueDate) : 'Sin fecha' }}
+                  </span>
+                  <span class="task-comment-count" [attr.aria-label]="task.comments.length + ' comentarios'"
+                    title="Comentarios">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.5A7.5 7.5 0 1 1 20 11.5Z" /></svg>
+                    {{ task.comments.length }}
+                  </span>
                   @if (member(task.assigneeId); as person) {
                     <span class="member-avatar" [title]="person.firstName + ' ' + person.lastName">
                       @if (person.profileImage) { <img [src]="person.profileImage" alt="" /> }
                       @else { {{ memberInitials(person) }} }
                     </span>
+                  } @else {
+                    <span class="member-avatar member-avatar--unassigned" title="Sin responsable asignado"
+                      aria-label="Sin responsable asignado">?</span>
                   }
                 </footer>
               </article>
@@ -351,33 +360,36 @@
 
 @if (columnDialogOpen() || labelDialogOpen()) {
   <button type="button" class="task-modal-backdrop task-modal-backdrop--nested" aria-label="Cerrar configuración"
-    (click)="columnDialogOpen.set(false); labelDialogOpen.set(false)"></button>
+    (click)="columnDialogOpen.set(false); labelDialogOpen.set(false); editingColumnId.set(null)"></button>
   <section class="small-task-modal" role="dialog" aria-modal="true"
-    [attr.aria-label]="columnDialogOpen() ? 'Añadir lista' : 'Gestionar etiquetas'">
+    [attr.aria-label]="columnDialogOpen() ? (editingColumnId() ? 'Modificar lista' : 'Añadir lista') : 'Gestionar etiquetas'">
     <header class="task-modal__header">
       <div>
         <p class="eyebrow">Configuración</p>
-        <h2>{{ columnDialogOpen() ? 'Añadir lista' : 'Gestionar etiquetas' }}</h2>
+        <h2>{{ columnDialogOpen() ? (editingColumnId() ? 'Modificar lista' : 'Añadir lista') : 'Gestionar etiquetas' }}</h2>
       </div>
       <button type="button" class="task-close-button" aria-label="Cerrar"
-        (click)="columnDialogOpen.set(false); labelDialogOpen.set(false)">×</button>
+        (click)="columnDialogOpen.set(false); labelDialogOpen.set(false); editingColumnId.set(null)">×</button>
     </header>
     @if (saveError()) { <p class="task-notice task-notice--error" role="alert">{{ saveError() }}</p> }
     @if (columnDialogOpen()) {
-      <form class="task-form" (ngSubmit)="createColumn()">
+      <form class="task-form" (ngSubmit)="saveColumn()">
         <label>Nombre de la lista
           <input name="columnName" required maxlength="120" [ngModel]="columnName()"
             (ngModelChange)="columnName.set($event)" />
         </label>
         <label>Color
-          <select name="columnColor" [ngModel]="columnColor()" (ngModelChange)="columnColor.set($event)">
-            <option value="blue">Azul claro</option><option value="mint">Verde menta</option>
-            <option value="yellow">Amarillo</option><option value="rose">Rosa</option>
-          </select>
+          <span class="color-picker-control">
+            <input name="columnColor" type="color" aria-label="Color de la lista"
+              [value]="columnColorValue(columnColor())" (input)="updateColumnColor($event)" />
+            <span>{{ columnColor() }}</span>
+          </span>
         </label>
         <footer class="task-modal__actions">
-          <button type="button" class="task-secondary" (click)="columnDialogOpen.set(false)">Cancelar</button>
-          <button type="submit" class="task-primary" [disabled]="!columnName().trim() || saving()">Crear lista</button>
+          <button type="button" class="task-secondary" (click)="columnDialogOpen.set(false); editingColumnId.set(null)">Cancelar</button>
+          <button type="submit" class="task-primary" [disabled]="!columnName().trim() || saving()">
+            {{ saving() ? 'Guardando…' : editingColumnId() ? 'Guardar cambios' : 'Crear lista' }}
+          </button>
         </footer>
       </form>
     } @else {
