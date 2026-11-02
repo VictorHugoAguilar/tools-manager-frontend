@@ -195,6 +195,128 @@ Si no encuentra ninguna de las marcas, no modifica la versión.
 
 > El comportamiento final depende de la configuración vigente de los workflows en `.github/workflows/`.
 
+## Versionado semántico
+
+Como decía, una parte importante del versionado es decidir las normas y reglas que puedes usar para denominar a las versiones. Existen muchos sistemas para designar las versiones, o incluso podrías crearte las tuyas propias.
+
+Sin embargo, existe un sistema llamado versionado semántico que es ampliamente utilizado en la comunidad de desarrollo. Aunque no es el único, se ha convertido en prácticamente en un estándar aceptado.
+
+El versionado semántico se compone de tres números que identifican la versión:
+
+```consola
+$ MAJOR.MINOR.PATCH
+```
+
+Veamos cada una de esas partes, y las reglas que llevan a incrementarlos:
+
+- **MAJOR**: El número de versión mayor indica cambios significativos e incompatibles con versiones anteriores (generalmente, se incrementa cuando se introducen cambios que pueden romper la compatibilidad con versiones anteriores).
+
+- **MINOR**: El número de versión menor señala nuevas funcionalidades o mejoras que son retrocompatibles (al incrementar el número menor, se indica que se han añadido características sin afectar la compatibilidad con versiones previas).
+
+- **PATCH**: El número de versión de parche indica correcciones de errores o ajustes menores que no afectan la compatibilidad hacia atrás.
+
+Además, existe otra regla. Cada vez que se incremente un número, los que están “por debajo” vuelven a cero. Es decir:
+
+Si cambia `MAJOR`, reiniciamos a cero `MINOR` y `PATCH`
+Si cambia `MINOR`, reiniciamos a cero `PATCH`
+
+### Ejemplo de versionado semántico
+
+Seguramente sea más sencillo y si lo vemos con un ejemplo. Supongamos que tu tienes un programa o una librería, y lanzas una versión inicial v1.0.0
+
+```
+1.0.0 - Versión inicial
+```
+
+Después surgen algunos errores, que arreglo en Bugfix. Como solo son bugs, incremento el campo `PATH`.
+
+```
+1.0.0 - Versión inicial
+1.0.1 - Bugfix uno
+1.0.2 - Bugfix dos
+```
+
+Pasa más tiempo, y te apetece añadirle una nueva funcionalidad. Estas funcionalidades son compatibles con la anterior versión, así que incremento el campo `MINOR`. Además, al incrementar el `MINOR` tengo que volver `PATCH` a cero.
+
+```
+1.1.0 - Nueva funcionalidad
+```
+
+Por supuesto cada nueva versión puede tener sus propios `PATCH`, que generalmente corresponderían con resolución de bugs o cambios muy pequeños.
+
+```
+1.1.0 - Nueva funcionalidad
+1.1.1 - Bugfix
+1.1.2 - Bugfix
+```
+
+Ahora pasa aún más tiempo, y quieres añadir más funcionalidades. Pero, en esta ocasión, vas a hacer cambios importantes que rompen la compatibilidad con la versión anterior.
+
+En ese caso, incremento la versión `MAJOR`, y tanto `MINOR` como `PATH` vuelven a cero.
+
+```
+2.0.0 - Cambio que rompe compatibilidad
+```
+
+### Qué es romper la compatibilidad
+
+He dicho varias veces que el criterio para definir si es una versión `MAJOR` o `MINOR` es si se rompe compatibilidad. Pero que significa eso de “romper la compatibilidad”. Vamos a verlo en más detalle con un ejemplo.
+
+Imagina que te has hecho una librería que genera códigos QR. La sintaxis para generar los códigos es muy sencilla, simplemente le pasas el texto que quieres dentro del QR, y la ruta donde guardar el QR generado..
+
+```
+// v1.0
+generateQR('mi texto', 'path_image')
+```
+
+Ahora añades un parámetro opcional para cambiar el color del código QR. Esto es un cambio que no rompe compatibilidad. Todo código que estuviera usando tu librería va a seguir funcionando.
+
+```
+// v1.1 ahora hay un parámetro opcional de color
+generateQR('mi texto', 'path_image', 'pink')
+
+// si no pones el color, funciona igual que la v1.0. No rompe compatibilidad
+generateQR('mi texto', 'path_image')
+```
+
+Pero, por ejemplo, en alguno momento tu librería admite tantas opciones que pasarlo como parámetros no es práctico. Así que te lías la manta a la cabeza, y creas un nuevo objeto que se llame options y que se pasa a la función generateQR.
+
+```
+// v2.0
+options = { path: 'path_image', color: 'pink');
+		   
+generateQR('mi_texto', options);
+```
+
+Nade que estuviera usando tu librería v1.0 va a poder usarla. Así que es un cambio que rompe la compatibilidad y por tanto la nueva versión debe ser v2.0.
+
+### Ruptura de compatibilidad parcial
+
+No quiero ser pesado, pero es importante entender lo de romper la compatibilidad. Tú rompes la compatibilidad incluso aunque no ocurra en todos los casos.
+
+Olvidemos un momento la v2.0 anterior, y volvamos al caso donde tenías la v1.0.
+
+```
+// v1.0
+generateQR('mi texto', 'path_image')
+```
+
+Imaginad que (vete tu a saber porqué motivo, es un ejemplo) tu nueva versión de generador de código no va a aceptar el carácter -. *(por ejemplo, porque lo usas internamente para “vete tu a saber porqué”).
+
+Sea como sea, a partir de ahora si alguien quiere usar un - en tu librería, van a tener que ‘escaparlo’, poniendo \-.
+
+```
+// v1.0
+generateQR('mi-texto', 'path_image')
+
+// v2.0 se deben escapar los caracteres especiales
+generateQR('mi\-texto', 'path_image', 'pink')
+```
+
+La mayoría de programas que usen tu librería, que no usaban el carácter - para nada, les va a funcionar sin problemas.
+
+Pero justo al pobre que ha tenido la mala suerte de sí usar un -, le va a petar su programa de mala manera. Así que es un cambio de versión `MAJOR`, aunque solo se rompa en ciertos casos.
+
 ## Estructura del proyecto
 
 Estructura principal identificada en el repositorio:
