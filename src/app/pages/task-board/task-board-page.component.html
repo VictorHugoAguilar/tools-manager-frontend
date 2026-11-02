@@ -327,7 +327,7 @@
             <section class="task-panel-content task-comments" role="tabpanel">
               <div class="task-comments__list">
                 @for (comment of task.comments; track comment.id) {
-                  <article class="task-comment">
+                  <article class="task-comment" [class.is-menu-open]="openCommentMenuId() === comment.id">
                     @if (member(comment.authorId); as author) {
                       <span class="member-avatar member-avatar--small task-comment__avatar">
                         @if (author.profileImage) { <img [src]="author.profileImage" alt="" /> }
