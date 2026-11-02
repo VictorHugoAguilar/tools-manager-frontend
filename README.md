@@ -189,7 +189,7 @@ La acción identifica el tipo de cambio en el título o en la descripción de la
 - `[minor]`: incrementa la versión menor, por ejemplo `1.2.3` → `1.3.0`.
 - `[major]`: incrementa la versión principal, por ejemplo `1.2.3` → `2.0.0`.
 
-Cuando encuentra una marca válida, la automatización actualiza `package.json`, crea un commit y una etiqueta Git con el prefijo `v` (por ejemplo, `v1.2.4`). El commit de versión incluye `[skip ci]` para ayudar a evitar ejecuciones recursivas de CI.
+Cuando encuentra una marca válida, la automatización actualiza `package.json`, crea un commit y una etiqueta con el link hacia la `Pull Request` (por ejemplo, `1.2.4`). El commit de versión incluye `[skip ci]` para ayudar a evitar ejecuciones recursivas de CI.
 
 Si no encuentra ninguna de las marcas, no modifica la versión.
 
