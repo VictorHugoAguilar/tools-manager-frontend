@@ -39,7 +39,7 @@ export class AppShellComponent {
   protected readonly showTecnicos = signal(this.getShowTecnicosInitialValue());
   protected readonly showArreglos = signal(this.getShowArreglosInitialValue());
 
-  private getShowTecnicosInitialValue(): boolean { 
+  private getShowTecnicosInitialValue(): boolean {
     return this.propertiesStorage.getValueOfLocalStorageByKey('show-access-to-technicians-menu');
   }
 
@@ -56,9 +56,7 @@ export class AppShellComponent {
 
   protected readonly showCreateAction = computed(() => this.routeData().showCreateAction);
   protected readonly showPageHeader = computed(() => this.routeData().showPageHeader ?? true);
-  protected readonly showGlobalSearch = computed(() =>
-    this.routeData().showGlobalSearch ?? this.showPageHeader()
-  );
+  protected readonly showGlobalSearch = computed(() => this.routeData().showGlobalSearch ?? this.showPageHeader());
 
   constructor() {
     this.store.ensureLoaded();
@@ -121,7 +119,9 @@ export class AppShellComponent {
       eyebrow: data?.eyebrow ?? 'Panel Operativo',
       title: data?.title ?? 'Gestion de Herramientas',
       description: data?.description ?? 'Operacion diaria de herramientas.',
-      showCreateAction: data?.showCreateAction ?? true
+      showCreateAction: data?.showCreateAction ?? true,
+      showPageHeader: data?.showPageHeader ?? true,
+      showGlobalSearch: data?.showGlobalSearch ?? false
     });
   }
 

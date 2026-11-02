@@ -33,7 +33,8 @@ export const appRoutes: Routes = [
           eyebrow: 'Panel Operativo',
           title: 'Tablero de Herramientas',
           description: 'Vista kanban para disponibilidad, asignaciones y mantenimiento.',
-          showCreateAction: true
+          showCreateAction: true,
+          showGlobalSearch: true
         }
       },
       {
@@ -43,7 +44,8 @@ export const appRoutes: Routes = [
           eyebrow: 'Control Diario',
           title: 'Inventario',
           description: 'Listado operativo para revisar y actualizar rapidamente todo el parque.',
-          showCreateAction: true
+          showCreateAction: true,
+          showGlobalSearch: true
         }
       },
       {
@@ -98,7 +100,6 @@ export const appRoutes: Routes = [
           description: 'Organiza, planifica y gestiona todas tus tareas de forma sencilla y eficiente.',
           showCreateAction: false,
           showPageHeader: false,
-          showGlobalSearch: true
         }
       },
       {
@@ -108,7 +109,8 @@ export const appRoutes: Routes = [
           eyebrow: 'Agrupacion',
           title: 'Categorias',
           description: 'Resumen por familias de herramientas con disponibilidad y materiales.',
-          showCreateAction: false
+          showCreateAction: false,
+          showGlobalSearch: true
         }
       },
       {
