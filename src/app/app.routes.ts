@@ -86,8 +86,7 @@ export const appRoutes: Routes = [
           eyebrow: 'Organización',
           title: 'Listas de tareas',
           description: 'Organiza y controla tus tareas de forma visual.',
-          showCreateAction: false,
-          showPageHeader: false
+          showCreateAction: false
         }
       },
       {
@@ -99,7 +98,6 @@ export const appRoutes: Routes = [
           title: 'Tareas',
           description: 'Organiza, planifica y gestiona todas tus tareas de forma sencilla y eficiente.',
           showCreateAction: false,
-          showPageHeader: false,
         }
       },
       {
