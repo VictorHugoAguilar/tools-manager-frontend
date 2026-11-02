@@ -86,7 +86,7 @@ export const appRoutes: Routes = [
           eyebrow: 'Organización',
           title: 'Listas de tareas',
           description: 'Organiza y controla tus tareas de forma visual.',
-          showCreateAction: false
+          showCreateAction: false,
         }
       },
       {
@@ -94,7 +94,7 @@ export const appRoutes: Routes = [
         loadComponent: () => import('./pages/todo-list/todo-list-page.component')
           .then((module) => module.TodoListPageComponent),
         data: {
-          eyebrow: 'ORGANIZACIÓN',
+          eyebrow: 'Organización',
           title: 'Tareas',
           description: 'Organiza, planifica y gestiona todas tus tareas de forma sencilla y eficiente.',
           showCreateAction: false,
@@ -104,7 +104,7 @@ export const appRoutes: Routes = [
         path: 'categorias',
         component: CategoriesPageComponent,
         data: {
-          eyebrow: 'Agrupacion',
+          eyebrow: 'Agrupación',
           title: 'Categorias',
           description: 'Resumen por familias de herramientas con disponibilidad y materiales.',
           showCreateAction: false,
@@ -115,7 +115,7 @@ export const appRoutes: Routes = [
         path: 'reportes',
         component: ReportsPageComponent,
         data: {
-          eyebrow: 'Analitica',
+          eyebrow: 'Analítica',
           title: 'Reportes',
           description: 'Lectura rapida del estado general, uso y composicion del inventario.',
           showCreateAction: false
@@ -136,7 +136,7 @@ export const appRoutes: Routes = [
         component: TechniciansPageComponent,
         data: {
           eyebrow: 'Equipo',
-          title: 'Gestion de Tecnicos',
+          title: 'Gestión de Técnicos',
           description: 'Alta, edicion y disponibilidad del personal que realiza los arreglos.',
           showCreateAction: false
         }
@@ -146,7 +146,7 @@ export const appRoutes: Routes = [
         component: SettingsPageComponent,
         data: {
           eyebrow: 'Entorno',
-          title: 'Configuracion',
+          title: 'Configuración',
           description: 'Preferencias del frontend y recordatorios del entorno actual.',
           showCreateAction: false
         }
