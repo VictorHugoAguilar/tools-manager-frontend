@@ -405,6 +405,44 @@
                 <button type="submit" class="task-primary task-send-button" aria-label="Enviar comentario"
                   [disabled]="!commentDraft().trim() || commentBusy()">➤</button>
               </form>
+
+              <section class="task-comments__attachments" aria-label="Archivos adjuntos">
+                <h3>Archivos adjuntos</h3>
+                @for (attachment of task.attachments; track attachment.id) {
+                  <article class="attachment-row">
+                    <span class="attachment-icon" aria-hidden="true">▤</span>
+                    <div class="attachment-row__copy">
+                      <a [href]="attachment.url" target="_blank" rel="noopener noreferrer">{{ attachment.name }}</a>
+                      <small>{{ formatFileSize(attachment.size) }}</small>
+                    </div>
+                    <a class="attachment-download" [href]="attachment.url" target="_blank"
+                      rel="noopener noreferrer" [attr.download]="attachment.name" aria-label="Descargar archivo">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                      </svg>
+                    </a>
+                    <div class="attachment-actions">
+                      <button type="button" class="remove-attachment" [disabled]="attachmentBusy()"
+                        [attr.aria-label]="'Opciones del archivo ' + attachment.name"
+                        [attr.aria-expanded]="openAttachmentMenuId() === attachment.id"
+                        (click)="toggleAttachmentMenu(attachment.id)">⋯</button>
+                      @if (openAttachmentMenuId() === attachment.id) {
+                        <div class="attachment-menu" role="menu">
+                          <button type="button" role="menuitem" class="is-danger"
+                            (click)="removeAttachment(attachment.id)">Eliminar archivo</button>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="task-attachments__empty">No hay archivos adjuntos.</p>
+                }
+                <label class="attachment-picker">
+                  <input type="file" (change)="onAttachmentSelected($event)" [disabled]="attachmentBusy()" />
+                  {{ attachmentBusy() ? 'Subiendo…' : '＋ Añadir archivo' }}
+                </label>
+                <small class="attachment-hint">Tamaño máximo: 15 MB.</small>
+              </section>
             </section>
           } @else if (taskPanelTab() === 'attachments') {
             <section class="task-panel-content task-attachments" role="tabpanel">
@@ -415,8 +453,24 @@
                     <a [href]="attachment.url" target="_blank" rel="noopener noreferrer">{{ attachment.name }}</a>
                     <small>{{ formatFileSize(attachment.size) }} · {{ attachment.uploadedByName }}</small>
                   </div>
-                  <button type="button" class="remove-attachment" aria-label="Eliminar archivo"
-                    (click)="removeAttachment(attachment.id)">×</button>
+                  <a class="attachment-download" [href]="attachment.url" target="_blank"
+                    rel="noopener noreferrer" [attr.download]="attachment.name" aria-label="Descargar archivo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                    </svg>
+                  </a>
+                  <div class="attachment-actions">
+                    <button type="button" class="remove-attachment" [disabled]="attachmentBusy()"
+                      [attr.aria-label]="'Opciones del archivo ' + attachment.name"
+                      [attr.aria-expanded]="openAttachmentMenuId() === attachment.id"
+                      (click)="toggleAttachmentMenu(attachment.id)">⋯</button>
+                    @if (openAttachmentMenuId() === attachment.id) {
+                      <div class="attachment-menu" role="menu">
+                        <button type="button" role="menuitem" class="is-danger"
+                          (click)="removeAttachment(attachment.id)">Eliminar archivo</button>
+                      </div>
+                    }
+                  </div>
                 </article>
               } @empty {
                 <p class="muted-copy">No hay archivos adjuntos.</p>

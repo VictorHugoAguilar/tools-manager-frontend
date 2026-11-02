@@ -1220,8 +1220,33 @@
   display: grid;
   align-content: start;
   gap: 0.75rem;
-  max-height: 360px;
+  max-height: 240px;
   overflow-y: auto;
+}
+
+.task-comments {
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.task-comments__attachments {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(35, 52, 90, 0.12);
+
+  h3 {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 900;
+  }
+}
+
+.task-attachments__empty {
+  margin: 0;
+  color: #7b879a;
+  font-size: 0.75rem;
 }
 
 .task-comment {
@@ -1409,11 +1434,11 @@
 .attachment-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
   min-width: 0;
-  padding: 0.48rem;
+  padding: 0.5rem 0.6rem;
   border: 1px solid rgba(35, 52, 90, 0.1);
-  border-radius: 10px;
+  border-radius: 12px;
   background: #fff;
 }
 
@@ -1424,8 +1449,10 @@
   height: 2rem;
   flex: 0 0 2rem;
   border-radius: 8px;
-  background: #edf1fa;
-  color: #52658c;
+  background: #d95d57;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 900;
 }
 
 .attachment-row__copy {
@@ -1464,19 +1491,86 @@
   &:hover {
     background: #fff0ed;
   }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+}
+
+.attachment-actions {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.attachment-menu {
+  position: absolute;
+  z-index: 6;
+  top: calc(100% + 0.2rem);
+  right: 0;
+  min-width: 9rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(35, 52, 90, 0.14);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(35, 52, 90, 0.16);
+
+  button {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #a93d31;
+    font-size: 0.76rem;
+    text-align: left;
+
+    &:hover {
+      background: #fff1ef;
+    }
+  }
+}
+
+.attachment-download {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 1.8rem;
+  border-radius: 7px;
+  color: #52658c;
+
+  &:hover {
+    background: #edf1fa;
+  }
+
+  svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
 }
 
 .attachment-picker {
   display: flex;
+  align-items: center;
   justify-content: center;
-  min-height: 2.3rem;
-  padding: 0.5rem;
-  border: 1px dashed rgba(35, 52, 90, 0.25);
-  border-radius: 9px;
-  color: #536a98;
+  justify-self: start;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  border: 1.5px solid rgba(35, 52, 90, 0.18);
+  border-radius: 999px;
+  background: #fff;
+  color: #405d92;
   cursor: pointer;
   font-size: 0.76rem;
   font-weight: 850;
+  transition: background 140ms ease, border-color 140ms ease;
 
   input {
     position: absolute;
@@ -1490,6 +1584,11 @@
 
   &:focus-within {
     outline: 3px solid rgba(102, 127, 174, 0.24);
+  }
+
+  &:hover {
+    border-color: rgba(35, 52, 90, 0.35);
+    background: #f7f9fc;
   }
 }
 

@@ -50,6 +50,7 @@ export class TaskBoardPageComponent implements OnInit {
   protected readonly commentEditDraft = signal('');
   protected readonly editingCommentId = signal<string | null>(null);
   protected readonly openCommentMenuId = signal<string | null>(null);
+  protected readonly openAttachmentMenuId = signal<string | null>(null);
   protected readonly attachmentBusy = signal(false);
   protected readonly columnDialogOpen = signal(false);
   protected readonly labelDialogOpen = signal(false);
@@ -492,12 +493,17 @@ export class TaskBoardPageComponent implements OnInit {
       tone: 'danger'
     });
     if (!accepted) return;
+    this.openAttachmentMenuId.set(null);
     try {
       await firstValueFrom(this.api.deleteAttachment(task.id, attachmentId));
       await this.loadBoard();
     } catch (error: unknown) {
       this.saveError.set(this.errorMessage(error));
     }
+  }
+
+  protected toggleAttachmentMenu(attachmentId: string): void {
+    this.openAttachmentMenuId.update((current) => current === attachmentId ? null : attachmentId);
   }
 
   protected taskLabel(labelId: string): TaskBoardLabel | undefined {
