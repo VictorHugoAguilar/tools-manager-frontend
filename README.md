@@ -203,7 +203,7 @@ Sin embargo, existe un sistema llamado versionado semántico que es ampliamente 
 
 El versionado semántico se compone de tres números que identifican la versión:
 
-```consola
+```shell
 $ MAJOR.MINOR.PATCH
 ```
 
