@@ -447,3 +447,18 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Fixed: se arregla la implementacion y se añade en las rutas las propiedades showGlobalSearch
 
 <!-- CHANGELOG-PR-90-END -->
+
+<!-- CHANGELOG-PR-92-START -->
+### [7.1.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/92) (2026-11-02)
+
+- Changed: cambio en las propiedades de las rutas
+- Changed: cambio de aspecto visual en las listas de tareas y tareas
+- Changed: modificado footer de la tarea se modifica la distribucion, se cambia la fecha en otro formato (12 jun, 21 abr, 25 dic)
+- Changed: se modifica el detalle de la tarea y la modificacion de la tarea
+- Fixed: se modifica en la confirmación de la eliminación para que no se quede debajo del modal de modificar tarea.
+- Fixed: se modifica el tamaño y la posicion de los botones en los detalles de las tareas
+- Changed: se añade la subida de archivos en los detalles de las tareas.
+- Changed: cambio de nombres, y unificación de headers
+- Fixed: cambio de avisos y errores en el budgets
+
+<!-- CHANGELOG-PR-92-END -->
