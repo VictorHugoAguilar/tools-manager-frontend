@@ -27,6 +27,7 @@ export interface TaskComment {
   authorId: string;
   authorName: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface TaskAttachment {
