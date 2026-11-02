@@ -440,3 +440,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se quita etiqueta de @deprecated de una función de un servicio de almacenamiento en el storage
 
 <!-- CHANGELOG-PR-88-END -->
+
+<!-- CHANGELOG-PR-90-START -->
+### [7.0.1](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/90) (2026-11-02)
+
+- Fixed: se arregla la implementacion y se añade en las rutas las propiedades showGlobalSearch
+
+<!-- CHANGELOG-PR-90-END -->
