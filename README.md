@@ -251,19 +251,19 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 
 ---
 
-### v[3.2.8](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/58) (2026-10-27)
+### [v3.2.8](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/58) (2026-10-27)
 
 - Added: Añadida la sección de changelog al README.
 - Fixed: Eliminado un workflow de GitHub y actualizado el nombre del workflow de versión.
 - Fixed: Cambiado el encabezado del changelog de H1 a H3.
 
-### v[3.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/72) (2026-10-27)
+### [v3.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/72) (2026-10-27)
 
 - Added: Se crea un servicio para controlar las imagenes que no cargan
 - Added: Se implementa el servicio que se ha creado
 - Fixed: Se arregla el fallo de la carga del icono
 
-### v[4.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/74) (2026-10-29)
+### [v4.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/74) (2026-10-29)
 
 - Added: se crea la nueva página para controlar los consumibles del taller
 - Added: se introduce la confirmacion de la eliminacion de cualquier componente
@@ -272,7 +272,7 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: cambio de nombre de la nueva página y sus rutas
 - Fixed: sincronizar los estilos de las páginas de almacenamiento
 
-### v[5.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/76) (2026-10-30)
+### [v5.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/76) (2026-10-30)
 
 - Added: se crean los servicios para consumir los nuevos endpoint de autenticación
 - Added: se crea el nuevo modelo para usuarios
@@ -288,7 +288,7 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se modifican los changelog para que cumplan la nueva semántica
 
 <!-- CHANGELOG-PR-78-START -->
-### v[5.1.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/78) (2026-10-30)
+### [v5.1.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/78) (2026-10-30)
 
 - Fixed: cambio del flujo guardado de dato modificados
 - Changed: añadimos en la pagina del login un icono en lugar de texto
@@ -297,7 +297,7 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 <!-- CHANGELOG-PR-78-END -->
 
 <!-- CHANGELOG-PR-80-START -->
-### v[6.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/80) (2026-10-30)
+### [v6.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/80) (2026-10-30)
 
 - Added: se añaden la nueva pagina para la lista de tareas
 - Added: se añaden los servicios para las lista de tareas
@@ -309,7 +309,7 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 <!-- CHANGELOG-PR-80-END -->
 
 <!-- CHANGELOG-PR-88-START -->
-### v[7.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/88) (2026-11-02)
+### [v7.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/88) (2026-11-02)
 
 - Added: generación de nuevo modelo de datos para la página de tareas
 - Added: se añaden los nuevos servicios para la interconexión con el backend
