@@ -9,6 +9,7 @@ import {
   TaskBoardLabel,
   TaskBoardSnapshot,
   TaskBoardTask,
+  TaskComment,
   TaskPayload
 } from '../models/task-board.model';
 
@@ -74,6 +75,19 @@ export class TaskBoardApiService {
     return this.http.post<TaskBoardTask['comments'][number]>(
       `${this.baseUrl}/tasks/${encodeURIComponent(taskId)}/comments`,
       { text }
+    );
+  }
+
+  updateComment(taskId: string, commentId: string, text: string): Observable<TaskComment> {
+    return this.http.put<TaskComment>(
+      `${this.baseUrl}/tasks/${encodeURIComponent(taskId)}/comments/${encodeURIComponent(commentId)}`,
+      { text }
+    );
+  }
+
+  deleteComment(taskId: string, commentId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/tasks/${encodeURIComponent(taskId)}/comments/${encodeURIComponent(commentId)}`
     );
   }
 

@@ -1,4 +1,4 @@
-<section class="task-board-page">
+<section class="task-board-page" (click)="openColumnMenuId.set(null)">
   <header class="task-board-intro">
     <div>
       <p class="eyebrow">Listas de tareas</p>
@@ -97,19 +97,24 @@
       [cdkDropListData]="columns()" (cdkDropListDropped)="dropColumn($event)">
       @for (column of columns(); track column.id) {
         <article class="task-column" cdkDrag [cdkDragData]="column"
-          [class.task-column--blue]="column.color === 'blue'"
-          [class.task-column--mint]="column.color === 'mint'"
-          [class.task-column--yellow]="column.color === 'yellow'"
-          [class.task-column--rose]="column.color === 'rose'">
+          [style.--column-color]="columnColorValue(column.color)">
           <header class="task-column__header">
             <span class="column-status" aria-hidden="true"></span>
             <h3>{{ column.name }}</h3>
             <span class="column-count">{{ taskCount(column.id) }}</span>
             <div class="column-actions">
-              <button type="button" title="Cambiar nombre" [attr.aria-label]="'Cambiar nombre de ' + column.name"
-                (click)="renameColumn(column)">✎</button>
-              <button type="button" title="Eliminar lista" [attr.aria-label]="'Eliminar lista ' + column.name"
-                (click)="deleteColumn(column)">···</button>
+              <button type="button" class="column-menu-toggle" title="Opciones de la lista"
+                [attr.aria-label]="'Opciones de ' + column.name"
+                [attr.aria-expanded]="openColumnMenuId() === column.id"
+                (click)="$event.stopPropagation(); openColumnMenu(column.id)">•••</button>
+              @if (openColumnMenuId() === column.id) {
+                <div class="column-menu" role="menu" [attr.aria-label]="'Opciones de ' + column.name"
+                  (click)="$event.stopPropagation()">
+                  <button type="button" role="menuitem" (click)="editColumn(column)">Modificar</button>
+                  <button type="button" role="menuitem" class="column-menu__danger"
+                    (click)="deleteColumn(column)">Eliminar</button>
+                </div>
+              }
             </div>
           </header>
 
@@ -137,20 +142,23 @@
                   </div>
                 }
                 <footer class="task-card__meta">
-                  <div class="task-card__indicators">
-                    @if (task.dueDate) {
-                      <span class="task-date" [class.is-overdue]="isOverdue(task)">▢ {{ dueDateLabel(task.dueDate) }}</span>
-                    }
-                    @if (task.comments.length) { <span title="Comentarios">☏ {{ task.comments.length }}</span> }
-                    @if (task.attachments.length) { <span title="Archivos adjuntos">▧ {{ task.attachments.length }}</span> }
-                    <span class="priority-marker" [class.priority-marker--high]="task.priority === 'high'"
-                      [class.priority-marker--low]="task.priority === 'low'">{{ priorityLabel(task.priority) }}</span>
-                  </div>
+                  <span class="task-date" [class.is-overdue]="isOverdue(task)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4m8-4v4M4 10h16" /></svg>
+                    {{ task.dueDate ? dueDateLabel(task.dueDate) : 'Sin fecha' }}
+                  </span>
+                  <span class="task-comment-count" [attr.aria-label]="task.comments.length + ' comentarios'"
+                    title="Comentarios">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.5A7.5 7.5 0 1 1 20 11.5Z" /></svg>
+                    {{ task.comments.length }}
+                  </span>
                   @if (member(task.assigneeId); as person) {
                     <span class="member-avatar" [title]="person.firstName + ' ' + person.lastName">
                       @if (person.profileImage) { <img [src]="person.profileImage" alt="" /> }
                       @else { {{ memberInitials(person) }} }
                     </span>
+                  } @else {
+                    <span class="member-avatar member-avatar--unassigned" title="Sin responsable asignado"
+                      aria-label="Sin responsable asignado">?</span>
                   }
                 </footer>
               </article>
@@ -197,22 +205,23 @@
     <header class="task-modal__header">
       <div>
         <p class="eyebrow">{{ editorOpen() ? 'Organización · Tarea' : 'Detalle de tarea' }}</p>
-        <h2>{{ editorOpen() ? (selectedTaskId() ? 'Editar tarea' : 'Nueva tarea') : activeTask()?.title }}</h2>
+        <h2>{{ editorOpen() ? (selectedTaskId() ? (draft.title || 'Editar tarea') : 'Nueva tarea') : activeTask()?.title }}</h2>
+        @if (editorOpen() && draft.description) { <p class="task-modal__subtitle">{{ draft.description }}</p> }
       </div>
       <button type="button" class="task-close-button" aria-label="Cerrar" (click)="closeTaskDialog()">×</button>
     </header>
 
     @if (saveError()) { <p class="task-notice task-notice--error" role="alert">{{ saveError() }}</p> }
 
-    <div class="task-modal__body">
+    <div class="task-modal__body" [class.task-modal__body--single]="!selectedTaskId()">
       <div class="task-modal__main">
         @if (editorOpen()) {
-          <form class="task-form" (ngSubmit)="saveTask()" #taskForm="ngForm">
+          <form id="taskEditorForm" class="task-form task-form--editor" (ngSubmit)="saveTask()">
             <label>Título
               <input name="title" required maxlength="120" [(ngModel)]="draft.title" placeholder="Nombre de la tarea" />
             </label>
             <label>Descripción
-              <textarea name="description" rows="4" maxlength="5000" [(ngModel)]="draft.description"
+              <textarea name="description" rows="2" maxlength="5000" [(ngModel)]="draft.description"
                 placeholder="Describe qué hay que hacer..."></textarea>
             </label>
             <div class="task-form__row">
@@ -227,41 +236,43 @@
                 </select>
               </label>
             </div>
-            <div class="task-form__row">
-              <label>Fecha de vencimiento
-                <input name="dueDate" type="date" [(ngModel)]="draft.dueDate" />
-              </label>
-              <label>Responsable
+            <label>Fecha de vencimiento
+              <input name="dueDate" type="date" [(ngModel)]="draft.dueDate" />
+            </label>
+            <fieldset class="label-selector">
+              <legend>Etiquetas</legend>
+              <div class="task-label-picker">
+                @for (label of labels(); track label.id) {
+                  <button type="button" class="task-label task-label-option"
+                    [class.is-selected]="draft.labelIds.includes(label.id)"
+                    [style.backgroundColor]="label.color"
+                    [attr.aria-pressed]="draft.labelIds.includes(label.id)"
+                    (click)="toggleDraftLabel(label.id)">{{ label.name }}</button>
+                }
+                <button type="button" class="add-label-button" (click)="openLabelDialog()">＋ Añadir etiqueta</button>
+                @if (!labels().length) {
+                  <span class="muted-copy">Todavía no hay etiquetas.</span>
+                }
+              </div>
+            </fieldset>
+            <label class="task-assignee-field">Responsable
+              <span class="task-assignee-select">
+                @if (member(draft.assigneeId); as person) {
+                  <span class="member-avatar member-avatar--small">
+                    @if (person.profileImage) { <img [src]="person.profileImage" alt="" /> }
+                    @else { {{ memberInitials(person) }} }
+                  </span>
+                } @else {
+                  <span class="member-avatar member-avatar--small member-avatar--unassigned" aria-hidden="true">?</span>
+                }
                 <select name="assigneeId" [(ngModel)]="draft.assigneeId">
                   <option value="">Sin asignar</option>
                   @for (person of members(); track person.id) {
                     <option [value]="person.id">{{ person.firstName }} {{ person.lastName }}</option>
                   }
                 </select>
-              </label>
-            </div>
-            <fieldset class="label-selector">
-              <legend>Etiquetas</legend>
-              @for (label of labels(); track label.id) {
-                <label class="label-option">
-                  <input type="checkbox" [checked]="draft.labelIds.includes(label.id)"
-                    (change)="toggleDraftLabel(label.id)" />
-                  <span class="task-label" [style.backgroundColor]="label.color">{{ label.name }}</span>
-                </label>
-              } @empty {
-                <span class="muted-copy">Todavía no hay etiquetas. Puedes crear una desde el tablero.</span>
-              }
-            </fieldset>
-            <footer class="task-modal__actions">
-              @if (selectedTaskId()) {
-                <button type="button" class="task-danger" [disabled]="saving()" (click)="deleteTask()">Eliminar tarea</button>
-              }
-              <span class="actions-spacer"></span>
-              <button type="button" class="task-secondary" [disabled]="saving()" (click)="closeTaskDialog()">Cancelar</button>
-              <button type="submit" class="task-primary" [disabled]="taskForm.invalid || saving()">
-                {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
-              </button>
-            </footer>
+              </span>
+            </label>
           </form>
         } @else if (activeTask(); as task) {
           <div class="task-detail">
@@ -279,105 +290,256 @@
                 @if (taskLabel(labelId); as label) { <span class="task-label" [style.backgroundColor]="label.color">{{ label.name }}</span> }
               }
             </div>
-            <p class="assigned-member">
+            <div class="assigned-member">
               <strong>Responsable</strong>
-              @if (member(task.assigneeId); as person) { {{ person.firstName }} {{ person.lastName }} }
-              @else { <span class="muted-copy">Sin asignar</span> }
-            </p>
+              @if (member(task.assigneeId); as person) {
+                <span class="assigned-member__value">
+                  <span class="member-avatar member-avatar--small">
+                    @if (person.profileImage) { <img [src]="person.profileImage" alt="" /> }
+                    @else { {{ memberInitials(person) }} }
+                  </span>
+                  <span>{{ person.firstName }} {{ person.lastName }}</span>
+                </span>
+              } @else {
+                <span class="assigned-member__value assigned-member__value--empty">
+                  <span class="member-avatar member-avatar--small member-avatar--unassigned" aria-hidden="true">?</span>
+                  <span>Sin asignar</span>
+                </span>
+              }
+            </div>
             <div class="task-detail__actions">
               <button type="button" class="task-secondary" (click)="editTask()">Editar tarea</button>
-              <button type="button" class="task-danger task-danger--compact" (click)="deleteTask()">Eliminar</button>
+              <button type="button" class="task-danger task-danger--compact" (click)="deleteTask()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" />
+                </svg>
+                Eliminar tarea
+              </button>
             </div>
-            <section class="task-history">
-              <h3>Historial</h3>
-              @for (entry of task.history; track entry.id) {
-                <p><strong>{{ entry.actorName }}</strong> · {{ entry.text }}<time>{{ formatDate(entry.createdAt) }}</time></p>
-              }
-            </section>
           </div>
         } @else {
           <div class="task-empty-state"><strong>La tarea ya no está disponible.</strong></div>
         }
       </div>
 
-      @if (!editorOpen() && activeTask(); as task) {
+      @if (activeTask(); as task) {
         <aside class="task-modal__side">
-          <section class="task-comments">
-            <header><h3>Comentarios</h3><span class="column-count">{{ task.comments.length }}</span></header>
-            <div class="task-comments__list">
-              @for (comment of task.comments; track comment.id) {
-                <article class="task-comment">
-                  <span class="member-avatar member-avatar--small">{{ comment.authorName.charAt(0).toUpperCase() }}</span>
-                  <div><strong>{{ comment.authorName }}</strong><time>{{ formatDate(comment.createdAt) }}</time><p>{{ comment.text }}</p></div>
+          <nav class="task-panel-tabs" role="tablist" aria-label="Actividad de la tarea">
+            <button type="button" role="tab" [attr.aria-selected]="taskPanelTab() === 'comments'"
+              [class.is-active]="taskPanelTab() === 'comments'" (click)="selectTaskPanelTab('comments')">
+              Comentarios <span>{{ task.comments.length }}</span>
+            </button>
+            <button type="button" role="tab" [attr.aria-selected]="taskPanelTab() === 'attachments'"
+              [class.is-active]="taskPanelTab() === 'attachments'" (click)="selectTaskPanelTab('attachments')">
+              Archivos <span>{{ task.attachments.length }}</span>
+            </button>
+            <button type="button" role="tab" [attr.aria-selected]="taskPanelTab() === 'history'"
+              [class.is-active]="taskPanelTab() === 'history'" (click)="selectTaskPanelTab('history')">
+              Historial
+            </button>
+          </nav>
+
+          @if (taskPanelTab() === 'comments') {
+            <section class="task-panel-content task-comments" role="tabpanel">
+              <div class="task-comments__list">
+                @for (comment of task.comments; track comment.id) {
+                  <article class="task-comment" [class.is-menu-open]="openCommentMenuId() === comment.id">
+                    @if (member(comment.authorId); as author) {
+                      <span class="member-avatar member-avatar--small task-comment__avatar">
+                        @if (author.profileImage) { <img [src]="author.profileImage" alt="" /> }
+                        @else { {{ memberInitials(author) }} }
+                      </span>
+                    } @else {
+                      <span class="member-avatar member-avatar--small task-comment__avatar">
+                        {{ commentInitials(comment.authorName) }}
+                      </span>
+                    }
+                    <div class="task-comment__content">
+                      <header class="task-comment__heading">
+                        <strong>{{ comment.authorName }}</strong>
+                        <time>{{ commentDateLabel(comment.createdAt) }}</time>
+                      </header>
+                      @if (editingCommentId() === comment.id) {
+                        <textarea class="task-comment__editor" name="editedComment" rows="3" maxlength="120"
+                          [ngModel]="commentEditDraft()" (ngModelChange)="commentEditDraft.set($event)"
+                          aria-label="Editar comentario"></textarea>
+                        <div class="task-comment__edit-actions">
+                          <button type="button" class="task-secondary" [disabled]="commentBusy()"
+                            (click)="cancelCommentEdit()">Cancelar</button>
+                          <button type="button" class="task-primary" [disabled]="!commentEditDraft().trim() || commentBusy()"
+                            (click)="saveCommentEdit(comment.id)">
+                            {{ commentBusy() ? 'Guardando…' : 'Guardar' }}
+                          </button>
+                        </div>
+                      } @else {
+                        <p>{{ comment.text }}</p>
+                      }
+                    </div>
+                    @if (editingCommentId() !== comment.id && (canEditComment(comment) || canDeleteComment(comment))) {
+                      <div class="task-comment__actions">
+                        <button type="button" class="task-comment__menu-button" aria-label="Opciones del comentario"
+                          [attr.aria-expanded]="openCommentMenuId() === comment.id"
+                          (click)="toggleCommentMenu(comment.id)">⋯</button>
+                        @if (openCommentMenuId() === comment.id) {
+                          <div class="task-comment__menu" role="menu">
+                            @if (canEditComment(comment)) {
+                              <button type="button" role="menuitem" (click)="startCommentEdit(comment)">Modificar</button>
+                            }
+                            @if (canDeleteComment(comment)) {
+                              <button type="button" role="menuitem" class="is-danger"
+                                (click)="deleteComment(comment)">Eliminar</button>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </article>
+                } @empty {
+                  <p class="muted-copy">Todavía no hay comentarios.</p>
+                }
+              </div>
+              <form class="comment-form" (ngSubmit)="addComment()">
+                <input name="comment" required maxlength="120" [ngModel]="commentDraft()"
+                  (ngModelChange)="commentDraft.set($event)" placeholder="Escribe un comentario..." />
+                <button type="submit" class="task-primary task-send-button" aria-label="Enviar comentario"
+                  [disabled]="!commentDraft().trim() || commentBusy()">➤</button>
+              </form>
+
+              <section class="task-comments__attachments" aria-label="Archivos adjuntos">
+                <h3>Archivos adjuntos</h3>
+                @for (attachment of task.attachments; track attachment.id) {
+                  <article class="attachment-row">
+                    <span class="attachment-icon" aria-hidden="true">▤</span>
+                    <div class="attachment-row__copy">
+                      <a [href]="attachment.url" target="_blank" rel="noopener noreferrer">{{ attachment.name }}</a>
+                      <small>{{ formatFileSize(attachment.size) }}</small>
+                    </div>
+                    <a class="attachment-download" [href]="attachment.url" target="_blank"
+                      rel="noopener noreferrer" [attr.download]="attachment.name" aria-label="Descargar archivo">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                      </svg>
+                    </a>
+                    <div class="attachment-actions">
+                      <button type="button" class="remove-attachment" [disabled]="attachmentBusy()"
+                        [attr.aria-label]="'Opciones del archivo ' + attachment.name"
+                        [attr.aria-expanded]="openAttachmentMenuId() === attachment.id"
+                        (click)="toggleAttachmentMenu(attachment.id)">⋯</button>
+                      @if (openAttachmentMenuId() === attachment.id) {
+                        <div class="attachment-menu" role="menu">
+                          <button type="button" role="menuitem" class="is-danger"
+                            (click)="removeAttachment(attachment.id)">Eliminar archivo</button>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                } @empty {
+                  <p class="task-attachments__empty">No hay archivos adjuntos.</p>
+                }
+                <label class="attachment-picker">
+                  <input type="file" (change)="onAttachmentSelected($event)" [disabled]="attachmentBusy()" />
+                  {{ attachmentBusy() ? 'Subiendo…' : '＋ Añadir archivo' }}
+                </label>
+                <small class="attachment-hint">Tamaño máximo: 15 MB.</small>
+              </section>
+            </section>
+          } @else if (taskPanelTab() === 'attachments') {
+            <section class="task-panel-content task-attachments" role="tabpanel">
+              @for (attachment of task.attachments; track attachment.id) {
+                <article class="attachment-row">
+                  <span class="attachment-icon" aria-hidden="true">▤</span>
+                  <div class="attachment-row__copy">
+                    <a [href]="attachment.url" target="_blank" rel="noopener noreferrer">{{ attachment.name }}</a>
+                    <small>{{ formatFileSize(attachment.size) }} · {{ attachment.uploadedByName }}</small>
+                  </div>
+                  <a class="attachment-download" [href]="attachment.url" target="_blank"
+                    rel="noopener noreferrer" [attr.download]="attachment.name" aria-label="Descargar archivo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                    </svg>
+                  </a>
+                  <div class="attachment-actions">
+                    <button type="button" class="remove-attachment" [disabled]="attachmentBusy()"
+                      [attr.aria-label]="'Opciones del archivo ' + attachment.name"
+                      [attr.aria-expanded]="openAttachmentMenuId() === attachment.id"
+                      (click)="toggleAttachmentMenu(attachment.id)">⋯</button>
+                    @if (openAttachmentMenuId() === attachment.id) {
+                      <div class="attachment-menu" role="menu">
+                        <button type="button" role="menuitem" class="is-danger"
+                          (click)="removeAttachment(attachment.id)">Eliminar archivo</button>
+                      </div>
+                    }
+                  </div>
                 </article>
               } @empty {
-                <p class="muted-copy">Todavía no hay comentarios.</p>
+                <p class="muted-copy">No hay archivos adjuntos.</p>
               }
-            </div>
-            <form class="comment-form" (ngSubmit)="addComment()">
-              <input name="comment" required maxlength="120" [ngModel]="commentDraft()"
-                (ngModelChange)="commentDraft.set($event)" placeholder="Escribe un comentario..." />
-              <button type="submit" class="task-primary task-send-button" aria-label="Enviar comentario"
-                [disabled]="!commentDraft().trim() || commentBusy()">➤</button>
-            </form>
-          </section>
-
-          <section class="task-attachments">
-            <header><h3>Archivos</h3><span class="column-count">{{ task.attachments.length }}</span></header>
-            @for (attachment of task.attachments; track attachment.id) {
-              <article class="attachment-row">
-                <span class="attachment-icon" aria-hidden="true">▤</span>
-                <div class="attachment-row__copy">
-                  <a [href]="attachment.url" target="_blank" rel="noopener noreferrer">{{ attachment.name }}</a>
-                  <small>{{ formatFileSize(attachment.size) }} · {{ attachment.uploadedByName }}</small>
-                </div>
-                <button type="button" class="remove-attachment" aria-label="Eliminar archivo"
-                  (click)="removeAttachment(attachment.id)">×</button>
-              </article>
-            } @empty {
-              <p class="muted-copy">No hay archivos adjuntos.</p>
-            }
-            <label class="attachment-picker">
-              <input type="file" (change)="onAttachmentSelected($event)" [disabled]="attachmentBusy()" />
-              {{ attachmentBusy() ? 'Subiendo…' : '＋ Añadir archivo' }}
-            </label>
-            <small class="attachment-hint">Tamaño máximo: 15 MB.</small>
-          </section>
+              <label class="attachment-picker">
+                <input type="file" (change)="onAttachmentSelected($event)" [disabled]="attachmentBusy()" />
+                {{ attachmentBusy() ? 'Subiendo…' : '＋ Añadir archivo' }}
+              </label>
+              <small class="attachment-hint">Tamaño máximo: 15 MB.</small>
+            </section>
+          } @else {
+            <section class="task-panel-content task-history" role="tabpanel">
+              @for (entry of task.history; track entry.id) {
+                <p><strong>{{ entry.actorName }}</strong> · {{ entry.text }}<time>{{ formatDate(entry.createdAt) }}</time></p>
+              } @empty {
+                <p class="muted-copy">Todavía no hay actividad.</p>
+              }
+            </section>
+          }
         </aside>
       }
     </div>
+    @if (editorOpen()) {
+      <footer class="task-modal__actions task-modal__actions--global">
+        @if (selectedTaskId()) {
+          <button type="button" class="task-danger" [disabled]="saving()" (click)="deleteTask()">Eliminar tarea</button>
+        }
+        <span class="actions-spacer"></span>
+        <button type="button" class="task-secondary" [disabled]="saving()" (click)="closeTaskDialog()">Cancelar</button>
+        <button type="submit" form="taskEditorForm" class="task-primary"
+          [disabled]="!draft.title.trim() || !draft.columnId || saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </footer>
+    }
   </section>
 }
 
 @if (columnDialogOpen() || labelDialogOpen()) {
   <button type="button" class="task-modal-backdrop task-modal-backdrop--nested" aria-label="Cerrar configuración"
-    (click)="columnDialogOpen.set(false); labelDialogOpen.set(false)"></button>
+    (click)="columnDialogOpen.set(false); labelDialogOpen.set(false); editingColumnId.set(null)"></button>
   <section class="small-task-modal" role="dialog" aria-modal="true"
-    [attr.aria-label]="columnDialogOpen() ? 'Añadir lista' : 'Gestionar etiquetas'">
+    [attr.aria-label]="columnDialogOpen() ? (editingColumnId() ? 'Modificar lista' : 'Añadir lista') : 'Gestionar etiquetas'">
     <header class="task-modal__header">
       <div>
         <p class="eyebrow">Configuración</p>
-        <h2>{{ columnDialogOpen() ? 'Añadir lista' : 'Gestionar etiquetas' }}</h2>
+        <h2>{{ columnDialogOpen() ? (editingColumnId() ? 'Modificar lista' : 'Añadir lista') : 'Gestionar etiquetas' }}</h2>
       </div>
       <button type="button" class="task-close-button" aria-label="Cerrar"
-        (click)="columnDialogOpen.set(false); labelDialogOpen.set(false)">×</button>
+        (click)="columnDialogOpen.set(false); labelDialogOpen.set(false); editingColumnId.set(null)">×</button>
     </header>
     @if (saveError()) { <p class="task-notice task-notice--error" role="alert">{{ saveError() }}</p> }
     @if (columnDialogOpen()) {
-      <form class="task-form" (ngSubmit)="createColumn()">
+      <form class="task-form" (ngSubmit)="saveColumn()">
         <label>Nombre de la lista
           <input name="columnName" required maxlength="120" [ngModel]="columnName()"
             (ngModelChange)="columnName.set($event)" />
         </label>
         <label>Color
-          <select name="columnColor" [ngModel]="columnColor()" (ngModelChange)="columnColor.set($event)">
-            <option value="blue">Azul claro</option><option value="mint">Verde menta</option>
-            <option value="yellow">Amarillo</option><option value="rose">Rosa</option>
-          </select>
+          <span class="color-picker-control">
+            <input name="columnColor" type="color" aria-label="Color de la lista"
+              [value]="columnColorValue(columnColor())" (input)="updateColumnColor($event)" />
+            <span>{{ columnColor() }}</span>
+          </span>
         </label>
         <footer class="task-modal__actions">
-          <button type="button" class="task-secondary" (click)="columnDialogOpen.set(false)">Cancelar</button>
-          <button type="submit" class="task-primary" [disabled]="!columnName().trim() || saving()">Crear lista</button>
+          <button type="button" class="task-secondary" (click)="columnDialogOpen.set(false); editingColumnId.set(null)">Cancelar</button>
+          <button type="submit" class="task-primary" [disabled]="!columnName().trim() || saving()">
+            {{ saving() ? 'Guardando…' : editingColumnId() ? 'Guardar cambios' : 'Crear lista' }}
+          </button>
         </footer>
       </form>
     } @else {

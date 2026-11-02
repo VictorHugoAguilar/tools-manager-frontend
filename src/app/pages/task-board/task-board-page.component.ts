@@ -12,10 +12,12 @@ import {
   TaskPayload,
   TaskPriority
 } from '../../models/task-board.model';
+import { AuthService } from '../../services/auth.service';
 import { ConfirmService } from '../../services/confirm.service';
 import { TaskBoardApiService } from '../../services/task-board-api.service';
 
 type BoardView = 'kanban' | 'list';
+type TaskPanelTab = 'comments' | 'attachments' | 'history';
 
 @Component({
   selector: 'app-task-board-page',
@@ -26,6 +28,7 @@ type BoardView = 'kanban' | 'list';
 })
 export class TaskBoardPageComponent implements OnInit {
   private readonly api = inject(TaskBoardApiService);
+  private readonly auth = inject(AuthService);
   private readonly confirm = inject(ConfirmService);
 
   protected readonly columns = signal<TaskBoardColumn[]>([]);
@@ -41,18 +44,26 @@ export class TaskBoardPageComponent implements OnInit {
   protected readonly dialogOpen = signal(false);
   protected readonly selectedTaskId = signal<string | null>(null);
   protected readonly editorOpen = signal(false);
+  protected readonly taskPanelTab = signal<TaskPanelTab>('comments');
   protected readonly commentDraft = signal('');
   protected readonly commentBusy = signal(false);
+  protected readonly commentEditDraft = signal('');
+  protected readonly editingCommentId = signal<string | null>(null);
+  protected readonly openCommentMenuId = signal<string | null>(null);
+  protected readonly openAttachmentMenuId = signal<string | null>(null);
   protected readonly attachmentBusy = signal(false);
   protected readonly columnDialogOpen = signal(false);
   protected readonly labelDialogOpen = signal(false);
   protected readonly columnName = signal('');
-  protected readonly columnColor = signal<TaskBoardColumn['color']>('blue');
+  protected readonly columnColor = signal<TaskBoardColumn['color']>('#9fc9ff');
+  protected readonly editingColumnId = signal<string | null>(null);
+  protected readonly openColumnMenuId = signal<string | null>(null);
   protected readonly labelName = signal('');
   protected readonly labelColor = signal('#8edfc0');
   protected readonly activeTask = computed(() =>
     this.tasks().find((task) => task.id === this.selectedTaskId()) ?? null
   );
+  protected readonly currentUser = this.auth.user;
   protected readonly columnDropIds = computed(() => this.columns().map((column) => `tasks-${column.id}`));
 
   protected searchTerm = '';
@@ -130,6 +141,7 @@ export class TaskBoardPageComponent implements OnInit {
     this.selectedTaskId.set(null);
     this.draft = this.emptyTask(columnId);
     this.saveError.set('');
+    this.taskPanelTab.set('comments');
     this.editorOpen.set(true);
     this.dialogOpen.set(true);
   }
@@ -138,6 +150,7 @@ export class TaskBoardPageComponent implements OnInit {
     this.selectedTaskId.set(task.id);
     this.draft = this.toPayload(task);
     this.saveError.set('');
+    this.taskPanelTab.set('comments');
     this.editorOpen.set(false);
     this.dialogOpen.set(true);
   }
@@ -147,7 +160,12 @@ export class TaskBoardPageComponent implements OnInit {
     if (!task) return;
     this.draft = this.toPayload(task);
     this.saveError.set('');
+    this.taskPanelTab.set('comments');
     this.editorOpen.set(true);
+  }
+
+  protected selectTaskPanelTab(tab: TaskPanelTab): void {
+    this.taskPanelTab.set(tab);
   }
 
   protected closeTaskDialog(): void {
@@ -157,6 +175,9 @@ export class TaskBoardPageComponent implements OnInit {
     this.selectedTaskId.set(null);
     this.saveError.set('');
     this.commentDraft.set('');
+    this.commentEditDraft.set('');
+    this.editingCommentId.set(null);
+    this.openCommentMenuId.set(null);
   }
 
   protected async saveTask(): Promise<void> {
@@ -240,18 +261,44 @@ export class TaskBoardPageComponent implements OnInit {
   }
 
   protected openColumnDialog(): void {
+    this.editingColumnId.set(null);
     this.columnName.set('');
-    this.columnColor.set('blue');
+    this.columnColor.set('#9fc9ff');
     this.saveError.set('');
     this.columnDialogOpen.set(true);
   }
 
-  protected async createColumn(): Promise<void> {
+  protected openColumnMenu(columnId: string): void {
+    this.openColumnMenuId.update((current) => current === columnId ? null : columnId);
+  }
+
+  protected editColumn(column: TaskBoardColumn): void {
+    this.editingColumnId.set(column.id);
+    this.columnName.set(column.name);
+    this.columnColor.set(this.columnColorValue(column.color));
+    this.openColumnMenuId.set(null);
+    this.saveError.set('');
+    this.columnDialogOpen.set(true);
+  }
+
+  protected async saveColumn(): Promise<void> {
     this.saving.set(true);
     this.saveError.set('');
     try {
-      await firstValueFrom(this.api.createColumn(this.columnName(), this.columnColor()));
+      const editingColumnId = this.editingColumnId();
+      if (editingColumnId) {
+        await firstValueFrom(this.api.updateColumn(editingColumnId, {
+          name: this.columnName().trim(),
+          color: this.columnColorValue(this.columnColor())
+        }));
+      } else {
+        await firstValueFrom(this.api.createColumn(
+          this.columnName(),
+          this.columnColorValue(this.columnColor())
+        ));
+      }
       this.columnDialogOpen.set(false);
+      this.editingColumnId.set(null);
       await this.loadBoard();
     } catch (error: unknown) {
       this.saveError.set(this.errorMessage(error));
@@ -260,18 +307,8 @@ export class TaskBoardPageComponent implements OnInit {
     }
   }
 
-  protected async renameColumn(column: TaskBoardColumn): Promise<void> {
-    const name = window.prompt('Nombre de la lista', column.name);
-    if (name === null || !name.trim()) return;
-    try {
-      await firstValueFrom(this.api.updateColumn(column.id, { name: name.trim() }));
-      await this.loadBoard();
-    } catch (error: unknown) {
-      this.loadError.set(this.errorMessage(error));
-    }
-  }
-
   protected async deleteColumn(column: TaskBoardColumn): Promise<void> {
+    this.openColumnMenuId.set(null);
     const count = this.taskCount(column.id);
     if (count) {
       this.loadError.set(`La lista «${column.name}» contiene tareas. Muévelas o elimínalas antes de borrarla.`);
@@ -355,6 +392,74 @@ export class TaskBoardPageComponent implements OnInit {
     }
   }
 
+  protected canEditComment(comment: TaskBoardTask['comments'][number]): boolean {
+    return comment.authorId === this.currentUser()?.id;
+  }
+
+  protected canDeleteComment(comment: TaskBoardTask['comments'][number]): boolean {
+    const user = this.currentUser();
+    return comment.authorId === user?.id || Boolean(user?.permissions.includes('users:manage'));
+  }
+
+  protected toggleCommentMenu(commentId: string): void {
+    this.openCommentMenuId.update((current) => current === commentId ? null : commentId);
+  }
+
+  protected startCommentEdit(comment: TaskBoardTask['comments'][number]): void {
+    if (!this.canEditComment(comment)) return;
+    this.editingCommentId.set(comment.id);
+    this.commentEditDraft.set(comment.text);
+    this.openCommentMenuId.set(null);
+    this.saveError.set('');
+  }
+
+  protected cancelCommentEdit(): void {
+    this.editingCommentId.set(null);
+    this.commentEditDraft.set('');
+  }
+
+  protected async saveCommentEdit(commentId: string): Promise<void> {
+    const task = this.activeTask();
+    const text = this.commentEditDraft().trim();
+    if (!task || !text || this.commentBusy()) return;
+    this.commentBusy.set(true);
+    this.saveError.set('');
+    try {
+      await firstValueFrom(this.api.updateComment(task.id, commentId, text));
+      this.cancelCommentEdit();
+      await this.loadBoard();
+    } catch (error: unknown) {
+      this.saveError.set(this.errorMessage(error));
+    } finally {
+      this.commentBusy.set(false);
+    }
+  }
+
+  protected async deleteComment(comment: TaskBoardTask['comments'][number]): Promise<void> {
+    const task = this.activeTask();
+    if (!task || !this.canDeleteComment(comment) || this.commentBusy()) return;
+    const accepted = await this.confirm.confirm({
+      title: '¿Eliminar comentario?',
+      message: 'El comentario se eliminará permanentemente.',
+      confirmLabel: 'Eliminar comentario',
+      cancelLabel: 'Cancelar',
+      tone: 'danger'
+    });
+    if (!accepted) return;
+    this.commentBusy.set(true);
+    this.saveError.set('');
+    this.openCommentMenuId.set(null);
+    try {
+      await firstValueFrom(this.api.deleteComment(task.id, comment.id));
+      if (this.editingCommentId() === comment.id) this.cancelCommentEdit();
+      await this.loadBoard();
+    } catch (error: unknown) {
+      this.saveError.set(this.errorMessage(error));
+    } finally {
+      this.commentBusy.set(false);
+    }
+  }
+
   protected async onAttachmentSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -388,6 +493,7 @@ export class TaskBoardPageComponent implements OnInit {
       tone: 'danger'
     });
     if (!accepted) return;
+    this.openAttachmentMenuId.set(null);
     try {
       await firstValueFrom(this.api.deleteAttachment(task.id, attachmentId));
       await this.loadBoard();
@@ -396,8 +502,27 @@ export class TaskBoardPageComponent implements OnInit {
     }
   }
 
+  protected toggleAttachmentMenu(attachmentId: string): void {
+    this.openAttachmentMenuId.update((current) => current === attachmentId ? null : attachmentId);
+  }
+
   protected taskLabel(labelId: string): TaskBoardLabel | undefined {
     return this.labels().find((label) => label.id === labelId);
+  }
+
+  protected columnColorValue(color: string): string {
+    const legacyColors: Record<string, string> = {
+      blue: '#9fc9ff',
+      mint: '#8edfc0',
+      yellow: '#ffe59a',
+      rose: '#ffb5c5'
+    };
+    return /^#[0-9a-f]{6}$/i.test(color) ? color : legacyColors[color] ?? '#9fc9ff';
+  }
+
+  protected updateColumnColor(event: Event): void {
+    const color = (event.target as HTMLInputElement).value;
+    this.columnColor.set(this.columnColorValue(color));
   }
 
   protected member(memberId: string): TaskBoardMember | undefined {
@@ -408,10 +533,19 @@ export class TaskBoardPageComponent implements OnInit {
     return `${member.firstName.charAt(0)}${member.lastName.charAt(0)}`.toUpperCase() || 'U';
   }
 
+  protected commentInitials(authorName: string): string {
+    return authorName.trim().split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toUpperCase() || 'U';
+  }
+
   protected dueDateLabel(value: string): string {
     if (!value) return '';
-    const [year, month, day] = value.split('-');
-    return `${day}/${month}/${year}`;
+    const match = /^\d{4}-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return value;
+    const [, month, day] = match;
+    const date = new Date(`${value}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return value;
+    const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${Number(day)} ${monthNames[Number(month) - 1]}`;
   }
 
   protected isOverdue(task: TaskBoardTask): boolean {
@@ -445,6 +579,19 @@ export class TaskBoardPageComponent implements OnInit {
       hour: '2-digit',
       minute: '2-digit'
     }).format(new Date(value));
+  }
+
+  protected commentDateLabel(value: string): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   }
 
   protected formatFileSize(size: number): string {
