@@ -307,3 +307,14 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se modifican los subpaneles para que mantengan el mismo estilo en todas las páginas
 
 <!-- CHANGELOG-PR-80-END -->
+
+<!-- CHANGELOG-PR-88-START -->
+### [7.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/88) (2026-11-02)
+
+- Added: generación de nuevo modelo de datos para la página de tareas
+- Added: se añaden los nuevos servicios para la interconexión con el backend
+- Added: se añade la nueva ruta de la página de tareas
+- Added: se añade la página nueva Tareas
+- Changed: se quita etiqueta de @deprecated de una función de un servicio de almacenamiento en el storage
+
+<!-- CHANGELOG-PR-88-END -->
