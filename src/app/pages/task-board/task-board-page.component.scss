@@ -840,6 +840,7 @@
 .task-modal__body {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(330px, 1fr);
+  flex: 1 0 auto;
   min-height: 390px;
 }
 
@@ -848,6 +849,8 @@
 }
 
 .task-modal__main {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 1.1rem 1.3rem 1.3rem;
 }
@@ -928,19 +931,22 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  min-height: 2.8rem;
-  padding: 0.25rem 0.55rem;
+  width: min(100%, 19rem);
+  min-height: 3.1rem;
+  padding: 0.3rem 0.6rem;
   border: 1.5px solid rgba(35, 52, 90, 0.2);
-  border-radius: 11px;
+  border-radius: 14px;
   background: #fff;
+  box-shadow: 0 1px 2px rgba(35, 52, 90, 0.04);
 
   select {
     min-width: 0;
-    min-height: 2.2rem;
-    padding: 0.35rem 0.25rem;
+    min-height: 2.45rem;
+    padding: 0.35rem 0.3rem;
     border: 0;
     outline: 0;
     background: transparent;
+    font-weight: 750;
   }
 }
 
@@ -1009,8 +1015,9 @@
 }
 
 .task-detail {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   gap: 1rem;
 }
 
@@ -1040,8 +1047,9 @@
 }
 
 .assigned-member {
-  display: flex;
-  align-items: center;
+  display: grid;
+  align-content: start;
+  justify-items: start;
   gap: 0.5rem;
   margin: 0;
   color: #66738a;
@@ -1052,14 +1060,58 @@
   }
 }
 
+.assigned-member__value {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.35rem 0.8rem 0.35rem 0.4rem;
+  border: 1.5px solid rgba(35, 52, 90, 0.16);
+  border-radius: 14px;
+  background: #fff;
+  color: #344a76;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.assigned-member__value--empty {
+  color: #7b879a;
+  font-weight: 650;
+}
+
 .task-detail__actions {
   display: flex;
+  align-self: start;
+  align-items: center;
+  margin-top: auto;
   gap: 0.5rem;
+
+  .task-secondary,
+  .task-danger {
+    box-sizing: border-box;
+    height: 3rem;
+    min-height: 3rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 14px;
+    line-height: 1;
+  }
 }
 
 .task-danger--compact {
-  min-height: 2.4rem;
-  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  box-shadow: 3px 4px 0 rgba(169, 61, 49, 0.14);
+
+  svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
 }
 
 .task-history,

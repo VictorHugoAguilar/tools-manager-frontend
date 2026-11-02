@@ -291,14 +291,31 @@
                 @if (taskLabel(labelId); as label) { <span class="task-label" [style.backgroundColor]="label.color">{{ label.name }}</span> }
               }
             </div>
-            <p class="assigned-member">
+            <div class="assigned-member">
               <strong>Responsable</strong>
-              @if (member(task.assigneeId); as person) { {{ person.firstName }} {{ person.lastName }} }
-              @else { <span class="muted-copy">Sin asignar</span> }
-            </p>
+              @if (member(task.assigneeId); as person) {
+                <span class="assigned-member__value">
+                  <span class="member-avatar member-avatar--small">
+                    @if (person.profileImage) { <img [src]="person.profileImage" alt="" /> }
+                    @else { {{ memberInitials(person) }} }
+                  </span>
+                  <span>{{ person.firstName }} {{ person.lastName }}</span>
+                </span>
+              } @else {
+                <span class="assigned-member__value assigned-member__value--empty">
+                  <span class="member-avatar member-avatar--small member-avatar--unassigned" aria-hidden="true">?</span>
+                  <span>Sin asignar</span>
+                </span>
+              }
+            </div>
             <div class="task-detail__actions">
               <button type="button" class="task-secondary" (click)="editTask()">Editar tarea</button>
-              <button type="button" class="task-danger task-danger--compact" (click)="deleteTask()">Eliminar</button>
+              <button type="button" class="task-danger task-danger--compact" (click)="deleteTask()">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3" />
+                </svg>
+                Eliminar tarea
+              </button>
             </div>
           </div>
         } @else {
