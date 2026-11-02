@@ -443,8 +443,13 @@ export class TaskBoardPageComponent implements OnInit {
 
   protected dueDateLabel(value: string): string {
     if (!value) return '';
-    const [year, month, day] = value.split('-');
-    return `${day}/${month}/${year}`;
+    const match = /^\d{4}-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return value;
+    const [, month, day] = match;
+    const date = new Date(`${value}T00:00:00.000Z`);
+    if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return value;
+    const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${Number(day)} ${monthNames[Number(month) - 1]}`;
   }
 
   protected isOverdue(task: TaskBoardTask): boolean {
