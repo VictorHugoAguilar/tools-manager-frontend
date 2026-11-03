@@ -80,6 +80,15 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   protected readonly todoListUsers = computed(() => this.todoListOverview()?.users ?? []);
   protected readonly todoListFormProjectMembers = signal<TodoListUser[]>([]);
   protected readonly todoListFormMembersLoading = signal(false);
+  protected readonly todoListTaskLabelPickerOpen = signal(false);
+  protected readonly todoListTaskSubtaskModalOpen = signal(false);
+  protected readonly todoListEditDetailsLoading = signal(false);
+  protected readonly todoListFormChildren = signal<TodoListChildItem[]>([]);
+  protected readonly todoListFormAttachments = signal<TodoListAttachment[]>([]);
+  protected readonly todoListRemovedChildIds: string[] = [];
+  protected readonly todoListRemovedAttachmentIds: string[] = [];
+  protected readonly todoListDraftSubtasks: string[] = [];
+  protected readonly todoListDraftAttachments: File[] = [];
   protected readonly todoListCurrentUserId = computed(() => this.todoListAuth.user()?.id ?? '');
   protected readonly todoListSelectedProject = computed(
     () => [...this.todoListProjects(), ...this.todoListArchivedProjects()]
@@ -218,6 +227,10 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   protected todoListChildTitle = '';
   protected todoListCommentText = '';
   protected todoListSectionName = '';
+  protected todoListDraftSubtaskTitle = '';
+  protected readonly todoListPendingCreateItemId = signal('');
+  private todoListReturnToTaskAfterLabel = false;
+  private readonly todoListOriginalChildStatuses = new Map<string, TodoListChildItem['status']>();
   protected todoListProjectForm: { name: string; description: string; color: TodoListColor } = {
     name: '',
     description: '',
@@ -483,6 +496,18 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       return;
     }
     this.todoListEditingItemId.set('');
+    this.todoListPendingCreateItemId.set('');
+    this.todoListTaskLabelPickerOpen.set(false);
+    this.todoListTaskSubtaskModalOpen.set(false);
+    this.todoListDraftSubtasks.splice(0);
+    this.todoListDraftAttachments.splice(0);
+    this.todoListFormChildren.set([]);
+    this.todoListFormAttachments.set([]);
+    this.todoListRemovedChildIds.splice(0);
+    this.todoListRemovedAttachmentIds.splice(0);
+    this.todoListOriginalChildStatuses.clear();
+    this.todoListEditDetailsLoading.set(false);
+    this.todoListDraftSubtaskTitle = '';
     this.todoListForm = this.todoListEmptyForm();
     this.todoListForm.todoListId = this.todoListProjectFilter() ||
       (this.todoListView() === 'project' ? this.todoListProjectId() : '');
@@ -510,6 +535,26 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     }
     this.todoListModalKind.set('task');
     void this.todoListLoadFormSections();
+    if (this.todoListEditingItemId()) {
+      void this.todoListLoadTaskEditDetails(this.todoListEditingItemId());
+    }
+  }
+
+  private async todoListLoadTaskEditDetails(itemId: string): Promise<void> {
+    this.todoListEditDetailsLoading.set(true);
+    try {
+      const { item } = await firstValueFrom(this.todoListApi.getItem(itemId));
+      if (this.todoListEditingItemId() !== itemId) return;
+      const children = [...(item.children ?? [])].sort((left, right) => left.position - right.position);
+      this.todoListFormChildren.set(children);
+      this.todoListFormAttachments.set(item.attachments ?? []);
+      this.todoListOriginalChildStatuses.clear();
+      children.forEach((child) => this.todoListOriginalChildStatuses.set(child.id, child.status));
+    } catch (error) {
+      this.todoListSetRequestError(error);
+    } finally {
+      if (this.todoListEditingItemId() === itemId) this.todoListEditDetailsLoading.set(false);
+    }
   }
 
   protected async todoListLoadFormSections(): Promise<void> {
@@ -556,6 +601,80 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       : [...todoListIds, todoListId];
   }
 
+  protected todoListSetFormAssignee(userId: string): void {
+    this.todoListForm.assigneeUserIds = userId ? [userId] : [];
+  }
+
+  protected todoListOpenTaskLabelPicker(): void {
+    this.todoListTaskLabelPickerOpen.set(true);
+  }
+
+  protected todoListCloseTaskLabelPicker(): void {
+    this.todoListTaskLabelPickerOpen.set(false);
+  }
+
+  protected todoListOpenLabelFormFromTask(): void {
+    this.todoListReturnToTaskAfterLabel = true;
+    this.todoListEditingLabelId.set('');
+    this.todoListLabelForm = { name: '', color: '#bdebd9' };
+    this.todoListModalKind.set('label');
+  }
+
+  protected todoListOpenTaskSubtaskModal(): void {
+    this.todoListDraftSubtaskTitle = '';
+    this.todoListTaskSubtaskModalOpen.set(true);
+  }
+
+  protected todoListAddDraftSubtask(): void {
+    const title = this.todoListDraftSubtaskTitle.trim();
+    if (!title) return;
+    this.todoListDraftSubtasks.push(title);
+    this.todoListDraftSubtaskTitle = '';
+    this.todoListTaskSubtaskModalOpen.set(false);
+  }
+
+  protected todoListRemoveDraftSubtask(index: number): void {
+    this.todoListDraftSubtasks.splice(index, 1);
+  }
+
+  protected todoListToggleFormChild(childId: string): void {
+    this.todoListFormChildren.update((children) => children.map((child) =>
+      child.id === childId
+        ? { ...child, status: child.status === 'completed' ? 'pending' : 'completed' }
+        : child
+    ));
+  }
+
+  protected todoListRemoveFormChild(child: TodoListChildItem): void {
+    this.todoListRemovedChildIds.push(child.id);
+    this.todoListFormChildren.update((children) => children.filter((entry) => entry.id !== child.id));
+  }
+
+  protected todoListAddDraftAttachments(event: Event): void {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || !input.files?.length) return;
+    this.todoListDraftAttachments.push(...Array.from(input.files));
+    input.value = '';
+  }
+
+  protected todoListDropDraftAttachments(event: DragEvent): void {
+    event.preventDefault();
+    if (event.dataTransfer?.files.length) {
+      this.todoListDraftAttachments.push(...Array.from(event.dataTransfer.files));
+    }
+  }
+
+  protected todoListRemoveDraftAttachment(index: number): void {
+    this.todoListDraftAttachments.splice(index, 1);
+  }
+
+  protected todoListRemoveFormAttachment(attachment: TodoListAttachment): void {
+    this.todoListRemovedAttachmentIds.push(attachment.id);
+    this.todoListFormAttachments.update((attachments) =>
+      attachments.filter((entry) => entry.id !== attachment.id)
+    );
+  }
+
   protected todoListToggleDetailLabel(labelId: string): void {
     const labelIds = this.todoListDetailForm.labelIds;
     this.todoListDetailForm.labelIds = labelIds.includes(labelId)
@@ -599,15 +718,61 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     };
     try {
       if (this.todoListEditingItemId()) {
-        await firstValueFrom(this.todoListApi.updateItem(this.todoListEditingItemId(), todoListPayload));
+        const itemId = this.todoListEditingItemId();
+        await firstValueFrom(this.todoListApi.updateItem(itemId, todoListPayload));
+        for (const child of this.todoListFormChildren()) {
+          if (this.todoListOriginalChildStatuses.get(child.id) === child.status) continue;
+          await firstValueFrom(this.todoListApi.updateChild(child.id, { status: child.status }));
+          this.todoListOriginalChildStatuses.set(child.id, child.status);
+        }
+        while (this.todoListRemovedChildIds.length) {
+          await firstValueFrom(this.todoListApi.deleteChild(this.todoListRemovedChildIds[0]));
+          this.todoListRemovedChildIds.shift();
+        }
+        while (this.todoListDraftSubtasks.length) {
+          await firstValueFrom(this.todoListApi.createChild(itemId, this.todoListDraftSubtasks[0]));
+          this.todoListDraftSubtasks.shift();
+        }
+        while (this.todoListDraftAttachments.length) {
+          await firstValueFrom(this.todoListApi.uploadAttachment(itemId, this.todoListDraftAttachments[0]));
+          this.todoListDraftAttachments.shift();
+        }
+        while (this.todoListRemovedAttachmentIds.length) {
+          await firstValueFrom(this.todoListApi.deleteAttachment(this.todoListRemovedAttachmentIds[0]));
+          this.todoListRemovedAttachmentIds.shift();
+        }
       } else {
-        await firstValueFrom(this.todoListApi.createItem(todoListPayload));
+        let itemId = this.todoListPendingCreateItemId();
+        if (!itemId) {
+          const response = await firstValueFrom(this.todoListApi.createItem(todoListPayload));
+          itemId = response.item.id;
+          this.todoListPendingCreateItemId.set(itemId);
+        } else {
+          await firstValueFrom(this.todoListApi.updateItem(itemId, todoListPayload));
+        }
+        while (this.todoListDraftSubtasks.length) {
+          await firstValueFrom(this.todoListApi.createChild(itemId, this.todoListDraftSubtasks[0]));
+          this.todoListDraftSubtasks.shift();
+        }
+        while (this.todoListDraftAttachments.length) {
+          await firstValueFrom(this.todoListApi.uploadAttachment(itemId, this.todoListDraftAttachments[0]));
+          this.todoListDraftAttachments.shift();
+        }
+        this.todoListPendingCreateItemId.set('');
       }
       this.todoListModalKind.set(null);
+      this.todoListClearTaskDrafts();
       this.todoListShowSuccess('La tarea se ha guardado.');
       await this.todoListRefreshData();
     } catch (error) {
       this.todoListSetRequestError(error);
+      if (this.todoListPendingCreateItemId()) {
+        this.todoListError.update((message) =>
+          `La tarea ya se creó, pero no se pudo completar su guardado. Puedes volver a intentarlo; no se duplicará. ${message}`);
+      } else if (this.todoListEditingItemId()) {
+        this.todoListError.update((message) =>
+          `No se pudieron guardar todos los cambios de la tarea. Puedes volver a intentarlo. ${message}`);
+      }
     } finally {
       this.todoListSaving.set(false);
     }
@@ -1108,6 +1273,7 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   }
 
   protected todoListOpenLabelForm(todoListLabel?: TodoListLabel): void {
+    this.todoListReturnToTaskAfterLabel = false;
     this.todoListEditingLabelId.set(todoListLabel?.id ?? '');
     this.todoListLabelForm = {
       name: todoListLabel?.name ?? '',
@@ -1148,12 +1314,23 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
         name: this.todoListLabelForm.name.trim(),
         color: this.todoListLabelForm.color
       };
+      let createdLabelId = '';
       if (this.todoListEditingLabelId()) {
         await firstValueFrom(this.todoListApi.updateLabel(this.todoListEditingLabelId(), todoListPayload));
       } else {
-        await firstValueFrom(this.todoListApi.createLabel(todoListPayload.name, todoListPayload.color));
+        const response = await firstValueFrom(this.todoListApi.createLabel(todoListPayload.name, todoListPayload.color));
+        createdLabelId = response.label.id;
       }
-      this.todoListModalKind.set(null);
+      const returnToTask = this.todoListReturnToTaskAfterLabel;
+      this.todoListReturnToTaskAfterLabel = false;
+      if (returnToTask) {
+        if (createdLabelId && !this.todoListForm.labelIds.includes(createdLabelId)) {
+          this.todoListForm.labelIds = [...this.todoListForm.labelIds, createdLabelId];
+        }
+        this.todoListModalKind.set('task');
+      } else {
+        this.todoListModalKind.set(null);
+      }
       this.todoListShowSuccess('Etiqueta guardada.');
       await this.todoListLoadOverview();
     } catch (error) {
@@ -1243,8 +1420,28 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   }
 
   protected todoListCloseModal(): void {
+    if (this.todoListReturnToTaskAfterLabel) {
+      this.todoListReturnToTaskAfterLabel = false;
+      this.todoListModalKind.set('task');
+      return;
+    }
     this.todoListModalKind.set(null);
     this.todoListEditingSectionId.set('');
+    this.todoListTaskLabelPickerOpen.set(false);
+    this.todoListTaskSubtaskModalOpen.set(false);
+    this.todoListPendingCreateItemId.set('');
+    this.todoListClearTaskDrafts();
+  }
+
+  private todoListClearTaskDrafts(): void {
+    this.todoListDraftSubtasks.splice(0);
+    this.todoListDraftAttachments.splice(0);
+    this.todoListFormChildren.set([]);
+    this.todoListFormAttachments.set([]);
+    this.todoListRemovedChildIds.splice(0);
+    this.todoListRemovedAttachmentIds.splice(0);
+    this.todoListOriginalChildStatuses.clear();
+    this.todoListEditDetailsLoading.set(false);
   }
 
   protected async todoListDrop(event: CdkDragDrop<TodoListItem[]>): Promise<void> {
