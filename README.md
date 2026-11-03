@@ -491,3 +491,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Fixed: se corrige en la expresión de la línea 927: reemplacé ?? '' por || ''.
 
 <!-- CHANGELOG-PR-98-END -->
+
+<!-- CHANGELOG-PR-100-START -->
+### [7.5.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/100) (2026-11-03)
+
+- Changed: cambio de estilos visuales en los input, textarea y select
+
+<!-- CHANGELOG-PR-100-END -->
