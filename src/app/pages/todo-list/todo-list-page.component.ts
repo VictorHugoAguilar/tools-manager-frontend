@@ -1360,6 +1360,16 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  protected todoListTaskDateLabel(todoListDate: string): string {
+    if (!todoListDate) return '';
+    const todoListToday = this.todoListLocalDateKey(new Date());
+    if (todoListDate === todoListToday) return 'Hoy';
+    const todoListTomorrowDate = new Date();
+    todoListTomorrowDate.setDate(todoListTomorrowDate.getDate() + 1);
+    if (todoListDate === this.todoListLocalDateKey(todoListTomorrowDate)) return 'Mañana';
+    return this.todoListFormatDate(todoListDate).replace(/\.$/, '');
+  }
+
   protected todoListFormatTimestamp(todoListTimestamp: string): string {
     if (!todoListTimestamp) return '';
     return new Date(todoListTimestamp).toLocaleString('es-ES', {

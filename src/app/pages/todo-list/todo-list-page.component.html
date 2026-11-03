@@ -364,58 +364,56 @@
             <article class="todoList-task-row" [class.completed]="todoListItem.status === 'completed'"
               [class.actions-open]="todoListOpenTaskActionsId() === todoListItem.id">
               <button type="button" class="todoList-complete-button" [class.done]="todoListItem.status === 'completed'"
+                [attr.aria-pressed]="todoListItem.status === 'completed'"
                 [attr.aria-label]="todoListItem.status === 'completed' ? 'Recuperar tarea' : 'Completar tarea'"
                 (click)="todoListToggleStatus(todoListItem)">
                 @if (todoListItem.status === 'completed') { ✓ }
               </button>
-              <button type="button" class="todoList-task-main" (click)="todoListOpenDetail(todoListItem)">
+              <button type="button" class="todoList-task-main todoList-row-title" (click)="todoListOpenDetail(todoListItem)">
                 <strong>{{ todoListItem.title }}</strong>
-                @if (todoListItem.description) { <span class="todoList-task-description">{{ todoListItem.description }}</span> }
-                <span class="todoList-task-meta">
-                  @if (todoListItem.todoListId) { <span class="todoList-meta-project">{{ todoListItem.projectName }}</span> }
-                  @if (todoListItem.dueDate) {
-                    <span class="todoList-meta-date" [class.overdue]="todoListIsOverdue(todoListItem)">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4m8-4v4M4 10h16" /></svg>
-                      {{ todoListFormatDate(todoListItem.dueDate) }}
-                    </span>
-                  }
-                  @if (todoListItem.childCount) { <span>☷ {{ todoListItem.completedChildCount }}/{{ todoListItem.childCount }}</span> }
-                  @for (todoListLabelId of todoListItem.labelIds; track todoListLabelId) {
-                    @if (todoListFindLabel(todoListLabelId); as todoListLabel) {
-                      <span class="todoList-tag" [attr.data-color]="todoListLabel.color">{{ todoListLabel.name }}</span>
-                    }
-                  }
-                </span>
               </button>
-              <div class="todoList-row-assignees"
-                [attr.aria-label]="todoListItem.assigneeUserIds.length ? 'Responsables: ' + todoListAssigneeNames(todoListItem.assigneeUserIds) : 'Sin responsable asignado'">
-                @for (todoListAssigneeId of todoListItem.assigneeUserIds; track todoListAssigneeId) {
-                  @if (todoListFindUser(todoListAssigneeId); as todoListAssignee) {
-                    <span class="todoList-assignee" [title]="todoListAssigneeLabel(todoListAssigneeId)">
-                      @if (todoListAssignee.profileImage) {
-                        <img class="todoList-assignee-avatar" [src]="todoListAssignee.profileImage"
-                          [alt]="todoListAssigneeLabel(todoListAssigneeId)">
-                      } @else {
-                        <span class="todoList-assignee-avatar" aria-hidden="true">{{ todoListAssigneeInitials(todoListAssigneeId) }}</span>
-                      }
-                      <span class="todoList-assignee-name">{{ todoListAssigneeLabel(todoListAssigneeId) }}</span>
-                    </span>
-                  } @else {
-                    <span class="todoList-assignee" [title]="todoListAssigneeLabel(todoListAssigneeId)">
-                      <span class="todoList-assignee-avatar" aria-hidden="true">?</span>
-                      <span class="todoList-assignee-name">Responsable no disponible</span>
-                    </span>
+              <div class="todoList-row-labels" aria-label="Etiquetas">
+                @for (todoListLabelId of todoListItem.labelIds; track todoListLabelId) {
+                  @if (todoListFindLabel(todoListLabelId); as todoListLabel) {
+                    <span class="todoList-tag" [attr.data-color]="todoListLabel.color">{{ todoListLabel.name }}</span>
                   }
                 }
               </div>
-              <span class="todoList-priority" [attr.data-priority]="todoListItem.priority">
-                {{ todoListPriorityName(todoListItem.priority) }}
-              </span>
-              <button type="button" class="todoList-icon-button todoList-important"
-                [class.selected]="todoListItem.isImportant" (click)="todoListToggleImportant(todoListItem)"
-                [attr.aria-label]="todoListItem.isImportant ? 'Quitar importancia' : 'Marcar importante'">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>
-              </button>
+              @if (todoListItem.commentCount) {
+                <span class="todoList-row-comments" [attr.aria-label]="todoListItem.commentCount + ' comentarios'"
+                  [title]="todoListItem.commentCount + ' comentarios'">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.5A7.5 7.5 0 1 1 20 11.5Z" />
+                  </svg>
+                  <span>{{ todoListItem.commentCount }}</span>
+                </span>
+              }
+              @if (todoListItem.dueDate) {
+                <span class="todoList-row-date" [class.overdue]="todoListIsOverdue(todoListItem)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="5" width="16" height="15" rx="2" />
+                    <path d="M8 3v4m8-4v4M4 10h16" />
+                  </svg>
+                  {{ todoListTaskDateLabel(todoListItem.dueDate) }}
+                </span>
+              }
+              @if (todoListItem.assigneeUserIds[0]; as todoListAssigneeId) {
+                @if (todoListFindUser(todoListAssigneeId); as todoListAssignee) {
+                  <span class="todoList-row-assignee" [title]="todoListAssigneeLabel(todoListAssigneeId)"
+                    [attr.aria-label]="'Responsable: ' + todoListAssigneeLabel(todoListAssigneeId)">
+                    @if (todoListAssignee.profileImage) {
+                      <img [src]="todoListAssignee.profileImage" [alt]="todoListAssigneeLabel(todoListAssigneeId)">
+                    } @else {
+                      {{ todoListAssigneeInitials(todoListAssigneeId) }}
+                    }
+                  </span>
+                } @else {
+                  <span class="todoList-row-assignee" title="Responsable no disponible" aria-label="Responsable no disponible">?</span>
+                }
+              } @else {
+                <span class="todoList-row-assignee todoList-row-assignee--empty"
+                  title="Sin responsable asignado" aria-label="Sin responsable asignado">—</span>
+              }
               <div class="todoList-row-action-menu">
                 <button type="button" class="todoList-icon-button todoList-more-button"
                   (click)="todoListToggleTaskActions(todoListItem.id)"
@@ -426,6 +424,9 @@
                 @if (todoListOpenTaskActionsId() === todoListItem.id) {
                   <div class="todoList-row-action-popover" role="group" [attr.aria-label]="'Acciones para ' + todoListItem.title">
                     <button type="button" (click)="todoListCloseTaskActions(); todoListOpenTaskForm(todoListItem)">Editar</button>
+                    <button type="button" (click)="todoListCloseTaskActions(); todoListToggleImportant(todoListItem)">
+                      {{ todoListItem.isImportant ? 'Quitar importancia' : 'Marcar importante' }}
+                    </button>
                     @if (todoListView() === 'completed' || todoListView() === 'archived') {
                       <button type="button" (click)="todoListCloseTaskActions(); todoListRestoreItem(todoListItem)">Recuperar</button>
                     } @else {

@@ -45,6 +45,7 @@ export interface TodoListItem {
   assigneeUserIds: string[];
   childCount: number;
   completedChildCount: number;
+  commentCount?: number;
   projectName?: string;
   children?: TodoListChildItem[];
   comments?: TodoListComment[];
