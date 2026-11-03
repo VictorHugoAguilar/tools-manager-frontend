@@ -1469,6 +1469,20 @@
   font: inherit;
 }
 
+.todoList-form .todoList-label-color-control input[type='color'] {
+  min-height: 3.25rem;
+  padding: 0.3rem;
+  appearance: auto;
+  cursor: pointer;
+}
+
+.todoList-label-color-control output {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
 .todoList-form-wide {
   grid-column: 1 / -1;
 }

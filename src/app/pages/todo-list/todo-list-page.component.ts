@@ -15,6 +15,7 @@ import {
   TodoListItem,
   TodoListItemPayload,
   TodoListLabel,
+  TodoListLabelColor,
   TodoListNotification,
   TodoListOverview,
   TodoListPriority,
@@ -219,7 +220,7 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     description: '',
     color: 'blue'
   };
-  protected todoListLabelForm: { name: string; color: TodoListColor } = {
+  protected todoListLabelForm: { name: string; color: TodoListLabelColor } = {
     name: '',
     color: 'mint'
   };
@@ -1080,9 +1081,34 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     this.todoListEditingLabelId.set(todoListLabel?.id ?? '');
     this.todoListLabelForm = {
       name: todoListLabel?.name ?? '',
-      color: todoListLabel?.color ?? 'mint'
+      color: todoListLabel ? this.todoListLabelColorHex(todoListLabel.color) : '#bdebd9'
     };
     this.todoListModalKind.set('label');
+  }
+
+  protected todoListLabelColorHex(color: TodoListLabelColor): TodoListLabelColor {
+    switch (color) {
+      case 'blue': return '#cfe5ff';
+      case 'mint': return '#bdebd9';
+      case 'yellow': return '#ffe59a';
+      case 'rose': return '#ffd3d8';
+      case 'purple': return '#e4d7ff';
+      case 'coral': return '#ffc9b4';
+      default: return color;
+    }
+  }
+
+  protected todoListLabelTextColor(color: TodoListLabelColor): string {
+    const hex = this.todoListLabelColorHex(color).slice(1);
+    if (!/^[0-9a-f]{6}$/i.test(hex)) return '#23345a';
+    const linearChannel = (value: string): number => {
+      const channel = parseInt(value, 16) / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    };
+    const luminance = linearChannel(hex.slice(0, 2)) * 0.2126 +
+      linearChannel(hex.slice(2, 4)) * 0.7152 +
+      linearChannel(hex.slice(4, 6)) * 0.0722;
+    return luminance < 0.179 ? '#ffffff' : '#23345a';
   }
 
   protected async todoListSaveLabel(): Promise<void> {

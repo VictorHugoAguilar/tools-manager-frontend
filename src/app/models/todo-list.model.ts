@@ -1,5 +1,6 @@
 export type TodoListPriority = 1 | 2 | 3 | 4;
 export type TodoListColor = 'blue' | 'mint' | 'yellow' | 'rose' | 'purple' | 'coral';
+export type TodoListLabelColor = TodoListColor | `#${string}`;
 export type TodoListView = 'inbox' | 'today' | 'upcoming' | 'overdue' | 'important' | 'completed' | 'archived' | 'project' | 'all';
 export type TodoListRecurrenceFrequency = 'daily' | 'weekdays' | 'weekly' | 'biweekly' | 'monthly' | 'yearly' | 'custom';
 
@@ -58,7 +59,7 @@ export interface TodoListItem {
 export interface TodoListLabel {
   id: string;
   name: string;
-  color: TodoListColor;
+  color: TodoListLabelColor;
 }
 
 export interface TodoListUser {

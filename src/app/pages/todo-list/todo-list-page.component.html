@@ -203,7 +203,7 @@
         @for (todoListLabel of todoListLabels(); track todoListLabel.id) {
           <div class="todoList-label-entry">
             <button type="button" class="todoList-label-link" (click)="todoListToggleLabelFilter(todoListLabel.id)">
-              <span class="todoList-label-dot" [attr.data-color]="todoListLabel.color"></span>
+              <span class="todoList-label-dot" [style.background-color]="todoListLabelColorHex(todoListLabel.color)"></span>
               <span>{{ todoListLabel.name }}</span>
               @if (todoListLabelFilter() === todoListLabel.id) { <span aria-hidden="true">✓</span> }
             </button>
@@ -375,7 +375,8 @@
               <div class="todoList-row-labels" aria-label="Etiquetas">
                 @for (todoListLabelId of todoListItem.labelIds; track todoListLabelId) {
                   @if (todoListFindLabel(todoListLabelId); as todoListLabel) {
-                    <span class="todoList-tag" [attr.data-color]="todoListLabel.color">{{ todoListLabel.name }}</span>
+                    <span class="todoList-tag" [style.background-color]="todoListLabelColorHex(todoListLabel.color)"
+                      [style.color]="todoListLabelTextColor(todoListLabel.color)">{{ todoListLabel.name }}</span>
                   }
                 }
               </div>
@@ -855,10 +856,12 @@
         @if (todoListModalKind() === 'label') {
           <form class="todoList-form" (ngSubmit)="todoListSaveLabel()">
             <label class="todoList-form-wide"><span>Nombre *</span><input name="name" required maxlength="120" [(ngModel)]="todoListLabelForm.name"></label>
-            <label><span>Color</span><select name="color" [(ngModel)]="todoListLabelForm.color">
-              <option value="blue">Azul</option><option value="mint">Menta</option><option value="yellow">Amarillo</option>
-              <option value="rose">Rosa</option><option value="purple">Morado</option><option value="coral">Coral</option>
-            </select></label>
+            <label class="todoList-label-color-control">
+              <span>Color</span>
+              <input type="color" name="labelColor" aria-label="Elige cualquier color para la etiqueta"
+                [(ngModel)]="todoListLabelForm.color">
+              <output>{{ todoListLabelForm.color }}</output>
+            </label>
             <div class="todoList-form-actions todoList-form-wide">
               @if (todoListEditingLabelId()) {
                 <button type="button" class="todoList-danger-button" (click)="todoListDeleteLabel()">Eliminar</button>
