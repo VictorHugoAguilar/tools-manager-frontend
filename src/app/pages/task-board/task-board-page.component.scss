@@ -186,7 +186,7 @@
     font-size: 0.9rem;
   }
 
-  > span {
+  >span {
     color: var(--muted);
     font-size: 0.82rem;
   }
@@ -285,11 +285,9 @@
   min-height: 250px;
   padding: 0.75rem;
   border-color: rgba(35, 52, 90, 0.15);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--column-color, #9fc9ff) 20%, white),
-    #f8f9fc 180px
-  );
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--column-color, #9fc9ff) 20%, white),
+      #f8f9fc 180px);
   box-shadow: 0 2px 7px rgba(35, 52, 90, 0.07);
 }
 
@@ -489,7 +487,6 @@
   border-radius: 999px;
   color: #243457;
   font-size: 0.67rem;
-  font-weight: 850;
   line-height: 1.15;
 }
 
@@ -502,7 +499,7 @@
   padding-top: 0.12rem;
 }
 
-.task-card__meta > .member-avatar {
+.task-card__meta>.member-avatar {
   justify-self: end;
 }
 
@@ -833,7 +830,7 @@
   line-height: 1;
 }
 
-.task-modal > .task-notice {
+.task-modal>.task-notice {
   margin: 0.8rem 1.3rem 0;
 }
 
@@ -871,14 +868,21 @@
   display: grid;
   gap: 0.9rem;
 
-  > label,
-  .task-form__row > label,
-  .label-create-form > label {
+  >label,
+  .task-form__row>label,
+  .label-create-form>label {
     display: grid;
     gap: 0.35rem;
     color: #53617a;
     font-size: 0.78rem;
     font-weight: 850;
+  }
+
+  input,
+  select,
+  textarea {
+    font-weight: 500;
+    color:  #a1a3a3 !important;
   }
 
   input:not([type='checkbox']):not([type='color']),
@@ -915,7 +919,7 @@
   align-content: start;
   gap: 0.8rem;
 
-  > label {
+  >label {
     gap: 0.38rem;
     color: #344a76;
     font-size: 0.78rem;
@@ -946,7 +950,7 @@
     border: 0;
     outline: 0;
     background: transparent;
-    font-weight: 750;
+    font-weight: 500;
   }
 }
 
@@ -1209,8 +1213,8 @@
   }
 }
 
-.task-comments > header,
-.task-attachments > header {
+.task-comments>header,
+.task-attachments>header {
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -1297,7 +1301,7 @@
   }
 }
 
-.task-comment__content > p {
+.task-comment__content>p {
   margin: 0;
   color: #5f6e86;
   font-size: 0.77rem;
@@ -1606,12 +1610,12 @@
   width: min(430px, calc(100vw - 2rem));
   padding-bottom: 1.1rem;
 
-  > .task-notice {
+  >.task-notice {
     margin: 0.75rem 1.1rem 0;
   }
 
-  > .task-form,
-  > .label-manager {
+  >.task-form,
+  >.label-manager {
     margin: 0.9rem 1.1rem 0;
   }
 }
@@ -1712,6 +1716,7 @@
 }
 
 @media (max-width: 560px) {
+
   .task-board-intro,
   .task-toolbar {
     padding: 0.85rem;
@@ -1727,7 +1732,7 @@
     width: 100%;
   }
 
-  .task-board-intro__actions > .task-primary {
+  .task-board-intro__actions>.task-primary {
     grid-column: 1 / -1;
   }
 
