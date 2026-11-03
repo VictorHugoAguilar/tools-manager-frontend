@@ -66,7 +66,11 @@ interface TodoListBoardColumn {
   standalone: true,
   imports: [CommonModule, FormsModule, CdkDropListGroup, CdkDropList, CdkDrag],
   templateUrl: './todo-list-page.component.html',
-  styleUrl: './todo-list-page.component.scss',
+  styleUrls: [
+    './todo-list-page.component.scss',
+    './todo-list-page-detail.component.scss',
+    './todo-list-page-form.component.scss'
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TodoListPageComponent implements OnInit, OnDestroy {
