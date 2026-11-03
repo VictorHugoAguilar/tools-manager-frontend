@@ -924,7 +924,7 @@
                   <p class="todoList-muted" role="status">Cargando personas…</p>
                 } @else {
                   <div class="todoList-assignee-control">
-                    @if (todoListFindUser(todoListForm.assigneeUserIds[0] ?? ''); as todoListSelectedAssignee) {
+                    @if (todoListFindUser(todoListForm.assigneeUserIds[0] || ''); as todoListSelectedAssignee) {
                       @if (todoListSelectedAssignee.profileImage) {
                         <img class="todoList-form-assignee-avatar" [src]="todoListSelectedAssignee.profileImage"
                           [alt]="todoListSelectedAssignee.firstName + ' ' + todoListSelectedAssignee.lastName">
@@ -937,7 +937,7 @@
                       <span class="todoList-form-assignee-avatar todoList-form-assignee-avatar--empty" aria-hidden="true">?</span>
                     }
                     <select name="assigneeUserId" aria-label="Responsable"
-                      [ngModel]="todoListForm.assigneeUserIds[0] ?? ''"
+                      [ngModel]="todoListForm.assigneeUserIds[0] || ''"
                       (ngModelChange)="todoListSetFormAssignee($event)">
                       <option value="">Sin responsable</option>
                       @for (todoListUser of todoListFormAssignees(); track todoListUser.id) {
