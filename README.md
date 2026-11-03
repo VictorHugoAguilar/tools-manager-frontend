@@ -484,3 +484,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Fixed: se ha dividido los estilos de Todo List en tres hojas independientes, manteniendo la encapsulación de Angular y sin tocar las plantillas ni la lógica. El CSS de cada hoja queda por debajo de 26 kB: página 21,7 kB, detalle 12,6 kB y formulario 9,6 kB. Angular aplica anyComponentStyle por hoja individual.
 
 <!-- CHANGELOG-PR-96-END -->
+
+<!-- CHANGELOG-PR-98-START -->
+### [7.4.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/98) (2026-11-03)
+
+- Fixed: se corrige en la expresión de la línea 927: reemplacé ?? '' por || ''.
+
+<!-- CHANGELOG-PR-98-END -->
