@@ -371,6 +371,12 @@
               </button>
               <button type="button" class="todoList-task-main todoList-row-title" (click)="todoListOpenDetail(todoListItem)">
                 <strong>{{ todoListItem.title }}</strong>
+                @if (todoListItem.isImportant) {
+                  <svg class="todoList-row-important-flag" viewBox="0 0 24 24" role="img"
+                    aria-label="Tarea importante" title="Tarea importante">
+                    <path d="M5 21V4m1 1c4-3 8 3 12 0v8c-4 3-8-3-12 0" />
+                  </svg>
+                }
               </button>
               <div class="todoList-row-labels" aria-label="Etiquetas">
                 @for (todoListLabelId of todoListItem.labelIds; track todoListLabelId) {
