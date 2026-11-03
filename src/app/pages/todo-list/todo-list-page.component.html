@@ -710,19 +710,46 @@
 
             @if (todoListDetailTab() === 'attachments') {
               <div class="todoList-detail-tab-content todoList-detail-attachments">
-                <label class="todoList-file-picker">
-                  Añadir archivo
-                  <input type="file" (change)="todoListUploadAttachment($event)">
-                </label>
+                <h3>Archivos adjuntos</h3>
+                @if (todoListAttachmentUploading()) {
+                  <p class="todoList-muted" role="status">Subiendo archivos…</p>
+                }
                 @for (todoListAttachment of todoListDetail()?.attachments ?? []; track todoListAttachment.id) {
-                  <div class="todoList-attachment">
-                    <a [href]="todoListAttachment.url" target="_blank" rel="noopener">{{ todoListAttachment.fileName }}</a>
-                    <button type="button" class="todoList-icon-button todoList-danger-text"
-                      (click)="todoListDeleteAttachment(todoListAttachment)" aria-label="Eliminar archivo">×</button>
-                  </div>
-                } @empty {
+                  <article class="todoList-attachment-row">
+                    <span class="todoList-attachment-icon" aria-hidden="true">▤</span>
+                    <div class="todoList-attachment-copy">
+                      <a [href]="todoListAttachment.url" target="_blank" rel="noopener">{{ todoListAttachment.fileName }}</a>
+                      <small>{{ todoListFormatFileSize(todoListAttachment.size) }}</small>
+                    </div>
+                    <a class="todoList-attachment-download" [href]="todoListAttachment.url" target="_blank"
+                      rel="noopener" [attr.download]="todoListAttachment.fileName" aria-label="Descargar archivo">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                      </svg>
+                    </a>
+                    <div class="todoList-attachment-actions">
+                      <button type="button" class="todoList-attachment-options"
+                        [attr.aria-label]="'Opciones del archivo ' + todoListAttachment.fileName"
+                        [attr.aria-expanded]="todoListOpenAttachmentMenuId() === todoListAttachment.id"
+                        (click)="todoListToggleAttachmentMenu(todoListAttachment.id)">⋯</button>
+                      @if (todoListOpenAttachmentMenuId() === todoListAttachment.id) {
+                        <div class="todoList-attachment-menu" role="menu">
+                          <button type="button" role="menuitem"
+                            (click)="todoListDeleteAttachment(todoListAttachment)">Eliminar archivo</button>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                }
+                @if (!todoListAttachmentUploading() && !todoListDetail()?.attachments?.length) {
                   <p class="todoList-muted">Aún no hay archivos adjuntos.</p>
                 }
+                <label class="todoList-add-attachment" [class.is-disabled]="todoListAttachmentUploading()">
+                  <input type="file" multiple [disabled]="todoListAttachmentUploading()"
+                    (change)="todoListUploadAttachment($event)">
+                  {{ todoListAttachmentUploading() ? 'Subiendo…' : '＋ Añadir archivo' }}
+                </label>
+                <small class="todoList-attachment-hint">Tamaño máximo: 15 MB.</small>
               </div>
             }
 
@@ -982,27 +1009,58 @@
                 <p class="todoList-muted" role="status">Cargando archivos…</p>
               }
               @for (todoListAttachment of todoListFormAttachments(); track todoListAttachment.id) {
-                <div class="todoList-task-draft-row">
-                  <a [href]="todoListAttachment.url" target="_blank" rel="noopener">{{ todoListAttachment.fileName }}</a>
-                  <button type="button" class="todoList-icon-button todoList-danger-text"
-                    (click)="todoListRemoveFormAttachment(todoListAttachment)"
-                    [attr.aria-label]="'Quitar archivo ' + todoListAttachment.fileName">×</button>
-                </div>
+                <article class="todoList-attachment-row">
+                  <span class="todoList-attachment-icon" aria-hidden="true">▤</span>
+                  <div class="todoList-attachment-copy">
+                    <a [href]="todoListAttachment.url" target="_blank" rel="noopener">{{ todoListAttachment.fileName }}</a>
+                    <small>{{ todoListFormatFileSize(todoListAttachment.size) }}</small>
+                  </div>
+                  <a class="todoList-attachment-download" [href]="todoListAttachment.url" target="_blank"
+                    rel="noopener" [attr.download]="todoListAttachment.fileName" aria-label="Descargar archivo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                    </svg>
+                  </a>
+                  <div class="todoList-attachment-actions">
+                    <button type="button" class="todoList-attachment-options"
+                      [attr.aria-label]="'Opciones del archivo ' + todoListAttachment.fileName"
+                      [attr.aria-expanded]="todoListOpenFormAttachmentMenuId() === todoListAttachment.id"
+                      (click)="todoListToggleFormAttachmentMenu(todoListAttachment.id)">⋯</button>
+                    @if (todoListOpenFormAttachmentMenuId() === todoListAttachment.id) {
+                      <div class="todoList-attachment-menu" role="menu">
+                        <button type="button" role="menuitem"
+                          (click)="todoListRemoveFormAttachment(todoListAttachment)">Quitar archivo</button>
+                      </div>
+                    }
+                  </div>
+                </article>
               }
-              <label class="todoList-task-dropzone" (dragover)="$event.preventDefault()"
-                (drop)="todoListDropDraftAttachments($event)">
-                <input type="file" multiple (change)="todoListAddDraftAttachments($event)">
-                <span>Arrastra archivos aquí o <strong>selecciona</strong></span>
-                <small>Imágenes, PDF y otros archivos</small>
-              </label>
               @for (todoListDraftFile of todoListDraftAttachments; track todoListDraftFile.name + todoListDraftFile.lastModified; let fileIndex = $index) {
-                <div class="todoList-task-draft-row">
-                  <span>{{ todoListDraftFile.name }}</span>
-                  <button type="button" class="todoList-icon-button todoList-danger-text"
-                    (click)="todoListRemoveDraftAttachment(fileIndex)"
-                    [attr.aria-label]="'Quitar archivo ' + todoListDraftFile.name">×</button>
-                </div>
+                <article class="todoList-attachment-row">
+                  <span class="todoList-attachment-icon" aria-hidden="true">▤</span>
+                  <div class="todoList-attachment-copy">
+                    <span>{{ todoListDraftFile.name }}</span>
+                    <small>{{ todoListFormatFileSize(todoListDraftFile.size) }}</small>
+                  </div>
+                  <div class="todoList-attachment-actions">
+                    <button type="button" class="todoList-attachment-options"
+                      [attr.aria-label]="'Opciones del archivo ' + todoListDraftFile.name"
+                      [attr.aria-expanded]="todoListOpenFormAttachmentMenuId() === todoListDraftFile.name + todoListDraftFile.lastModified"
+                      (click)="todoListToggleFormAttachmentMenu(todoListDraftFile.name + todoListDraftFile.lastModified)">⋯</button>
+                    @if (todoListOpenFormAttachmentMenuId() === todoListDraftFile.name + todoListDraftFile.lastModified) {
+                      <div class="todoList-attachment-menu" role="menu">
+                        <button type="button" role="menuitem"
+                          (click)="todoListRemoveDraftAttachment(fileIndex)">Quitar archivo</button>
+                      </div>
+                    }
+                  </div>
+                </article>
               }
+              <label class="todoList-add-attachment">
+                <input type="file" multiple (change)="todoListAddDraftAttachments($event)">
+                ＋ Añadir archivo
+              </label>
+              <small class="todoList-attachment-hint">Tamaño máximo: 15 MB.</small>
             </section>
 
             <details class="todoList-task-advanced todoList-form-wide">

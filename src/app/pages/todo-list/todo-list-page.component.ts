@@ -33,6 +33,8 @@ type TodoListDisplay = 'list' | 'board' | 'calendar';
 type TodoListFormRelation = 'labelIds';
 type TodoListDetailTab = 'comments' | 'attachments' | 'history';
 
+const TODO_LIST_MAX_ATTACHMENT_SIZE = 15 * 1024 * 1024;
+
 interface TodoListFormState {
   title: string;
   description: string;
@@ -206,6 +208,9 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   protected readonly todoListDetail = signal<TodoListItem | null>(null);
   protected readonly todoListDetailTab = signal<TodoListDetailTab>('comments');
   protected readonly todoListChildModalOpen = signal(false);
+  protected readonly todoListAttachmentUploading = signal(false);
+  protected readonly todoListOpenAttachmentMenuId = signal('');
+  protected readonly todoListOpenFormAttachmentMenuId = signal('');
   protected readonly todoListMembers = signal<TodoListUser[]>([]);
   protected readonly todoListEditingItemId = signal('');
   protected readonly todoListOpenTaskActionsId = signal('');
@@ -653,19 +658,21 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   protected todoListAddDraftAttachments(event: Event): void {
     const input = event.target;
     if (!(input instanceof HTMLInputElement) || !input.files?.length) return;
-    this.todoListDraftAttachments.push(...Array.from(input.files));
+    const files = Array.from(input.files);
     input.value = '';
-  }
-
-  protected todoListDropDraftAttachments(event: DragEvent): void {
-    event.preventDefault();
-    if (event.dataTransfer?.files.length) {
-      this.todoListDraftAttachments.push(...Array.from(event.dataTransfer.files));
+    const acceptedFiles = files.filter((file) => file.size <= TODO_LIST_MAX_ATTACHMENT_SIZE);
+    const oversizedFiles = files.filter((file) => file.size > TODO_LIST_MAX_ATTACHMENT_SIZE);
+    this.todoListDraftAttachments.push(...acceptedFiles);
+    if (oversizedFiles.length) {
+      this.todoListError.set(
+        `No se añadieron ${oversizedFiles.length} archivo(s) que superan el límite de 15 MB: ${oversizedFiles.map((file) => file.name).join(', ')}.`
+      );
     }
   }
 
   protected todoListRemoveDraftAttachment(index: number): void {
     this.todoListDraftAttachments.splice(index, 1);
+    this.todoListOpenFormAttachmentMenuId.set('');
   }
 
   protected todoListRemoveFormAttachment(attachment: TodoListAttachment): void {
@@ -673,6 +680,21 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     this.todoListFormAttachments.update((attachments) =>
       attachments.filter((entry) => entry.id !== attachment.id)
     );
+    this.todoListOpenFormAttachmentMenuId.set('');
+  }
+
+  protected todoListToggleAttachmentMenu(attachmentId: string): void {
+    this.todoListOpenAttachmentMenuId.update((currentId) => currentId === attachmentId ? '' : attachmentId);
+  }
+
+  protected todoListToggleFormAttachmentMenu(attachmentId: string): void {
+    this.todoListOpenFormAttachmentMenuId.update((currentId) => currentId === attachmentId ? '' : attachmentId);
+  }
+
+  protected todoListFormatFileSize(size: number): string {
+    return size < 1024 * 1024
+      ? `${Math.max(1, Math.round(size / 1024))} KB`
+      : `${(size / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   protected todoListToggleDetailLabel(labelId: string): void {
@@ -1031,15 +1053,53 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   }
 
   protected async todoListUploadAttachment(event: Event): Promise<void> {
-    const todoListItemId = this.todoListDetail()?.id;
     const target = event.target;
-    if (!todoListItemId || !(target instanceof HTMLInputElement) || !target.files?.[0]) return;
+    if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+    const files = Array.from(target.files);
+    target.value = '';
+    await this.todoListUploadDetailAttachments(files);
+  }
+
+  private async todoListUploadDetailAttachments(files: File[]): Promise<void> {
+    const todoListItemId = this.todoListDetail()?.id;
+    if (!todoListItemId || !files.length || this.todoListAttachmentUploading()) return;
+    const acceptedFiles = files.filter((file) => file.size <= TODO_LIST_MAX_ATTACHMENT_SIZE);
+    const oversizedFiles = files.filter((file) => file.size > TODO_LIST_MAX_ATTACHMENT_SIZE);
+    if (!acceptedFiles.length) {
+      this.todoListError.set(
+        `No se pudieron subir archivos que superan el límite de 15 MB: ${oversizedFiles.map((file) => file.name).join(', ')}.`
+      );
+      return;
+    }
+    this.todoListAttachmentUploading.set(true);
+    let uploadedCount = 0;
+    let firstUploadError: unknown;
+    const failedFileNames: string[] = [];
     try {
-      await firstValueFrom(this.todoListApi.uploadAttachment(todoListItemId, target.files[0]));
-      target.value = '';
-      await this.todoListRefreshData(todoListItemId);
+      for (const file of acceptedFiles) {
+        try {
+          await firstValueFrom(this.todoListApi.uploadAttachment(todoListItemId, file));
+          uploadedCount++;
+        } catch (error) {
+          firstUploadError ??= error;
+          failedFileNames.push(file.name);
+        }
+      }
+      if (uploadedCount) await this.todoListRefreshData(todoListItemId);
+      if (failedFileNames.length) {
+        this.todoListSetRequestError(firstUploadError);
+        this.todoListError.update((message) =>
+          `No se pudieron subir ${failedFileNames.length} archivo(s): ${failedFileNames.join(', ')}. ${message}`);
+      }
     } catch (error) {
       this.todoListSetRequestError(error);
+    } finally {
+      this.todoListAttachmentUploading.set(false);
+    }
+    if (oversizedFiles.length) {
+      this.todoListError.update((message) =>
+        `${message ? `${message} ` : ''}No se pudieron subir ${oversizedFiles.length} archivo(s) que superan el límite de 15 MB: ${oversizedFiles.map((file) => file.name).join(', ')}.`
+      );
     }
   }
 
@@ -1050,6 +1110,7 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       `Se eliminará «${todoListAttachment.fileName}» permanentemente.`,
       'Eliminar archivo'
     )) return;
+    this.todoListOpenAttachmentMenuId.set('');
     try {
       await firstValueFrom(this.todoListApi.deleteAttachment(todoListAttachment.id));
       await this.todoListRefreshData(todoListItemId);
