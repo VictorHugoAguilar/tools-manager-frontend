@@ -133,13 +133,13 @@
 
         <button type="button" class="icon-button" aria-label="Notificaciones">🔔</button>
         <div class="account-menu">
-          <button type="button" class="avatar-button" aria-label="Menú de cuenta"
-            [attr.aria-expanded]="userMenuOpen()" (click)="userMenuOpen.update(open => !open)">
+          <button type="button" class="avatar-button" aria-label="Menú de cuenta" [attr.aria-expanded]="userMenuOpen()"
+            (click)="userMenuOpen.update(open => !open)">
             <span class="avatar">
               @if (auth.user()?.profileImage) {
-                <img [src]="auth.user()?.profileImage" alt="" />
+              <img [src]="auth.user()?.profileImage" alt="" />
               } @else {
-                {{ userInitials() }}
+              {{ userInitials() }}
               }
             </span>
             <span class="caret">⌄</span>
@@ -149,7 +149,7 @@
             <strong>{{ auth.user()?.firstName }} {{ auth.user()?.lastName }}</strong>
             <a routerLink="/mi-perfil" (click)="userMenuOpen.set(false)">Mi perfil</a>
             @if (auth.user()?.permissions?.includes('users:manage')) {
-              <a routerLink="/usuarios" (click)="userMenuOpen.set(false)">Gestión de usuarios</a>
+            <a routerLink="/usuarios" (click)="userMenuOpen.set(false)">Gestión de usuarios</a>
             }
             <button type="button" (click)="logout()">Cerrar sesión</button>
             @if (logoutError()) { <small role="alert">{{ logoutError() }}</small> }
@@ -160,17 +160,17 @@
     </header>
 
     @if (showPageHeader()) {
-      <section class="hero-strip">
-        <div>
-          <p class="eyebrow">{{ currentRoute.eyebrow }}</p>
-          <h2>{{ currentRoute.title }}</h2>
-        </div>
+    <section class="hero-strip">
+      <div>
+        <p class="eyebrow">{{ currentRoute.eyebrow }}</p>
+        <h2>{{ currentRoute.title }}</h2>
+        <p class="page-description">{{ currentRoute.description }}</p>
+      </div>
 
-        <div class="hero-copy">
-          <p class="page-description">{{ currentRoute.description }}</p>
-          <p class="banner">{{ store.bannerMessage() }}</p>
-        </div>
-      </section>
+      <div class="hero-copy">
+        <p class="banner">{{ store.bannerMessage() }}</p>
+      </div>
+    </section>
     }
 
     <router-outlet></router-outlet>
