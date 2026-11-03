@@ -203,7 +203,7 @@
         @for (todoListLabel of todoListLabels(); track todoListLabel.id) {
           <div class="todoList-label-entry">
             <button type="button" class="todoList-label-link" (click)="todoListToggleLabelFilter(todoListLabel.id)">
-              <span class="todoList-label-dot" [attr.data-color]="todoListLabel.color"></span>
+              <span class="todoList-label-dot" [style.background-color]="todoListLabelColorHex(todoListLabel.color)"></span>
               <span>{{ todoListLabel.name }}</span>
               @if (todoListLabelFilter() === todoListLabel.id) { <span aria-hidden="true">✓</span> }
             </button>
@@ -235,82 +235,86 @@
       <div class="todoList-filters">
         <label class="todoList-search">
           <svg class="todoList-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-          <input type="search" placeholder="Buscar tareas…" [ngModel]="todoListSearch()"
+          <input type="search" placeholder="Buscar tareas..." [ngModel]="todoListSearch()"
             (ngModelChange)="todoListUpdateSearch($event)">
         </label>
-        <label class="todoList-filter">
-          <span>Prioridad</span>
+        <label class="todoList-filter todoList-filter--select">
+          <select [ngModel]="todoListStatusFilter()" (ngModelChange)="todoListUpdateStatus($event)">
+            <option value="">Estado</option>
+            <option value="pending">Pendientes</option>
+            <option value="completed">Completadas</option>
+          </select>
+        </label>
+        <label class="todoList-filter todoList-filter--select">
+          <select [ngModel]="todoListLabelFilter()" (ngModelChange)="todoListToggleLabelFilter($event)">
+            <option value="">Etiqueta</option>
+            @for (todoListLabel of todoListLabels(); track todoListLabel.id) {
+              <option [value]="todoListLabel.id">{{ todoListLabel.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="todoList-filter todoList-filter--select">
           <select [ngModel]="todoListPriorityFilter()" (ngModelChange)="todoListUpdatePriority($event)">
-            <option value="">Todas</option>
+            <option value="">Prioridad</option>
             <option [ngValue]="1">Urgente</option>
             <option [ngValue]="2">Alta</option>
             <option [ngValue]="3">Media</option>
             <option [ngValue]="4">Baja</option>
           </select>
         </label>
-        <label class="todoList-filter">
-          <span>Estado</span>
-          <select [ngModel]="todoListStatusFilter()" (ngModelChange)="todoListUpdateStatus($event)">
-            <option value="">Todos</option>
-            <option value="pending">Pendientes</option>
-            <option value="completed">Completadas</option>
+        <label class="todoList-filter todoList-filter--select">
+          <select [ngModel]="todoListAssigneeFilter()" (ngModelChange)="todoListUpdateAssignee($event)">
+            <option value="">Responsable</option>
+            @for (todoListUser of todoListUsers(); track todoListUser.id) {
+              <option [value]="todoListUser.id">{{ todoListUser.firstName }} {{ todoListUser.lastName }}</option>
+            }
           </select>
         </label>
-        <label class="todoList-filter">
-          <span>Proyecto</span>
+        <label class="todoList-filter todoList-filter--date">
+          <input type="date" aria-label="Fecha exacta" [ngModel]="todoListDueDateFilter()"
+            (ngModelChange)="todoListUpdateDueDate($event)" >
+        </label>
+        <button type="button" class="todoList-clear-filters"
+          (click)="todoListClearFilters()" aria-label="Limpiar filtros">Limpiar</button>
+      </div>
+      <div class="todoList-filter-extras" aria-label="Filtros adicionales">
+        <label class="todoList-filter todoList-filter--select">
           <select [ngModel]="todoListProjectFilterValue()" (ngModelChange)="todoListUpdateProjectFilter($event)">
-            <option value="">Todos</option>
+            <option value="">Proyecto</option>
             @for (todoListProject of todoListProjects(); track todoListProject.id) {
               <option [value]="todoListProject.id">{{ todoListProject.name }}</option>
             }
           </select>
         </label>
-        <label class="todoList-filter">
-          <span>Importancia</span>
+        <label class="todoList-filter todoList-filter--select">
           <select [ngModel]="todoListImportantFilter()" (ngModelChange)="todoListUpdateImportant($event)">
-            <option value="">Todas</option>
+            <option value="">Importancia</option>
             <option value="true">Importantes</option>
             <option value="false">No importantes</option>
           </select>
         </label>
         @if (todoListView() === 'project' || todoListProjectFilter()) {
-          <label class="todoList-filter">
-            <span>Sección</span>
+          <label class="todoList-filter todoList-filter--select">
             <select [ngModel]="todoListSectionId()" (ngModelChange)="todoListSelectSection($event)">
-              <option value="">Todas</option>
+              <option value="">Sección</option>
               @for (todoListSection of todoListSections(); track todoListSection.id) {
                 <option [value]="todoListSection.id">{{ todoListSection.name }}</option>
               }
             </select>
           </label>
         }
-        <label class="todoList-filter">
-          <span>Responsable</span>
-          <select [ngModel]="todoListAssigneeFilter()" (ngModelChange)="todoListUpdateAssignee($event)">
-            <option value="">Todos</option>
-            @for (todoListUser of todoListUsers(); track todoListUser.id) {
-              <option [value]="todoListUser.id">{{ todoListUser.firstName }} {{ todoListUser.lastName }}</option>
-            }
-          </select>
-        </label>
-        <label class="todoList-filter">
-          <span>Fecha exacta</span>
-          <input type="date" [ngModel]="todoListDueDateFilter()" (ngModelChange)="todoListUpdateDueDate($event)">
-        </label>
-        <label class="todoList-filter todoList-filter-check">
+        <label class="todoList-filter-check" [class.active]="todoListOverdueFilter()">
           <input type="checkbox" [checked]="todoListOverdueFilter()" (change)="todoListToggleOverdueFilter()">
-          <span>Vencidas</span>
+          Vencidas
         </label>
-        <label class="todoList-filter todoList-filter-check">
+        <label class="todoList-filter-check" [class.active]="todoListNoDueDateFilter()">
           <input type="checkbox" [checked]="todoListNoDueDateFilter()" (change)="todoListToggleNoDueDateFilter()">
-          <span>Sin fecha</span>
+          Sin fecha
         </label>
-        <label class="todoList-filter todoList-filter-check">
+        <label class="todoList-filter-check" [class.active]="todoListRecurringFilter()">
           <input type="checkbox" [checked]="todoListRecurringFilter()" (change)="todoListToggleRecurringFilter()">
-          <span>Recurrentes</span>
+          Recurrentes
         </label>
-        <button type="button" class="todoList-icon-button todoList-clear-filters"
-          (click)="todoListClearFilters()" aria-label="Limpiar filtros">Limpiar</button>
       </div>
 
       <div class="todoList-viewbar">
@@ -360,58 +364,57 @@
             <article class="todoList-task-row" [class.completed]="todoListItem.status === 'completed'"
               [class.actions-open]="todoListOpenTaskActionsId() === todoListItem.id">
               <button type="button" class="todoList-complete-button" [class.done]="todoListItem.status === 'completed'"
+                [attr.aria-pressed]="todoListItem.status === 'completed'"
                 [attr.aria-label]="todoListItem.status === 'completed' ? 'Recuperar tarea' : 'Completar tarea'"
                 (click)="todoListToggleStatus(todoListItem)">
                 @if (todoListItem.status === 'completed') { ✓ }
               </button>
-              <button type="button" class="todoList-task-main" (click)="todoListOpenDetail(todoListItem)">
+              <button type="button" class="todoList-task-main todoList-row-title" (click)="todoListOpenDetail(todoListItem)">
                 <strong>{{ todoListItem.title }}</strong>
-                @if (todoListItem.description) { <span class="todoList-task-description">{{ todoListItem.description }}</span> }
-                <span class="todoList-task-meta">
-                  @if (todoListItem.todoListId) { <span class="todoList-meta-project">{{ todoListItem.projectName }}</span> }
-                  @if (todoListItem.dueDate) {
-                    <span class="todoList-meta-date" [class.overdue]="todoListIsOverdue(todoListItem)">
-                      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M8 3v4m8-4v4M4 10h16" /></svg>
-                      {{ todoListFormatDate(todoListItem.dueDate) }}
-                    </span>
-                  }
-                  @if (todoListItem.childCount) { <span>☷ {{ todoListItem.completedChildCount }}/{{ todoListItem.childCount }}</span> }
-                  @for (todoListLabelId of todoListItem.labelIds; track todoListLabelId) {
-                    @if (todoListFindLabel(todoListLabelId); as todoListLabel) {
-                      <span class="todoList-tag" [attr.data-color]="todoListLabel.color">{{ todoListLabel.name }}</span>
-                    }
-                  }
-                </span>
               </button>
-              <div class="todoList-row-assignees"
-                [attr.aria-label]="todoListItem.assigneeUserIds.length ? 'Responsables: ' + todoListAssigneeNames(todoListItem.assigneeUserIds) : 'Sin responsable asignado'">
-                @for (todoListAssigneeId of todoListItem.assigneeUserIds; track todoListAssigneeId) {
-                  @if (todoListFindUser(todoListAssigneeId); as todoListAssignee) {
-                    <span class="todoList-assignee" [title]="todoListAssigneeLabel(todoListAssigneeId)">
-                      @if (todoListAssignee.profileImage) {
-                        <img class="todoList-assignee-avatar" [src]="todoListAssignee.profileImage"
-                          [alt]="todoListAssigneeLabel(todoListAssigneeId)">
-                      } @else {
-                        <span class="todoList-assignee-avatar" aria-hidden="true">{{ todoListAssigneeInitials(todoListAssigneeId) }}</span>
-                      }
-                      <span class="todoList-assignee-name">{{ todoListAssigneeLabel(todoListAssigneeId) }}</span>
-                    </span>
-                  } @else {
-                    <span class="todoList-assignee" [title]="todoListAssigneeLabel(todoListAssigneeId)">
-                      <span class="todoList-assignee-avatar" aria-hidden="true">?</span>
-                      <span class="todoList-assignee-name">Responsable no disponible</span>
-                    </span>
+              <div class="todoList-row-labels" aria-label="Etiquetas">
+                @for (todoListLabelId of todoListItem.labelIds; track todoListLabelId) {
+                  @if (todoListFindLabel(todoListLabelId); as todoListLabel) {
+                    <span class="todoList-tag" [style.background-color]="todoListLabelColorHex(todoListLabel.color)"
+                      [style.color]="todoListLabelTextColor(todoListLabel.color)">{{ todoListLabel.name }}</span>
                   }
                 }
               </div>
-              <span class="todoList-priority" [attr.data-priority]="todoListItem.priority">
-                {{ todoListPriorityName(todoListItem.priority) }}
-              </span>
-              <button type="button" class="todoList-icon-button todoList-important"
-                [class.selected]="todoListItem.isImportant" (click)="todoListToggleImportant(todoListItem)"
-                [attr.aria-label]="todoListItem.isImportant ? 'Quitar importancia' : 'Marcar importante'">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>
-              </button>
+              @if (todoListItem.commentCount) {
+                <span class="todoList-row-comments" [attr.aria-label]="todoListItem.commentCount + ' comentarios'"
+                  [title]="todoListItem.commentCount + ' comentarios'">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.5A7.5 7.5 0 1 1 20 11.5Z" />
+                  </svg>
+                  <span>{{ todoListItem.commentCount }}</span>
+                </span>
+              }
+              @if (todoListItem.dueDate) {
+                <span class="todoList-row-date" [class.overdue]="todoListIsOverdue(todoListItem)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="5" width="16" height="15" rx="2" />
+                    <path d="M8 3v4m8-4v4M4 10h16" />
+                  </svg>
+                  {{ todoListTaskDateLabel(todoListItem.dueDate) }}
+                </span>
+              }
+              @if (todoListItem.assigneeUserIds[0]; as todoListAssigneeId) {
+                @if (todoListFindUser(todoListAssigneeId); as todoListAssignee) {
+                  <span class="todoList-row-assignee" [title]="todoListAssigneeLabel(todoListAssigneeId)"
+                    [attr.aria-label]="'Responsable: ' + todoListAssigneeLabel(todoListAssigneeId)">
+                    @if (todoListAssignee.profileImage) {
+                      <img [src]="todoListAssignee.profileImage" [alt]="todoListAssigneeLabel(todoListAssigneeId)">
+                    } @else {
+                      {{ todoListAssigneeInitials(todoListAssigneeId) }}
+                    }
+                  </span>
+                } @else {
+                  <span class="todoList-row-assignee" title="Responsable no disponible" aria-label="Responsable no disponible">?</span>
+                }
+              } @else {
+                <span class="todoList-row-assignee todoList-row-assignee--empty"
+                  title="Sin responsable asignado" aria-label="Sin responsable asignado">—</span>
+              }
               <div class="todoList-row-action-menu">
                 <button type="button" class="todoList-icon-button todoList-more-button"
                   (click)="todoListToggleTaskActions(todoListItem.id)"
@@ -422,6 +425,9 @@
                 @if (todoListOpenTaskActionsId() === todoListItem.id) {
                   <div class="todoList-row-action-popover" role="group" [attr.aria-label]="'Acciones para ' + todoListItem.title">
                     <button type="button" (click)="todoListCloseTaskActions(); todoListOpenTaskForm(todoListItem)">Editar</button>
+                    <button type="button" (click)="todoListCloseTaskActions(); todoListToggleImportant(todoListItem)">
+                      {{ todoListItem.isImportant ? 'Quitar importancia' : 'Marcar importante' }}
+                    </button>
                     @if (todoListView() === 'completed' || todoListView() === 'archived') {
                       <button type="button" (click)="todoListCloseTaskActions(); todoListRestoreItem(todoListItem)">Recuperar</button>
                     } @else {
@@ -538,156 +544,297 @@
   @if (todoListDetail()) {
     <div class="todoList-drawer-backdrop">
       <button type="button" class="todoList-overlay" (click)="todoListCloseDetail()" aria-label="Cerrar detalle"></button>
-      <aside class="todoList-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="todoList-detail-title"
-        >
+      <aside class="todoList-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="todoList-detail-title">
         <header class="todoList-drawer-heading">
           <span class="todoList-eyebrow">DETALLE DE TAREA</span>
           <button type="button" class="todoList-icon-button" (click)="todoListCloseDetail()" aria-label="Cerrar detalle">×</button>
         </header>
         <div class="todoList-detail-scroll">
-          <button type="button" class="todoList-complete-button" [class.done]="todoListDetail()?.status === 'completed'"
-            (click)="todoListToggleDetailStatus()" aria-label="Cambiar estado">
-            @if (todoListDetail()?.status === 'completed') { ✓ }
-          </button>
-          <h2 id="todoList-detail-title">{{ todoListDetail()?.title }}</h2>
-          @if (todoListDetail()?.description) { <p class="todoList-detail-description">{{ todoListDetail()?.description }}</p> }
-          <div class="todoList-detail-facts">
-            <span>Prioridad {{ todoListPriorityName(todoListDetail()?.priority ?? 4) }}</span>
-            @if (todoListDetail()?.dueDate) { <span>Vence {{ todoListFormatDate(todoListDetail()?.dueDate ?? '') }}</span> }
-            @if (todoListDetail()?.recurrence?.isActive) { <span>↻ Recurrente</span> }
+          @if (todoListError()) {
+            <p class="todoList-message todoList-message--error" role="alert">{{ todoListError() }}</p>
+          }
+          <div class="todoList-detail-title-row">
+            <input type="checkbox" class="todoList-detail-complete"
+              [checked]="todoListDetail()?.status === 'completed'"
+              (change)="todoListToggleDetailStatus()" aria-label="Marcar tarea como completada">
+            <input id="todoList-detail-title" class="todoList-detail-title-input" type="text" required maxlength="200"
+              [(ngModel)]="todoListDetailForm.title" aria-label="Título de la tarea">
           </div>
 
-          <section class="todoList-detail-section">
-            <h3>Subtareas <span>{{ todoListDetail()?.completedChildCount ?? 0 }}/{{ todoListDetail()?.childCount ?? 0 }}</span></h3>
-            @for (todoListChild of todoListDetail()?.children ?? []; track todoListChild.id; let childIndex = $index) {
-              <div class="todoList-child-row">
-                <input type="checkbox" [checked]="todoListChild.status === 'completed'"
-                  (change)="todoListToggleChild(todoListChild)">
-                @if (todoListEditingChildId() === todoListChild.id) {
-                  <input class="todoList-inline-input" [(ngModel)]="todoListEditingChildTitle"
-                    aria-label="Editar subtarea" (keydown.enter)="todoListSaveChild(todoListChild)"
-                    (keydown.escape)="todoListEditingChildId.set('')">
-                  <button type="button" class="todoList-icon-button" (click)="todoListSaveChild(todoListChild)"
-                    aria-label="Guardar subtarea">✓</button>
-                } @else {
-                  <span [class.done-text]="todoListChild.status === 'completed'">{{ todoListChild.title }}</span>
-                  <button type="button" class="todoList-icon-button" (click)="todoListStartChildEdit(todoListChild)"
-                    aria-label="Editar subtarea">✎</button>
-                  <button type="button" class="todoList-icon-button" (click)="todoListMoveChild(todoListChild, -1)"
-                    [disabled]="childIndex === 0" aria-label="Mover subtarea arriba">↑</button>
-                  <button type="button" class="todoList-icon-button" (click)="todoListMoveChild(todoListChild, 1)"
-                    [disabled]="childIndex === (todoListDetail()?.children?.length ?? 0) - 1"
-                    aria-label="Mover subtarea abajo">↓</button>
-                }
-                <button type="button" class="todoList-icon-button todoList-danger-text"
-                  (click)="todoListDeleteChild(todoListChild)" aria-label="Eliminar subtarea">×</button>
-              </div>
-            }
-            <div class="todoList-inline-create">
-              <input type="text" placeholder="Añadir subtarea" [(ngModel)]="todoListChildTitle"
-                (keydown.enter)="todoListCreateChild()">
-              <button type="button" class="todoList-icon-button" (click)="todoListCreateChild()" aria-label="Añadir subtarea">＋</button>
+          <div class="todoList-detail-properties">
+            <div class="todoList-detail-labels" aria-label="Etiquetas de la tarea">
+              @for (todoListLabel of todoListLabels(); track todoListLabel.id) {
+                <label class="todoList-detail-label-choice" [class.selected]="todoListDetailForm.labelIds.includes(todoListLabel.id)">
+                  <input type="checkbox" [checked]="todoListDetailForm.labelIds.includes(todoListLabel.id)"
+                    (change)="todoListToggleDetailLabel(todoListLabel.id)">
+                  <span [style.background-color]="todoListLabelColorHex(todoListLabel.color)"
+                    [style.color]="todoListLabelTextColor(todoListLabel.color)">{{ todoListLabel.name }}</span>
+                </label>
+              }
             </div>
-          </section>
-
-          <section class="todoList-detail-section">
-            <h3>Comentarios</h3>
-            @for (todoListComment of todoListDetail()?.comments ?? []; track todoListComment.id) {
-              <article class="todoList-comment">
-                <strong>{{ todoListComment.authorName }}</strong>
-                @if (todoListEditingCommentId() === todoListComment.id) {
-                  <textarea rows="3" maxlength="4000" [(ngModel)]="todoListEditingCommentContent"
-                    aria-label="Editar comentario"></textarea>
-                  <button type="button" class="todoList-icon-button" (click)="todoListSaveComment(todoListComment)"
-                    aria-label="Guardar comentario">✓</button>
-                  <button type="button" class="todoList-icon-button" (click)="todoListEditingCommentId.set('')"
-                    aria-label="Cancelar edición">↶</button>
-                } @else {
-                  <p>{{ todoListComment.content }}</p>
-                  @if (todoListComment.userId === todoListCurrentUserId()) {
-                    <button type="button" class="todoList-icon-button" (click)="todoListStartCommentEdit(todoListComment)"
-                      aria-label="Editar comentario">✎</button>
-                  }
-                }
-                <small>{{ todoListFormatTimestamp(todoListComment.createdAt) }}</small>
-                <button type="button" class="todoList-icon-button todoList-danger-text"
-                  (click)="todoListDeleteComment(todoListComment)" aria-label="Eliminar comentario">×</button>
-              </article>
-            }
-            <div class="todoList-inline-create">
-              <input type="text" placeholder="Escribe un comentario…" [(ngModel)]="todoListCommentText"
-                (keydown.enter)="todoListAddComment()">
-              <button type="button" class="todoList-icon-button" (click)="todoListAddComment()" aria-label="Enviar comentario">➤</button>
-            </div>
-          </section>
-
-          <section class="todoList-detail-section">
-            <h3>Archivos adjuntos</h3>
-            <label class="todoList-file-picker">
-              Añadir archivo
-              <input type="file" (change)="todoListUploadAttachment($event)">
-            </label>
-            @for (todoListAttachment of todoListDetail()?.attachments ?? []; track todoListAttachment.id) {
-              <div class="todoList-attachment">
-                <a [href]="todoListAttachment.url" target="_blank" rel="noopener">{{ todoListAttachment.fileName }}</a>
-                <button type="button" class="todoList-icon-button todoList-danger-text"
-                  (click)="todoListDeleteAttachment(todoListAttachment)" aria-label="Eliminar archivo">×</button>
-              </div>
-            }
-          </section>
-
-          <section class="todoList-detail-section">
-            <h3>Recordatorios</h3>
-            <label class="todoList-reminder-select">
-              <span>Programar aviso</span>
-              <select [(ngModel)]="todoListReminderType">
-                <option value="at_due">En el vencimiento</option>
-                <option value="before_15m">15 minutos antes</option>
-                <option value="before_1h">1 hora antes</option>
-                <option value="before_1d">1 día antes</option>
-                <option value="custom">Personalizado</option>
+            <label class="todoList-detail-property">
+              <span>Prioridad</span>
+              <select [(ngModel)]="todoListDetailForm.priority" aria-label="Prioridad">
+                <option [ngValue]="1">Urgente</option>
+                <option [ngValue]="2">Alta</option>
+                <option [ngValue]="3">Media</option>
+                <option [ngValue]="4">Baja</option>
               </select>
             </label>
-            @if (todoListReminderType === 'custom') {
-              <label class="todoList-reminder-select">
-                <span>Fecha y hora</span>
-                <input type="datetime-local" [(ngModel)]="todoListReminderDateTime">
-              </label>
+            <label class="todoList-detail-property">
+              <span>Fecha</span>
+              <input type="date" [(ngModel)]="todoListDetailForm.dueDate" aria-label="Fecha de vencimiento">
+            </label>
+            @if (todoListDetail()?.recurrence?.isActive) {
+              <span class="todoList-detail-recurrence">↻ Recurrente</span>
             }
-            <button type="button" class="todoList-secondary-button" (click)="todoListCreateReminder()">Crear recordatorio</button>
-            @for (todoListReminder of todoListDetail()?.reminders ?? []; track todoListReminder.id) {
-              <div class="todoList-attachment">
-                @if (todoListEditingReminderId() === todoListReminder.id) {
-                  <input type="datetime-local" [(ngModel)]="todoListEditingReminderDateTime"
-                    aria-label="Editar fecha del recordatorio">
-                  <button type="button" class="todoList-icon-button" (click)="todoListSaveReminder(todoListReminder)"
-                    aria-label="Guardar recordatorio">✓</button>
-                  <button type="button" class="todoList-icon-button" (click)="todoListEditingReminderId.set('')"
-                    aria-label="Cancelar edición">↶</button>
-                } @else {
-                  <span>{{ todoListFormatTimestamp(todoListReminder.reminderDateTime) }} · {{ todoListReminder.status }}</span>
-                }
-                @if (todoListReminder.status === 'scheduled') {
-                  @if (todoListReminder.userId === todoListCurrentUserId() && todoListEditingReminderId() !== todoListReminder.id) {
-                    <button type="button" class="todoList-icon-button" (click)="todoListStartReminderEdit(todoListReminder)"
-                      aria-label="Editar recordatorio">✎</button>
+          </div>
+
+          <section class="todoList-detail-description-box">
+            <h3>Descripción</h3>
+            <textarea rows="3" maxlength="5000" [(ngModel)]="todoListDetailForm.description"
+              aria-label="Descripción de la tarea" placeholder="Añade una descripción…"></textarea>
+          </section>
+
+          <section class="todoList-detail-subtasks">
+            <div class="todoList-detail-section-heading">
+              <h3>Subtareas <span>{{ todoListDetail()?.completedChildCount ?? 0 }}/{{ todoListDetail()?.childCount ?? 0 }}</span></h3>
+              <button type="button" class="todoList-add-subtask-button" (click)="todoListOpenChildModal()">＋ Añadir subtarea</button>
+            </div>
+            <div class="todoList-detail-child-list">
+              @for (todoListChild of todoListDetail()?.children ?? []; track todoListChild.id; let childIndex = $index) {
+                <div class="todoList-child-row">
+                  <input type="checkbox" [checked]="todoListChild.status === 'completed'"
+                    (change)="todoListToggleChild(todoListChild)">
+                  @if (todoListEditingChildId() === todoListChild.id) {
+                    <input class="todoList-inline-input" [(ngModel)]="todoListEditingChildTitle"
+                      aria-label="Editar subtarea" (keydown.enter)="todoListSaveChild(todoListChild)"
+                      (keydown.escape)="todoListEditingChildId.set('')">
+                    <button type="button" class="todoList-icon-button" (click)="todoListSaveChild(todoListChild)"
+                      aria-label="Guardar subtarea">✓</button>
+                  } @else {
+                    <span [class.done-text]="todoListChild.status === 'completed'">{{ todoListChild.title }}</span>
+                    <button type="button" class="todoList-icon-button" (click)="todoListStartChildEdit(todoListChild)"
+                      aria-label="Editar subtarea">✎</button>
+                    <button type="button" class="todoList-icon-button" (click)="todoListMoveChild(todoListChild, -1)"
+                      [disabled]="childIndex === 0" aria-label="Mover subtarea arriba">↑</button>
+                    <button type="button" class="todoList-icon-button" (click)="todoListMoveChild(todoListChild, 1)"
+                      [disabled]="childIndex === (todoListDetail()?.children?.length ?? 0) - 1"
+                      aria-label="Mover subtarea abajo">↓</button>
                   }
                   <button type="button" class="todoList-icon-button todoList-danger-text"
-                    (click)="todoListDeleteReminder(todoListReminder)" aria-label="Eliminar recordatorio">×</button>
+                    (click)="todoListDeleteChild(todoListChild)" aria-label="Eliminar subtarea">×</button>
+                </div>
+              } @empty {
+                <p class="todoList-muted">Todavía no hay subtareas.</p>
+              }
+            </div>
+          </section>
+
+          <section class="todoList-detail-content-panel">
+            <nav class="todoList-detail-tabs" aria-label="Contenido de la tarea">
+              <button type="button" [class.active]="todoListDetailTab() === 'comments'"
+                (click)="todoListDetailTab.set('comments')">
+                Comentarios <span>{{ todoListDetail()?.comments?.length ?? 0 }}</span>
+              </button>
+              <button type="button" [class.active]="todoListDetailTab() === 'attachments'"
+                (click)="todoListDetailTab.set('attachments')">
+                Archivos <span>{{ todoListDetail()?.attachments?.length ?? 0 }}</span>
+              </button>
+              <button type="button" [class.active]="todoListDetailTab() === 'history'"
+                (click)="todoListDetailTab.set('history')">Historial</button>
+            </nav>
+
+            @if (todoListDetailTab() === 'comments') {
+              <div class="todoList-detail-tab-content todoList-detail-comments">
+                <div class="todoList-detail-comment-list">
+                  @for (todoListComment of todoListDetail()?.comments ?? []; track todoListComment.id) {
+                    <article class="todoList-detail-comment">
+                      @if (todoListFindUser(todoListComment.userId)?.profileImage; as todoListCommentAvatar) {
+                        <img class="todoList-comment-avatar" [src]="todoListCommentAvatar"
+                          [alt]="todoListComment.authorName">
+                      } @else {
+                        <span class="todoList-comment-avatar todoList-comment-avatar--initials" aria-hidden="true">
+                          {{ todoListCommentInitials(todoListComment) }}
+                        </span>
+                      }
+                      <div class="todoList-comment-body">
+                        <header>
+                          <strong>{{ todoListComment.authorName }}</strong>
+                          <time [attr.datetime]="todoListComment.createdAt">
+                            {{ todoListCommentTimestamp(todoListComment.createdAt) }}
+                          </time>
+                          <div class="todoList-comment-actions">
+                            @if (todoListComment.userId === todoListCurrentUserId() &&
+                              todoListEditingCommentId() !== todoListComment.id) {
+                              <button type="button" class="todoList-icon-button"
+                                (click)="todoListStartCommentEdit(todoListComment)" aria-label="Editar comentario">✎</button>
+                            }
+                            <button type="button" class="todoList-icon-button todoList-danger-text"
+                              (click)="todoListDeleteComment(todoListComment)" aria-label="Eliminar comentario">×</button>
+                          </div>
+                        </header>
+                        @if (todoListEditingCommentId() === todoListComment.id) {
+                          <textarea rows="3" maxlength="4000" [(ngModel)]="todoListEditingCommentContent"
+                            aria-label="Editar comentario"></textarea>
+                          <div class="todoList-comment-edit-actions">
+                            <button type="button" class="todoList-icon-button"
+                              (click)="todoListSaveComment(todoListComment)" aria-label="Guardar comentario">✓</button>
+                            <button type="button" class="todoList-icon-button"
+                              (click)="todoListEditingCommentId.set('')" aria-label="Cancelar edición">↶</button>
+                          </div>
+                        } @else {
+                          <p>{{ todoListComment.content }}</p>
+                        }
+                      </div>
+                    </article>
+                  } @empty {
+                    <p class="todoList-muted">Aún no hay comentarios.</p>
+                  }
+                </div>
+                <div class="todoList-detail-comment-composer">
+                  @if (todoListFindUser(todoListCurrentUserId())?.profileImage; as todoListCurrentAvatar) {
+                    <img class="todoList-comment-avatar" [src]="todoListCurrentAvatar" alt="">
+                  } @else {
+                    <span class="todoList-comment-avatar todoList-comment-avatar--initials" aria-hidden="true">
+                      {{ todoListAssigneeInitials(todoListCurrentUserId()) }}
+                    </span>
+                  }
+                  <input type="text" placeholder="Escribe un comentario…" [(ngModel)]="todoListCommentText"
+                    (keydown.enter)="todoListAddComment()">
+                  <button type="button" class="todoList-primary-button" (click)="todoListAddComment()"
+                    [disabled]="!todoListCommentText.trim()" aria-label="Enviar comentario">➤</button>
+                </div>
+              </div>
+            }
+
+            @if (todoListDetailTab() === 'attachments') {
+              <div class="todoList-detail-tab-content todoList-detail-attachments">
+                <h3>Archivos adjuntos</h3>
+                @if (todoListAttachmentUploading()) {
+                  <p class="todoList-muted" role="status">Subiendo archivos…</p>
                 }
+                @for (todoListAttachment of todoListDetail()?.attachments ?? []; track todoListAttachment.id) {
+                  <article class="todoList-attachment-row">
+                    <span class="todoList-attachment-icon" aria-hidden="true">▤</span>
+                    <div class="todoList-attachment-copy">
+                      <a [href]="todoListAttachment.url" target="_blank" rel="noopener">{{ todoListAttachment.fileName }}</a>
+                      <small>{{ todoListFormatFileSize(todoListAttachment.size) }}</small>
+                    </div>
+                    <a class="todoList-attachment-download" [href]="todoListAttachment.url" target="_blank"
+                      rel="noopener" [attr.download]="todoListAttachment.fileName" aria-label="Descargar archivo">
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                      </svg>
+                    </a>
+                    <div class="todoList-attachment-actions">
+                      <button type="button" class="todoList-attachment-options"
+                        [attr.aria-label]="'Opciones del archivo ' + todoListAttachment.fileName"
+                        [attr.aria-expanded]="todoListOpenAttachmentMenuId() === todoListAttachment.id"
+                        (click)="todoListToggleAttachmentMenu(todoListAttachment.id)">⋯</button>
+                      @if (todoListOpenAttachmentMenuId() === todoListAttachment.id) {
+                        <div class="todoList-attachment-menu" role="menu">
+                          <button type="button" role="menuitem"
+                            (click)="todoListDeleteAttachment(todoListAttachment)">Eliminar archivo</button>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                }
+                @if (!todoListAttachmentUploading() && !todoListDetail()?.attachments?.length) {
+                  <p class="todoList-muted">Aún no hay archivos adjuntos.</p>
+                }
+                <label class="todoList-add-attachment" [class.is-disabled]="todoListAttachmentUploading()">
+                  <input type="file" multiple [disabled]="todoListAttachmentUploading()"
+                    (change)="todoListUploadAttachment($event)">
+                  {{ todoListAttachmentUploading() ? 'Subiendo…' : '＋ Añadir archivo' }}
+                </label>
+                <small class="todoList-attachment-hint">Tamaño máximo: 15 MB.</small>
+              </div>
+            }
+
+            @if (todoListDetailTab() === 'history') {
+              <div class="todoList-detail-tab-content todoList-detail-history">
+                @for (todoListActivity of todoListDetail()?.activities ?? []; track todoListActivity.id) {
+                  <p class="todoList-activity">
+                    <strong>{{ todoListActivity.userName }}</strong> · {{ todoListActivity.action }}
+                    <small>{{ todoListFormatTimestamp(todoListActivity.createdAt) }}</small>
+                  </p>
+                } @empty {
+                  <p class="todoList-muted">Aún no hay actividad registrada.</p>
+                }
+                <section class="todoList-detail-reminders">
+                  <h3>Recordatorios</h3>
+                  <label class="todoList-reminder-select">
+                    <span>Programar aviso</span>
+                    <select [(ngModel)]="todoListReminderType">
+                      <option value="at_due">En el vencimiento</option>
+                      <option value="before_15m">15 minutos antes</option>
+                      <option value="before_1h">1 hora antes</option>
+                      <option value="before_1d">1 día antes</option>
+                      <option value="custom">Personalizado</option>
+                    </select>
+                  </label>
+                  @if (todoListReminderType === 'custom') {
+                    <label class="todoList-reminder-select">
+                      <span>Fecha y hora</span>
+                      <input type="datetime-local" [(ngModel)]="todoListReminderDateTime">
+                    </label>
+                  }
+                  <button type="button" class="todoList-secondary-button" (click)="todoListCreateReminder()">Crear recordatorio</button>
+                  @for (todoListReminder of todoListDetail()?.reminders ?? []; track todoListReminder.id) {
+                    <div class="todoList-attachment">
+                      @if (todoListEditingReminderId() === todoListReminder.id) {
+                        <input type="datetime-local" [(ngModel)]="todoListEditingReminderDateTime"
+                          aria-label="Editar fecha del recordatorio">
+                        <button type="button" class="todoList-icon-button" (click)="todoListSaveReminder(todoListReminder)"
+                          aria-label="Guardar recordatorio">✓</button>
+                        <button type="button" class="todoList-icon-button" (click)="todoListEditingReminderId.set('')"
+                          aria-label="Cancelar edición">↶</button>
+                      } @else {
+                        <span>{{ todoListFormatTimestamp(todoListReminder.reminderDateTime) }} · {{ todoListReminder.status }}</span>
+                      }
+                      @if (todoListReminder.status === 'scheduled') {
+                        @if (todoListReminder.userId === todoListCurrentUserId() &&
+                          todoListEditingReminderId() !== todoListReminder.id) {
+                          <button type="button" class="todoList-icon-button"
+                            (click)="todoListStartReminderEdit(todoListReminder)" aria-label="Editar recordatorio">✎</button>
+                        }
+                        <button type="button" class="todoList-icon-button todoList-danger-text"
+                          (click)="todoListDeleteReminder(todoListReminder)" aria-label="Eliminar recordatorio">×</button>
+                      }
+                    </div>
+                  }
+                </section>
               </div>
             }
           </section>
 
-          <section class="todoList-detail-section">
-            <h3>Actividad</h3>
-            @for (todoListActivity of todoListDetail()?.activities ?? []; track todoListActivity.id) {
-              <p class="todoList-activity"><strong>{{ todoListActivity.userName }}</strong> · {{ todoListActivity.action }}
-                <small>{{ todoListFormatTimestamp(todoListActivity.createdAt) }}</small>
-              </p>
-            }
-          </section>
+          @if (todoListChildModalOpen()) {
+            <div class="todoList-child-modal-backdrop">
+              <section class="todoList-child-modal" role="dialog" aria-modal="true" aria-labelledby="todoList-child-modal-title">
+                <h2 id="todoList-child-modal-title">Añadir subtarea</h2>
+                <input type="text" required maxlength="200" placeholder="Título de la subtarea"
+                  [(ngModel)]="todoListChildTitle" (keydown.enter)="todoListCreateChild()">
+                <div>
+                  <button type="button" class="todoList-secondary-button"
+                    (click)="todoListChildModalOpen.set(false)">Cancelar</button>
+                  <button type="button" class="todoList-primary-button"
+                    [disabled]="!todoListChildTitle.trim()" (click)="todoListCreateChild()">Crear subtarea</button>
+                </div>
+              </section>
+            </div>
+          }
         </div>
+        <footer class="todoList-detail-footer">
+          <button type="button" class="todoList-danger-button"
+            (click)="todoListDeleteItem(todoListDetail()!)">Eliminar tarea</button>
+          <div>
+            <button type="button" class="todoList-secondary-button" (click)="todoListCloseDetail()">Cancelar</button>
+            <button type="button" class="todoList-primary-button" [disabled]="todoListSaving() || !todoListDetailForm.title.trim()"
+              (click)="todoListSaveDetail()">Guardar cambios</button>
+          </div>
+        </footer>
       </aside>
     </div>
   }
@@ -695,7 +842,8 @@
   @if (todoListModalKind()) {
     <div class="todoList-modal-backdrop">
       <button type="button" class="todoList-overlay" (click)="todoListCloseModal()" aria-label="Cerrar diálogo"></button>
-      <section class="todoList-modal" role="dialog" aria-modal="true">
+      <section class="todoList-modal" [class.todoList-modal--task]="todoListModalKind() === 'task'"
+        role="dialog" aria-modal="true">
         <header class="todoList-modal-heading">
           <h2>
             @if (todoListModalKind() === 'task') { {{ todoListEditingItemId() ? 'Editar tarea' : 'Nueva tarea' }} }
@@ -708,82 +856,238 @@
         </header>
 
         @if (todoListModalKind() === 'task') {
-          <form class="todoList-form" (ngSubmit)="todoListSaveTask()">
-            <label class="todoList-form-wide"><span>Título *</span><input name="title" required maxlength="200" [(ngModel)]="todoListForm.title"></label>
-            <label class="todoList-form-wide"><span>Descripción</span><textarea name="description" rows="3" maxlength="5000" [(ngModel)]="todoListForm.description"></textarea></label>
-            <label><span>Proyecto</span>
-              <select name="todoListId" [(ngModel)]="todoListForm.todoListId" (ngModelChange)="todoListLoadFormSections()">
-                <option value="">Bandeja de entrada</option>
-                @for (todoListProject of todoListProjects(); track todoListProject.id) {
-                  <option [value]="todoListProject.id">{{ todoListProject.name }}</option>
-                }
-              </select>
+          <form class="todoList-form todoList-task-form" (ngSubmit)="todoListSaveTask()">
+            @if (todoListError()) {
+              <p class="todoList-message todoList-message--error todoList-form-wide" role="alert">{{ todoListError() }}</p>
+            }
+            <label class="todoList-form-wide">
+              <span>Título <b aria-hidden="true">*</b></span>
+              <input name="title" required maxlength="200" placeholder="Ej. Revisar inventario del taller"
+                [(ngModel)]="todoListForm.title">
             </label>
-            <label><span>Sección</span>
-              <select name="sectionId" [(ngModel)]="todoListForm.sectionId">
-                <option value="">Sin sección</option>
-                @for (todoListSection of todoListFormSections(); track todoListSection.id) {
-                  <option [value]="todoListSection.id">{{ todoListSection.name }}</option>
-                }
-              </select>
+            <label class="todoList-form-wide">
+              <span>Descripción</span>
+              <textarea name="description" rows="2" maxlength="5000" placeholder="Añade una descripción…"
+                [(ngModel)]="todoListForm.description"></textarea>
             </label>
-            <label><span>Prioridad</span>
-              <select name="priority" [(ngModel)]="todoListForm.priority">
-                <option [ngValue]="1">Urgente</option><option [ngValue]="2">Alta</option>
-                <option [ngValue]="3">Media</option><option [ngValue]="4">Baja</option>
-              </select>
-            </label>
-            <label><span>Fecha</span><input type="date" name="dueDate" [required]="!!todoListForm.frequency" [(ngModel)]="todoListForm.dueDate"></label>
-            <label><span>Hora</span><input type="time" name="dueTime" [(ngModel)]="todoListForm.dueTime"></label>
-            <label class="todoList-form-checkbox"><input type="checkbox" name="isImportant" [(ngModel)]="todoListForm.isImportant"><span>Marcar como importante</span></label>
-            <fieldset class="todoList-form-wide">
-              <legend>Etiquetas</legend>
-              <div class="todoList-choice-list">
-                @for (todoListLabel of todoListLabels(); track todoListLabel.id) {
-                  <label><input type="checkbox" [checked]="todoListForm.labelIds.includes(todoListLabel.id)"
-                    (change)="todoListToggleFormId('labelIds', todoListLabel.id)"><span>{{ todoListLabel.name }}</span></label>
-                }
-              </div>
-            </fieldset>
-            <fieldset class="todoList-form-wide">
-              <legend>Responsables</legend>
-              <div class="todoList-choice-list">
-                @for (todoListUser of todoListFormAssignees(); track todoListUser.id) {
-                  <label><input type="checkbox" [checked]="todoListForm.assigneeUserIds.includes(todoListUser.id)"
-                    (change)="todoListToggleFormId('assigneeUserIds', todoListUser.id)">
-                    @if (todoListUser.profileImage) {
-                      <img class="todoList-form-assignee-avatar" [src]="todoListUser.profileImage"
-                        [alt]="todoListUser.firstName + ' ' + todoListUser.lastName">
-                    } @else {
-                      <span class="todoList-form-assignee-avatar" aria-hidden="true">{{ todoListUserInitials(todoListUser) }}</span>
+
+            <div class="todoList-task-fields todoList-form-wide">
+              <label><span>Lista</span>
+                <select name="todoListId" [(ngModel)]="todoListForm.todoListId" (ngModelChange)="todoListLoadFormSections()">
+                  <option value="">Todas las tareas</option>
+                  @for (todoListProject of todoListProjects(); track todoListProject.id) {
+                    <option [value]="todoListProject.id">{{ todoListProject.name }}</option>
+                  }
+                </select>
+              </label>
+              <label><span>Sección</span>
+                <select name="sectionId" [(ngModel)]="todoListForm.sectionId">
+                  <option value="">Sin sección</option>
+                  @for (todoListSection of todoListFormSections(); track todoListSection.id) {
+                    <option [value]="todoListSection.id">{{ todoListSection.name }}</option>
+                  }
+                </select>
+              </label>
+              <label><span>Prioridad</span>
+                <select name="priority" [(ngModel)]="todoListForm.priority">
+                  <option [ngValue]="1">Urgente</option><option [ngValue]="2">Alta</option>
+                  <option [ngValue]="3">Media</option><option [ngValue]="4">Baja</option>
+                </select>
+              </label>
+              <label><span>Fecha de vencimiento</span>
+                <input type="date" name="dueDate" [required]="!!todoListForm.frequency" [(ngModel)]="todoListForm.dueDate">
+              </label>
+            </div>
+
+            <div class="todoList-task-relations todoList-form-wide">
+              <section class="todoList-task-labels">
+                <h3>Etiquetas</h3>
+                <div>
+                  @for (todoListLabelId of todoListForm.labelIds; track todoListLabelId) {
+                    @if (todoListFindLabel(todoListLabelId); as todoListLabel) {
+                      <span class="todoList-task-label-chip"
+                        [style.background-color]="todoListLabelColorHex(todoListLabel.color)"
+                        [style.color]="todoListLabelTextColor(todoListLabel.color)">
+                        {{ todoListLabel.name }}
+                        <button type="button" (click)="todoListToggleFormId('labelIds', todoListLabel.id)"
+                          [attr.aria-label]="'Quitar etiqueta ' + todoListLabel.name">×</button>
+                      </span>
                     }
-                    <span>{{ todoListUser.firstName }} {{ todoListUser.lastName }}</span></label>
-                } @empty {
-                  <p class="todoList-muted">No hay responsables disponibles para esta tarea.</p>
+                  }
+                  <button type="button" class="todoList-add-label-button" (click)="todoListOpenTaskLabelPicker()">＋ Añadir etiqueta</button>
+                </div>
+              </section>
+
+              <section class="todoList-task-assignee">
+                <h3>Responsable</h3>
+                @if (todoListFormMembersLoading()) {
+                  <p class="todoList-muted" role="status">Cargando personas…</p>
+                } @else {
+                  <div class="todoList-assignee-control">
+                    @if (todoListFindUser(todoListForm.assigneeUserIds[0] ?? ''); as todoListSelectedAssignee) {
+                      @if (todoListSelectedAssignee.profileImage) {
+                        <img class="todoList-form-assignee-avatar" [src]="todoListSelectedAssignee.profileImage"
+                          [alt]="todoListSelectedAssignee.firstName + ' ' + todoListSelectedAssignee.lastName">
+                      } @else {
+                        <span class="todoList-form-assignee-avatar" aria-hidden="true">
+                          {{ todoListUserInitials(todoListSelectedAssignee) }}
+                        </span>
+                      }
+                    } @else {
+                      <span class="todoList-form-assignee-avatar todoList-form-assignee-avatar--empty" aria-hidden="true">?</span>
+                    }
+                    <select name="assigneeUserId" aria-label="Responsable"
+                      [ngModel]="todoListForm.assigneeUserIds[0] ?? ''"
+                      (ngModelChange)="todoListSetFormAssignee($event)">
+                      <option value="">Sin responsable</option>
+                      @for (todoListUser of todoListFormAssignees(); track todoListUser.id) {
+                        <option [value]="todoListUser.id">{{ todoListUser.firstName }} {{ todoListUser.lastName }}</option>
+                      }
+                    </select>
+                  </div>
                 }
+              </section>
+            </div>
+
+            @if (todoListTaskLabelPickerOpen()) {
+              <div class="todoList-task-picker-backdrop">
+                <section class="todoList-task-picker" role="dialog" aria-modal="true" aria-labelledby="todoList-task-labels-title">
+                  <h3 id="todoList-task-labels-title">Añadir etiquetas</h3>
+                  <div class="todoList-task-picker-labels">
+                    @for (todoListLabel of todoListLabels(); track todoListLabel.id) {
+                      <label>
+                        <input type="checkbox" [checked]="todoListForm.labelIds.includes(todoListLabel.id)"
+                          (change)="todoListToggleFormId('labelIds', todoListLabel.id)">
+                        <span [style.background-color]="todoListLabelColorHex(todoListLabel.color)"
+                          [style.color]="todoListLabelTextColor(todoListLabel.color)">{{ todoListLabel.name }}</span>
+                      </label>
+                    } @empty {
+                      <p class="todoList-muted">Aún no tienes etiquetas creadas.</p>
+                    }
+                  </div>
+                  <footer>
+                    <button type="button" class="todoList-secondary-button" (click)="todoListOpenLabelFormFromTask()">Crear etiqueta</button>
+                    <button type="button" class="todoList-primary-button" (click)="todoListCloseTaskLabelPicker()">Listo</button>
+                  </footer>
+                </section>
               </div>
-            </fieldset>
-            <fieldset class="todoList-form-wide">
-              <legend>Repetición</legend>
-              <div class="todoList-form-grid">
-                <label><span>Frecuencia</span>
+            }
+
+            <section class="todoList-task-subtasks todoList-form-wide">
+              <header>
+                <h3>Subtareas</h3>
+                <span>{{ todoListFormChildren().length + todoListDraftSubtasks.length }}</span>
+              </header>
+              @if (todoListEditDetailsLoading()) {
+                <p class="todoList-muted" role="status">Cargando subtareas…</p>
+              }
+              @for (todoListChild of todoListFormChildren(); track todoListChild.id) {
+                <div class="todoList-task-draft-row">
+                  <label class="todoList-task-existing-child">
+                    <input type="checkbox" [checked]="todoListChild.status === 'completed'"
+                      (change)="todoListToggleFormChild(todoListChild.id)">
+                    <span [class.done-text]="todoListChild.status === 'completed'">{{ todoListChild.title }}</span>
+                  </label>
+                  <button type="button" class="todoList-icon-button todoList-danger-text"
+                    (click)="todoListRemoveFormChild(todoListChild)"
+                    [attr.aria-label]="'Quitar subtarea ' + todoListChild.title">×</button>
+                </div>
+              }
+              @for (todoListDraftSubtask of todoListDraftSubtasks; track $index; let subtaskIndex = $index) {
+                <div class="todoList-task-draft-row">
+                  <span>{{ todoListDraftSubtask }}</span>
+                  <button type="button" class="todoList-icon-button todoList-danger-text"
+                    (click)="todoListRemoveDraftSubtask(subtaskIndex)" [attr.aria-label]="'Quitar subtarea ' + todoListDraftSubtask">×</button>
+                </div>
+              }
+              <button type="button" class="todoList-add-subtask-button" (click)="todoListOpenTaskSubtaskModal()">＋ Añadir subtarea</button>
+            </section>
+
+            <section class="todoList-task-attachments todoList-form-wide">
+              <h3>Archivos adjuntos</h3>
+              @if (todoListEditDetailsLoading()) {
+                <p class="todoList-muted" role="status">Cargando archivos…</p>
+              }
+              @for (todoListAttachment of todoListFormAttachments(); track todoListAttachment.id) {
+                <article class="todoList-attachment-row">
+                  <span class="todoList-attachment-icon" aria-hidden="true">▤</span>
+                  <div class="todoList-attachment-copy">
+                    <a [href]="todoListAttachment.url" target="_blank" rel="noopener">{{ todoListAttachment.fileName }}</a>
+                    <small>{{ todoListFormatFileSize(todoListAttachment.size) }}</small>
+                  </div>
+                  <a class="todoList-attachment-download" [href]="todoListAttachment.url" target="_blank"
+                    rel="noopener" [attr.download]="todoListAttachment.fileName" aria-label="Descargar archivo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+                    </svg>
+                  </a>
+                  <div class="todoList-attachment-actions">
+                    <button type="button" class="todoList-attachment-options"
+                      [attr.aria-label]="'Opciones del archivo ' + todoListAttachment.fileName"
+                      [attr.aria-expanded]="todoListOpenFormAttachmentMenuId() === todoListAttachment.id"
+                      (click)="todoListToggleFormAttachmentMenu(todoListAttachment.id)">⋯</button>
+                    @if (todoListOpenFormAttachmentMenuId() === todoListAttachment.id) {
+                      <div class="todoList-attachment-menu" role="menu">
+                        <button type="button" role="menuitem"
+                          (click)="todoListRemoveFormAttachment(todoListAttachment)">Quitar archivo</button>
+                      </div>
+                    }
+                  </div>
+                </article>
+              }
+              @for (todoListDraftFile of todoListDraftAttachments; track todoListDraftFile.name + todoListDraftFile.lastModified; let fileIndex = $index) {
+                <article class="todoList-attachment-row">
+                  <span class="todoList-attachment-icon" aria-hidden="true">▤</span>
+                  <div class="todoList-attachment-copy">
+                    <span>{{ todoListDraftFile.name }}</span>
+                    <small>{{ todoListFormatFileSize(todoListDraftFile.size) }}</small>
+                  </div>
+                  <div class="todoList-attachment-actions">
+                    <button type="button" class="todoList-attachment-options"
+                      [attr.aria-label]="'Opciones del archivo ' + todoListDraftFile.name"
+                      [attr.aria-expanded]="todoListOpenFormAttachmentMenuId() === todoListDraftFile.name + todoListDraftFile.lastModified"
+                      (click)="todoListToggleFormAttachmentMenu(todoListDraftFile.name + todoListDraftFile.lastModified)">⋯</button>
+                    @if (todoListOpenFormAttachmentMenuId() === todoListDraftFile.name + todoListDraftFile.lastModified) {
+                      <div class="todoList-attachment-menu" role="menu">
+                        <button type="button" role="menuitem"
+                          (click)="todoListRemoveDraftAttachment(fileIndex)">Quitar archivo</button>
+                      </div>
+                    }
+                  </div>
+                </article>
+              }
+              <label class="todoList-add-attachment">
+                <input type="file" multiple (change)="todoListAddDraftAttachments($event)">
+                ＋ Añadir archivo
+              </label>
+              <small class="todoList-attachment-hint">Tamaño máximo: 15 MB.</small>
+            </section>
+
+            <details class="todoList-task-advanced todoList-form-wide" [open]="!!todoListForm.frequency">
+              <summary>Más opciones</summary>
+              <div>
+                <label><span>Hora</span><input type="time" name="dueTime" [(ngModel)]="todoListForm.dueTime"></label>
+                <label class="todoList-form-checkbox">
+                  <input type="checkbox" name="isImportant" [(ngModel)]="todoListForm.isImportant">
+                  <span>Marcar como importante</span>
+                </label>
+                <label><span>Repetición</span>
                   <select name="frequency" [(ngModel)]="todoListForm.frequency">
                     <option value="">No se repite</option>
                     <option value="daily">Diaria</option><option value="weekdays">Días laborables</option>
                     <option value="weekly">Semanal</option><option value="biweekly">Quincenal</option>
-                    <option value="monthly">Mensual</option><option value="yearly">Anual</option>
-                    <option value="custom">Personalizada</option>
+                    <option value="monthly">Mensual</option><option value="yearly">Anual</option><option value="custom">Personalizada</option>
                   </select>
                 </label>
                 @if (todoListForm.frequency) {
                   @if (todoListForm.frequency !== 'biweekly') {
                     <label><span>Intervalo</span><input type="number" min="1" max="365" name="interval" [(ngModel)]="todoListForm.interval"></label>
                   }
-                  <label><span>Inicio de repetición</span><input type="date" name="startDate" [(ngModel)]="todoListForm.startDate"></label>
+                  <label><span>Inicio</span><input type="date" name="startDate" [(ngModel)]="todoListForm.startDate"></label>
                   <label><span>Finalización (opcional)</span><input type="date" name="endDate" [(ngModel)]="todoListForm.endDate"></label>
                 }
                 @if (todoListForm.frequency === 'weekly' || todoListForm.frequency === 'biweekly' || todoListForm.frequency === 'custom') {
-                  <fieldset class="todoList-form-wide todoList-weekday-choices">
+                  <fieldset class="todoList-weekday-choices">
                     <legend>Días de la semana</legend>
                     @for (day of todoListRecurrenceDays; track day.value) {
                       <label><input type="checkbox" [checked]="todoListForm.daysOfWeek.includes(day.value)"
@@ -800,11 +1104,32 @@
                   </label>
                 }
               </div>
-            </fieldset>
-            <div class="todoList-form-actions todoList-form-wide">
+            </details>
+
+            <footer class="todoList-task-form-actions todoList-form-wide">
               <button type="button" class="todoList-secondary-button" (click)="todoListCloseModal()">Cancelar</button>
-              <button type="submit" class="todoList-primary-button" [disabled]="todoListSaving()">Guardar tarea</button>
-            </div>
+              <button type="submit" class="todoList-primary-button"
+                [disabled]="todoListSaving() || todoListEditDetailsLoading() || !todoListForm.title.trim()">
+                {{ todoListEditingItemId() ? 'Guardar cambios' : 'Crear tarea' }}
+              </button>
+            </footer>
+
+            @if (todoListTaskSubtaskModalOpen()) {
+              <div class="todoList-task-picker-backdrop">
+                <section class="todoList-task-picker" role="dialog" aria-modal="true" aria-labelledby="todoList-new-subtask-title">
+                  <h3 id="todoList-new-subtask-title">Añadir subtarea</h3>
+                  <input type="text" required maxlength="200" placeholder="Título de la subtarea"
+                    [(ngModel)]="todoListDraftSubtaskTitle" name="draftSubtaskTitle"
+                    (keydown.enter)="$event.preventDefault(); todoListAddDraftSubtask()">
+                  <footer>
+                    <button type="button" class="todoList-secondary-button"
+                      (click)="todoListTaskSubtaskModalOpen.set(false)">Cancelar</button>
+                    <button type="button" class="todoList-primary-button" [disabled]="!todoListDraftSubtaskTitle.trim()"
+                      (click)="todoListAddDraftSubtask()">Añadir</button>
+                  </footer>
+                </section>
+              </div>
+            }
           </form>
         }
 
@@ -826,10 +1151,12 @@
         @if (todoListModalKind() === 'label') {
           <form class="todoList-form" (ngSubmit)="todoListSaveLabel()">
             <label class="todoList-form-wide"><span>Nombre *</span><input name="name" required maxlength="120" [(ngModel)]="todoListLabelForm.name"></label>
-            <label><span>Color</span><select name="color" [(ngModel)]="todoListLabelForm.color">
-              <option value="blue">Azul</option><option value="mint">Menta</option><option value="yellow">Amarillo</option>
-              <option value="rose">Rosa</option><option value="purple">Morado</option><option value="coral">Coral</option>
-            </select></label>
+            <label class="todoList-label-color-control">
+              <span>Color</span>
+              <input type="color" name="labelColor" aria-label="Elige cualquier color para la etiqueta"
+                [(ngModel)]="todoListLabelForm.color">
+              <output>{{ todoListLabelForm.color }}</output>
+            </label>
             <div class="todoList-form-actions todoList-form-wide">
               @if (todoListEditingLabelId()) {
                 <button type="button" class="todoList-danger-button" (click)="todoListDeleteLabel()">Eliminar</button>
