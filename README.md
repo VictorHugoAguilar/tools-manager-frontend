@@ -462,3 +462,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Fixed: cambio de avisos y errores en el budgets
 
 <!-- CHANGELOG-PR-92-END -->
+
+<!-- CHANGELOG-PR-94-START -->
+### [7.2.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/94) (2026-11-03)
+
+- Changed: cambios visuales en el headers
+
+<!-- CHANGELOG-PR-94-END -->
