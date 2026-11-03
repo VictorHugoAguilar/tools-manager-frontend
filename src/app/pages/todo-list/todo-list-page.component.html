@@ -751,22 +751,46 @@
               </div>
             </fieldset>
             <fieldset class="todoList-form-wide">
-              <legend>Responsables</legend>
-              <div class="todoList-choice-list">
-                @for (todoListUser of todoListFormAssignees(); track todoListUser.id) {
-                  <label><input type="checkbox" [checked]="todoListForm.assigneeUserIds.includes(todoListUser.id)"
-                    (change)="todoListToggleFormId('assigneeUserIds', todoListUser.id)">
-                    @if (todoListUser.profileImage) {
-                      <img class="todoList-form-assignee-avatar" [src]="todoListUser.profileImage"
-                        [alt]="todoListUser.firstName + ' ' + todoListUser.lastName">
-                    } @else {
-                      <span class="todoList-form-assignee-avatar" aria-hidden="true">{{ todoListUserInitials(todoListUser) }}</span>
+              <legend>Responsables del proyecto</legend>
+              @if (todoListFormMembersLoading()) {
+                <p class="todoList-muted" role="status">Cargando miembros del proyecto…</p>
+              } @else {
+                <select class="todoList-assignee-select" name="assigneeUserIds" multiple size="4"
+                  aria-label="Selecciona uno o varios responsables del proyecto"
+                  [ngModel]="todoListForm.assigneeUserIds"
+                  (ngModelChange)="todoListForm.assigneeUserIds = $event">
+                  @for (todoListUser of todoListFormAssignees(); track todoListUser.id) {
+                    <option [ngValue]="todoListUser.id">
+                      {{ todoListUser.firstName }} {{ todoListUser.lastName }}
+                      @if (todoListUser.role === 'owner') { (propietario) }
+                    </option>
+                  } @empty {
+                    <option disabled>No hay miembros disponibles para asignar</option>
+                  }
+                </select>
+                <small class="todoList-assignee-help">
+                  Puedes seleccionar varios responsables. Usa Ctrl (Windows/Linux) o ⌘ (Mac) para elegir más de uno.
+                </small>
+              }
+              @if (todoListForm.assigneeUserIds.length) {
+                <div class="todoList-selected-assignees" aria-label="Responsables seleccionados">
+                  @for (todoListAssigneeId of todoListForm.assigneeUserIds; track todoListAssigneeId) {
+                    @if (todoListFindUser(todoListAssigneeId); as todoListAssignee) {
+                      <span class="todoList-selected-assignee">
+                        @if (todoListAssignee.profileImage) {
+                          <img class="todoList-form-assignee-avatar" [src]="todoListAssignee.profileImage"
+                            [alt]="todoListAssignee.firstName + ' ' + todoListAssignee.lastName">
+                        } @else {
+                          <span class="todoList-form-assignee-avatar" aria-hidden="true">
+                            {{ todoListUserInitials(todoListAssignee) }}
+                          </span>
+                        }
+                        {{ todoListAssignee.firstName }} {{ todoListAssignee.lastName }}
+                      </span>
                     }
-                    <span>{{ todoListUser.firstName }} {{ todoListUser.lastName }}</span></label>
-                } @empty {
-                  <p class="todoList-muted">No hay responsables disponibles para esta tarea.</p>
-                }
-              </div>
+                  }
+                </div>
+              }
             </fieldset>
             <fieldset class="todoList-form-wide">
               <legend>Repetición</legend>

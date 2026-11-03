@@ -29,7 +29,7 @@ import { TodoListApiService } from '../../services/todo-list-api.service';
 
 type TodoListModalKind = 'task' | 'project' | 'label' | 'share' | 'section';
 type TodoListDisplay = 'list' | 'board' | 'calendar';
-type TodoListFormRelation = 'labelIds' | 'assigneeUserIds';
+type TodoListFormRelation = 'labelIds';
 
 interface TodoListFormState {
   title: string;
@@ -77,6 +77,7 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   protected readonly todoListLabels = computed(() => this.todoListOverview()?.labels ?? []);
   protected readonly todoListUsers = computed(() => this.todoListOverview()?.users ?? []);
   protected readonly todoListFormProjectMembers = signal<TodoListUser[]>([]);
+  protected readonly todoListFormMembersLoading = signal(false);
   protected readonly todoListCurrentUserId = computed(() => this.todoListAuth.user()?.id ?? '');
   protected readonly todoListSelectedProject = computed(
     () => [...this.todoListProjects(), ...this.todoListArchivedProjects()]
@@ -112,7 +113,13 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       project?.ownerUserId ?? '',
       ...this.todoListFormProjectMembers().map((member) => member.id)
     ]);
-    return this.todoListUsers().filter((user) => availableIds.has(user.id));
+    const projectMembers = new Map(this.todoListFormProjectMembers().map((member) => [member.id, member]));
+    return this.todoListUsers()
+      .filter((user) => availableIds.has(user.id))
+      .map((user) => ({
+        ...user,
+        role: user.id === project?.ownerUserId ? 'owner' : projectMembers.get(user.id)?.role
+      }));
   });
   protected readonly todoListContextTitle = computed(() => {
     if (this.todoListView() === 'project') return this.todoListSelectedProject()?.name ?? 'Proyecto';
@@ -498,6 +505,7 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     const todoListProjectId = this.todoListForm.todoListId;
     this.todoListFormProjectMembers.set([]);
     if (!todoListProjectId) {
+      this.todoListFormMembersLoading.set(false);
       this.todoListFormSections.set([]);
       this.todoListForm.sectionId = '';
       const currentUserId = this.todoListCurrentUserId();
@@ -505,6 +513,7 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
         .filter((userId) => userId === currentUserId);
       return;
     }
+    this.todoListFormMembersLoading.set(true);
     try {
       const [response, membersResponse] = await Promise.all([
         firstValueFrom(this.todoListApi.loadSections(todoListProjectId)),
@@ -522,6 +531,10 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       }
     } catch (error) {
       this.todoListSetRequestError(error);
+    } finally {
+      if (this.todoListForm.todoListId === todoListProjectId) {
+        this.todoListFormMembersLoading.set(false);
+      }
     }
   }
 

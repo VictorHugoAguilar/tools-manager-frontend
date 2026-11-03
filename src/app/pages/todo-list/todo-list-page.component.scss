@@ -1487,6 +1487,54 @@
   border-radius: 10px;
 }
 
+.todoList-assignee-select {
+  width: 100%;
+  min-height: 7rem;
+  padding: 0.35rem;
+  border: 2px solid var(--line);
+  border-radius: 9px;
+  background: #fffefb;
+  color: var(--text);
+  font: inherit;
+
+  option {
+    padding: 0.35rem 0.45rem;
+  }
+
+  &:focus-visible {
+    border-color: var(--primary);
+    outline: 3px solid rgba(89, 128, 203, 0.18);
+  }
+}
+
+.todoList-assignee-help {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.todoList-selected-assignees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.todoList-selected-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem 0.2rem 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .todoList-choice-list {
   display: flex;
   flex-wrap: wrap;
