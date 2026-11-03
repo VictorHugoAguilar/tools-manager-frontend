@@ -1063,7 +1063,7 @@
               <small class="todoList-attachment-hint">Tamaño máximo: 15 MB.</small>
             </section>
 
-            <details class="todoList-task-advanced todoList-form-wide">
+            <details class="todoList-task-advanced todoList-form-wide" [open]="!!todoListForm.frequency">
               <summary>Más opciones</summary>
               <div>
                 <label><span>Hora</span><input type="time" name="dueTime" [(ngModel)]="todoListForm.dueTime"></label>

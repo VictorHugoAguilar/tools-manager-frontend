@@ -553,6 +553,15 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       const children = [...(item.children ?? [])].sort((left, right) => left.position - right.position);
       this.todoListFormChildren.set(children);
       this.todoListFormAttachments.set(item.attachments ?? []);
+      this.todoListForm = {
+        ...this.todoListForm,
+        frequency: item.recurrence?.frequency ?? '',
+        interval: item.recurrence?.interval ?? 1,
+        daysOfWeek: [...(item.recurrence?.daysOfWeek ?? [])],
+        unit: item.recurrence?.unit ?? '',
+        startDate: item.recurrence?.startDate ?? item.dueDate,
+        endDate: item.recurrence?.endDate ?? ''
+      };
       this.todoListOriginalChildStatuses.clear();
       children.forEach((child) => this.todoListOriginalChildStatuses.set(child.id, child.status));
     } catch (error) {
