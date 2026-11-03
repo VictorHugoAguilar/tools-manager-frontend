@@ -469,3 +469,18 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: cambios visuales en el headers
 
 <!-- CHANGELOG-PR-94-END -->
+
+<!-- CHANGELOG-PR-96-START -->
+### [7.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/96) (2026-11-03)
+
+- Changed: Se modifican los estilos de los filtros de la lista de tareas
+- Changed: se ha reorganizado las filas para que muestren, en orden, check, título, etiquetas, contador de comentarios cuando los haya, fecha (Hoy, Mañana o día y mes), avatar de un responsable y menú
+- Changed: se cambia al crear o editar una tarea, el selector permite elegir responsables entre el propietario y los miembros del proyecto. Las asignaciones se limitan a las personas con acceso al proyecto; en tareas sin proyecto, solo se permite asignar al usuario actual.
+- Changed: se modifica los colores fijos por un color picket para elegir de una pantonera el color
+- Changed: se ha modificado el detalle de la tarea, el objetivo es que se parezca visualmente a la imagen del mockup-detaller-tarea.
+- Changed: se actualiza el formulario de Nueva tarea para acercarlo al mockup: título y descripción destacados, campos de lista/sección/prioridad/fecha, etiquetas con un selector modal y opción para crear una etiqueta, responsable único con avatar, subtareas temporales y carga de archivos por selección o arrastrar y soltar. Conservé hora, importancia y repetición en Más opciones.
+- Changed: se ha adaptado los adjuntos al estilo del mockup en el detalle y en los formularios de creación y edición: filas con icono, nombre, tamaño, descarga y menú para quitar o eliminar; botón «Añadir archivo» y aviso del límite de 15 MB. También se bloquean los archivos que superen ese límite.
+- Fixed: se modifica que al abrir la edición, el formulario recibía la tarea del listado, que no incluye los detalles de repetición. Aunque la consulta del detalle sí los devuelve, esos campos no se copiaban al formulario.
+- Fixed: se ha dividido los estilos de Todo List en tres hojas independientes, manteniendo la encapsulación de Angular y sin tocar las plantillas ni la lógica. El CSS de cada hoja queda por debajo de 26 kB: página 21,7 kB, detalle 12,6 kB y formulario 9,6 kB. Angular aplica anyComponentStyle por hoja individual.
+
+<!-- CHANGELOG-PR-96-END -->
