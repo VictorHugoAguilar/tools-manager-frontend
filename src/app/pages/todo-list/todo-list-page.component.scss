@@ -817,7 +817,7 @@
 
 .todoList-task-main strong {
   font-size: 0.9rem;
-  font-weight:600;
+  font-weight: 600;
 }
 
 .todoList-task-row .todoList-task-main {
@@ -1252,8 +1252,8 @@
 
 .todoList-detail-drawer {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  width: min(100%, 540px);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(100%, 600px);
   height: 100%;
   padding: 1.15rem;
   border-left: 3px solid var(--primary);
@@ -1268,55 +1268,415 @@
 
 .todoList-detail-scroll {
   overflow: auto;
-  padding: 1rem 0.2rem;
+  padding: 0.9rem 0.2rem 0;
+  scrollbar-gutter: stable;
 }
 
-.todoList-detail-drawer h2 {
-  margin: 0.65rem 0;
-  font-size: 1.5rem;
+.todoList-detail-title-row {
+  display: grid;
+  grid-template-columns: 1.55rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
 }
 
-.todoList-detail-description {
-  color: var(--muted);
-  white-space: pre-wrap;
+.todoList-detail-complete {
+  width: 1.4rem;
+  height: 1.4rem;
+  accent-color: var(--primary);
 }
 
-.todoList-detail-facts {
+.todoList-detail-title-input {
+  min-width: 0;
+  padding: 0.25rem 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 1.3rem;
+  font-weight: 950;
+}
+
+.todoList-detail-title-input:focus {
+  border-bottom-color: var(--primary);
+  outline: 0;
+}
+
+.todoList-detail-properties {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.85rem 0;
+  align-items: center;
+  grid-auto-flow: column;
+}
+
+.todoList-detail-labels {
   display: flex;
+  grid-column: 1 / -1;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.8rem 0;
+  gap: 0.35rem;
+  min-height: 1.9rem;
 }
 
-.todoList-detail-facts span,
-.todoList-comment {
-  padding: 0.35rem 0.55rem;
-  border-radius: 8px;
-  background: #f2efe9;
+.todoList-detail-label-choice {
+  position: relative;
+  cursor: pointer;
+}
+
+.todoList-detail-label-choice input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.todoList-detail-label-choice span {
+  display: block;
+  padding: 0.28rem 0.65rem;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.todoList-detail-label-choice.selected span {
+  border-color: var(--primary);
+}
+
+.todoList-detail-label-choice input:focus-visible+span {
+  outline: 3px solid rgba(89, 128, 203, 0.35);
+}
+
+.todoList-detail-property {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
   color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.todoList-detail-property select,
+.todoList-detail-property input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.5rem;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fffefb;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.todoList-detail-recurrence {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.todoList-detail-description-box {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+}
+
+.todoList-detail-description-box h3,
+.todoList-detail-section-heading h3,
+.todoList-detail-reminders h3 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.todoList-detail-description-box textarea {
+  width: 100%;
+  min-height: 4.2rem;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.todoList-detail-description-box textarea:focus {
+  outline: 0;
+}
+
+.todoList-detail-subtasks {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.95rem;
+}
+
+.todoList-detail-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.todoList-detail-section-heading h3 span,
+.todoList-detail-tabs button span {
+  margin-left: 0.25rem;
+  padding: 0.1rem 0.38rem;
+  border-radius: 999px;
+  background: #e8ebf1;
+  color: var(--primary);
+  font-size: 0.68rem;
+}
+
+.todoList-add-subtask-button {
+  padding: 0.4rem 0.7rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.todoList-detail-child-list {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.todoList-detail-content-panel {
+  display: grid;
+  grid-template-rows: auto minmax(10rem, auto);
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+}
+
+.todoList-detail-tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0 0.65rem;
+  border-bottom: 2px solid var(--line);
+}
+
+.todoList-detail-tabs button {
+  min-height: 2.65rem;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.todoList-detail-tabs button.active {
+  border-bottom-color: var(--primary);
+  color: var(--primary);
+}
+
+.todoList-detail-tab-content {
+  display: grid;
+  align-content: start;
+  gap: 0.65rem;
+  max-height: 20rem;
+  overflow: auto;
+  padding: 0.65rem;
+}
+
+.todoList-detail-comments {
+  grid-template-rows: minmax(0, 1fr) auto;
+  max-height: 22rem;
+}
+
+.todoList-detail-comment-list {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.todoList-detail-comment {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr);
+  gap: 0.55rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.todoList-comment-avatar {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: var(--accent-mint);
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 950;
+  object-fit: cover;
+}
+
+.todoList-comment-avatar--initials {
+  flex: 0 0 auto;
+}
+
+.todoList-comment-body {
+  min-width: 0;
+}
+
+.todoList-comment-body header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.todoList-comment-body header strong {
+  color: var(--primary);
+  font-size: 0.73rem;
+}
+
+.todoList-comment-body time,
+.todoList-activity small {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.todoList-comment-actions {
+  display: flex;
+  gap: 0.1rem;
+  margin-left: auto;
+}
+
+.todoList-comment-body p {
+  margin: 0.2rem 0 0;
+  color: var(--text);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.todoList-comment-body textarea {
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.45rem;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.todoList-comment-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.todoList-detail-comment-composer {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.todoList-detail-comment-composer input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.6rem;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fffefb;
+  font: inherit;
   font-size: 0.75rem;
 }
 
-.todoList-detail-section {
+.todoList-detail-comment-composer .todoList-primary-button {
+  min-width: 2.5rem;
+  padding-inline: 0.5rem;
+}
+
+.todoList-detail-attachments {
+  align-content: start;
+}
+
+.todoList-detail-history {
+  align-content: start;
+}
+
+.todoList-detail-reminders {
   display: grid;
-  gap: 0.45rem;
-  margin-top: 1rem;
-  padding-top: 0.7rem;
-  border-top: 2px solid var(--line);
+  gap: 0.55rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
 }
 
-.todoList-detail-section h3 {
+.todoList-detail-footer {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin: 0;
-  font-size: 0.86rem;
+  gap: 0.6rem;
+  margin: 0 -1.15rem -1.15rem;
+  padding: 0.75rem 1.15rem 0.85rem;
+  border-top: 2px solid var(--line);
+  background: var(--panel);
 }
 
-.todoList-detail-section h3 span,
-.todoList-activity small,
-.todoList-comment small {
-  color: var(--muted);
-  font-size: 0.68rem;
+.todoList-detail-footer>div {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.todoList-child-modal-backdrop {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(24, 39, 72, 0.48);
+}
+
+.todoList-child-modal {
+  display: grid;
+  width: min(100%, 25rem);
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 3px solid var(--primary);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: var(--shadow-lg);
+}
+
+.todoList-child-modal h2 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.05rem;
+}
+
+.todoList-child-modal input {
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.6rem;
+  border: 2px solid var(--line);
+  border-radius: 9px;
+  background: #fffefb;
+  font: inherit;
+}
+
+.todoList-child-modal>div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
 }
 
 .todoList-child-row,
@@ -1331,8 +1691,7 @@
 
 .todoList-child-row span,
 .todoList-attachment a,
-.todoList-member-row span,
-.todoList-inline-create input {
+.todoList-member-row span {
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
@@ -1342,32 +1701,10 @@
   text-decoration: line-through;
 }
 
-.todoList-inline-create {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.25rem 0.45rem;
-  border: 2px solid var(--line);
-  border-radius: 10px;
-}
-
-.todoList-inline-create input {
-  border: 0;
-  outline: 0;
-  background: transparent;
-  font: inherit;
-}
-
-.todoList-comment {
-  position: relative;
-}
-
-.todoList-comment p,
 .todoList-activity {
   margin: 0;
 }
 
-.todoList-comment textarea,
 .todoList-reminder-select input,
 .todoList-attachment input[type="datetime-local"] {
   min-width: 0;
@@ -1377,12 +1714,6 @@
   background: #fffefb;
   color: var(--text);
   font: inherit;
-}
-
-.todoList-comment>button {
-  position: absolute;
-  top: 0.1rem;
-  right: 0.1rem;
 }
 
 .todoList-file-picker {
@@ -1712,5 +2043,41 @@
 
   .todoList-form-wide {
     grid-column: auto;
+  }
+
+  .todoList-detail-drawer {
+    padding: 0.8rem;
+  }
+
+  .todoList-detail-properties {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .todoList-detail-labels {
+    grid-column: 1 / -1;
+  }
+
+  .todoList-detail-section-heading {
+    align-items: flex-start;
+  }
+
+  .todoList-detail-footer {
+    align-items: stretch;
+    flex-direction: column;
+    margin-inline: -0.8rem;
+    padding-inline: 0.8rem;
+  }
+
+  .todoList-detail-footer>div {
+    justify-content: flex-end;
+  }
+
+  .todoList-detail-footer>.todoList-danger-button {
+    align-self: flex-start;
+  }
+
+  .todoList-comment-body header {
+    flex-wrap: wrap;
+    gap: 0.2rem 0.4rem;
   }
 }

@@ -31,6 +31,7 @@ import { TodoListApiService } from '../../services/todo-list-api.service';
 type TodoListModalKind = 'task' | 'project' | 'label' | 'share' | 'section';
 type TodoListDisplay = 'list' | 'board' | 'calendar';
 type TodoListFormRelation = 'labelIds';
+type TodoListDetailTab = 'comments' | 'attachments' | 'history';
 
 interface TodoListFormState {
   title: string;
@@ -194,6 +195,8 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
   protected readonly todoListNotificationsOpen = signal(false);
   protected readonly todoListNotifications = signal<TodoListNotification[]>([]);
   protected readonly todoListDetail = signal<TodoListItem | null>(null);
+  protected readonly todoListDetailTab = signal<TodoListDetailTab>('comments');
+  protected readonly todoListChildModalOpen = signal(false);
   protected readonly todoListMembers = signal<TodoListUser[]>([]);
   protected readonly todoListEditingItemId = signal('');
   protected readonly todoListOpenTaskActionsId = signal('');
@@ -225,6 +228,13 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     color: 'mint'
   };
   protected todoListForm: TodoListFormState = this.todoListEmptyForm();
+  protected todoListDetailForm: {
+    title: string;
+    description: string;
+    priority: TodoListPriority;
+    dueDate: string;
+    labelIds: string[];
+  } = this.todoListEmptyDetailForm();
   private todoListSearchTimer?: ReturnType<typeof setTimeout>;
   private todoListNotificationPollTimer?: ReturnType<typeof setInterval>;
   private todoListNotificationsLoading = false;
@@ -546,6 +556,13 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       : [...todoListIds, todoListId];
   }
 
+  protected todoListToggleDetailLabel(labelId: string): void {
+    const labelIds = this.todoListDetailForm.labelIds;
+    this.todoListDetailForm.labelIds = labelIds.includes(labelId)
+      ? labelIds.filter((id) => id !== labelId)
+      : [...labelIds, labelId];
+  }
+
   protected todoListToggleRecurrenceDay(day: number): void {
     const days = this.todoListForm.daysOfWeek;
     this.todoListForm.daysOfWeek = days.includes(day)
@@ -700,8 +717,14 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     this.todoListError.set('');
     try {
       const todoListItemId = typeof todoListItem === 'string' ? todoListItem : todoListItem.id;
+      const currentItemId = this.todoListDetail()?.id;
+      const draft = currentItemId === todoListItemId
+        ? { ...this.todoListDetailForm, labelIds: [...this.todoListDetailForm.labelIds] }
+        : null;
       const response = await firstValueFrom(this.todoListApi.getItem(todoListItemId));
       this.todoListSetDetail(response.item);
+      if (draft) this.todoListDetailForm = draft;
+      else this.todoListDetailTab.set('comments');
     } catch (error) {
       this.todoListSetRequestError(error);
     }
@@ -709,8 +732,14 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
 
   protected todoListCloseDetail(): void {
     this.todoListDetail.set(null);
+    this.todoListChildModalOpen.set(false);
     this.todoListChildTitle = '';
     this.todoListCommentText = '';
+  }
+
+  protected todoListOpenChildModal(): void {
+    this.todoListChildTitle = '';
+    this.todoListChildModalOpen.set(true);
   }
 
   protected async todoListCreateChild(): Promise<void> {
@@ -720,6 +749,7 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.todoListApi.createChild(todoListItemId, todoListTitle));
       this.todoListChildTitle = '';
+      this.todoListChildModalOpen.set(false);
       await this.todoListRefreshData(todoListItemId);
     } catch (error) {
       this.todoListSetRequestError(error);
@@ -1417,6 +1447,52 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  protected todoListCommentTimestamp(todoListTimestamp: string): string {
+    if (!todoListTimestamp) return '';
+    const date = new Date(todoListTimestamp);
+    if (Number.isNaN(date.getTime())) return '';
+    const dateLabel = date.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    }).replace(/\.$/, '');
+    const timeLabel = date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    });
+    return `${dateLabel}, ${timeLabel}`;
+  }
+
+  protected todoListCommentInitials(todoListComment: TodoListComment): string {
+    const user = this.todoListFindUser(todoListComment.userId);
+    if (user) return this.todoListUserInitials(user);
+    return todoListComment.authorName.split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('').toLocaleUpperCase();
+  }
+
+  protected async todoListSaveDetail(): Promise<void> {
+    const item = this.todoListDetail();
+    const title = this.todoListDetailForm.title.trim();
+    if (!item || !title) return;
+    this.todoListSaving.set(true);
+    this.todoListError.set('');
+    try {
+      await firstValueFrom(this.todoListApi.updateItem(item.id, {
+        title,
+        description: this.todoListDetailForm.description.trim(),
+        priority: this.todoListDetailForm.priority,
+        dueDate: this.todoListDetailForm.dueDate,
+        labelIds: this.todoListDetailForm.labelIds
+      }));
+      this.todoListShowSuccess('La tarea se ha guardado.');
+      await this.todoListRefreshData(item.id);
+    } catch (error) {
+      this.todoListSetRequestError(error);
+    } finally {
+      this.todoListSaving.set(false);
+    }
+  }
+
   protected todoListToLocalDateTime(timestamp: string): string {
     if (!timestamp) return '';
     const date = new Date(timestamp);
@@ -1445,6 +1521,23 @@ export class TodoListPageComponent implements OnInit, OnDestroy {
       childCount: todoListChildren.length,
       completedChildCount: todoListChildren.filter((child) => child.status === 'completed').length
     });
+    this.todoListDetailForm = {
+      title: todoListItem.title,
+      description: todoListItem.description ?? '',
+      priority: todoListItem.priority,
+      dueDate: todoListItem.dueDate ?? '',
+      labelIds: [...(todoListItem.labelIds ?? [])]
+    };
+  }
+
+  private todoListEmptyDetailForm(): {
+    title: string;
+    description: string;
+    priority: TodoListPriority;
+    dueDate: string;
+    labelIds: string[];
+  } {
+    return { title: '', description: '', priority: 4, dueDate: '', labelIds: [] };
   }
 
   protected todoListLocalDateKey(todoListDate: Date): string {
