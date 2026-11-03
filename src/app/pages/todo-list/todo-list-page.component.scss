@@ -390,8 +390,8 @@
 .todoList-filters,
 .todoList-viewbar {
   display: flex;
-  align-items: end;
-  gap: 0.65rem;
+  align-items: center;
+  gap: 0.55rem;
   flex-wrap: wrap;
 }
 
@@ -401,22 +401,34 @@
   gap: 0.25rem;
   color: var(--muted);
   font-size: 0.68rem;
-  font-weight: 950;
+  font-weight: 600;
 }
 
 .todoList-search {
   display: flex;
-  min-width: min(100%, 220px);
-  min-height: 2.65rem;
-  flex: 1 1 250px;
+  min-width: min(100%, 250px);
+  min-height: 2.25rem;
+  flex: 1 1 280px;
+  max-width: 320px;
   align-items: center;
   gap: 0.5rem;
-  padding: 0 0.7rem;
-  border: 2px solid rgba(35, 52, 90, 0.2);
-  border-radius: 12px;
-  background: #fffefb;
+  padding: 0 0.75rem;
+  border: 1.5px solid #cad5e5;
+  border-radius: 999px;
+  background: #fff;
   color: var(--info);
-  font-size: 1.1rem;
+  font-size: 0.95rem;
+  box-shadow: 0 1px 2px rgba(35, 52, 90, 0.04);
+}
+
+.todoList-search-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
 }
 
 .todoList-search input,
@@ -432,37 +444,150 @@
 }
 
 .todoList-search input {
-  font-size: 0.87rem;
+  font-size: 0.78rem;
 }
 
 .todoList-filter {
-  min-width: 115px;
+  min-width: 0;
 }
 
 .todoList-filter select,
 .todoList-filter input[type="date"] {
-  min-height: 2.35rem;
-  border: 2px solid rgba(35, 52, 90, 0.2);
-  border-radius: 10px;
-  background: #fffefb;
-  font-size: 0.8rem;
+  min-height: 2.25rem;
+  border: 1.5px solid #cad5e5;
+  border-radius: 999px;
+  background-color: #fff;
+  font-size: 0.76rem;
+  box-shadow: 0 1px 2px rgba(35, 52, 90, 0.04);
 }
 
 .todoList-filter select {
-  padding: 0.35rem 0.55rem;
+  padding: 0.35rem 1.65rem 0.35rem 0.75rem;
 }
 
 .todoList-filter input[type="date"] {
-  padding: 0.3rem;
-  font-size: 0.75rem;
+  padding: 0.28rem 0.55rem;
+  font-size: 0.72rem;
+}
+
+.todoList-filter--select {
+  position: relative;
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  color: #23395f;
+  font-weight: 600;
+
+  &::after {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    width: 0.38rem;
+    height: 0.38rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    content: '';
+    pointer-events: none;
+    transform: translateY(-70%) rotate(45deg);
+  }
+
+  select {
+    width: auto;
+    min-width: 5.5rem;
+    max-width: 12rem;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: #8ca3c7;
+      box-shadow: 0 0 0 3px rgba(89, 128, 203, 0.12);
+      outline: 0;
+    }
+  }
+}
+
+.todoList-filter--date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2.25rem;
+  padding: 0 0.45rem 0 0.75rem;
+  border: 1.5px solid #cad5e5;
+  border-radius: 999px;
+  background: #fff;
+  color: #23395f;
+  font-size: 0.76rem;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(35, 52, 90, 0.04);
+
+  input[type="date"] {
+    width: 8.2rem;
+    min-height: 2rem;
+    padding: 0.15rem 0.1rem;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 0.7rem;
+  }
+}
+
+.todoList-filter-extras {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  padding-top: 0.05rem;
 }
 
 .todoList-filter-check {
-  display: flex;
-  min-height: 2.35rem;
+  display: inline-flex;
+  min-height: 2.1rem;
   align-items: center;
-  gap: .35rem;
-  white-space: nowrap
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid #d9e0eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #53617a;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &.active {
+    border-color: #91a8cc;
+    background: #edf3fd;
+    color: #263f6a;
+  }
+
+  input {
+    width: 0.85rem;
+    height: 0.85rem;
+    margin: 0;
+    accent-color: #35588d;
+  }
+}
+
+.todoList-clear-filters {
+  min-height: 2.25rem;
+  margin-left: auto;
+  padding: 0.35rem 0.85rem;
+  border: 1.5px solid var(--primary);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--primary);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 140ms ease, box-shadow 140ms ease;
+
+  &:hover {
+    background: #f3f6fb;
+    box-shadow: 0 2px 5px rgba(35, 52, 90, 0.12);
+  }
 }
 
 .todoList-viewbar {
@@ -1344,12 +1469,45 @@
     flex-direction: column;
   }
 
-  .todoList-filters>* {
-    flex: 1 1 42%;
+  .todoList-filters {
+    align-items: stretch;
   }
 
-  .todoList-search {
-    flex-basis: 100%;
+  .todoList-filters>.todoList-search {
+    flex: 1 0 100%;
+    max-width: none;
+  }
+
+  .todoList-filters>.todoList-filter--select {
+    flex: 1 1 calc(50% - 0.45rem);
+  }
+
+  .todoList-filter--select select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .todoList-filter--date {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .todoList-clear-filters {
+    flex: 1 1 auto;
+    margin-left: 0;
+  }
+
+  .todoList-filter-extras {
+    gap: 0.4rem;
+  }
+
+  .todoList-filter-extras>.todoList-filter--select {
+    flex: 1 1 calc(50% - 0.4rem);
+  }
+
+  .todoList-filter-extras>.todoList-filter--select select {
+    width: 100%;
+    max-width: none;
   }
 
   .todoList-task-row {

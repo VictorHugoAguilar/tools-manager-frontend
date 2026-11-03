@@ -235,82 +235,86 @@
       <div class="todoList-filters">
         <label class="todoList-search">
           <svg class="todoList-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-          <input type="search" placeholder="Buscar tareas…" [ngModel]="todoListSearch()"
+          <input type="search" placeholder="Buscar tareas..." [ngModel]="todoListSearch()"
             (ngModelChange)="todoListUpdateSearch($event)">
         </label>
-        <label class="todoList-filter">
-          <span>Prioridad</span>
+        <label class="todoList-filter todoList-filter--select">
+          <select [ngModel]="todoListStatusFilter()" (ngModelChange)="todoListUpdateStatus($event)">
+            <option value="">Estado</option>
+            <option value="pending">Pendientes</option>
+            <option value="completed">Completadas</option>
+          </select>
+        </label>
+        <label class="todoList-filter todoList-filter--select">
+          <select [ngModel]="todoListLabelFilter()" (ngModelChange)="todoListToggleLabelFilter($event)">
+            <option value="">Etiqueta</option>
+            @for (todoListLabel of todoListLabels(); track todoListLabel.id) {
+              <option [value]="todoListLabel.id">{{ todoListLabel.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="todoList-filter todoList-filter--select">
           <select [ngModel]="todoListPriorityFilter()" (ngModelChange)="todoListUpdatePriority($event)">
-            <option value="">Todas</option>
+            <option value="">Prioridad</option>
             <option [ngValue]="1">Urgente</option>
             <option [ngValue]="2">Alta</option>
             <option [ngValue]="3">Media</option>
             <option [ngValue]="4">Baja</option>
           </select>
         </label>
-        <label class="todoList-filter">
-          <span>Estado</span>
-          <select [ngModel]="todoListStatusFilter()" (ngModelChange)="todoListUpdateStatus($event)">
-            <option value="">Todos</option>
-            <option value="pending">Pendientes</option>
-            <option value="completed">Completadas</option>
+        <label class="todoList-filter todoList-filter--select">
+          <select [ngModel]="todoListAssigneeFilter()" (ngModelChange)="todoListUpdateAssignee($event)">
+            <option value="">Responsable</option>
+            @for (todoListUser of todoListUsers(); track todoListUser.id) {
+              <option [value]="todoListUser.id">{{ todoListUser.firstName }} {{ todoListUser.lastName }}</option>
+            }
           </select>
         </label>
-        <label class="todoList-filter">
-          <span>Proyecto</span>
+        <label class="todoList-filter todoList-filter--date">
+          <input type="date" aria-label="Fecha exacta" [ngModel]="todoListDueDateFilter()"
+            (ngModelChange)="todoListUpdateDueDate($event)" >
+        </label>
+        <button type="button" class="todoList-clear-filters"
+          (click)="todoListClearFilters()" aria-label="Limpiar filtros">Limpiar</button>
+      </div>
+      <div class="todoList-filter-extras" aria-label="Filtros adicionales">
+        <label class="todoList-filter todoList-filter--select">
           <select [ngModel]="todoListProjectFilterValue()" (ngModelChange)="todoListUpdateProjectFilter($event)">
-            <option value="">Todos</option>
+            <option value="">Proyecto</option>
             @for (todoListProject of todoListProjects(); track todoListProject.id) {
               <option [value]="todoListProject.id">{{ todoListProject.name }}</option>
             }
           </select>
         </label>
-        <label class="todoList-filter">
-          <span>Importancia</span>
+        <label class="todoList-filter todoList-filter--select">
           <select [ngModel]="todoListImportantFilter()" (ngModelChange)="todoListUpdateImportant($event)">
-            <option value="">Todas</option>
+            <option value="">Importancia</option>
             <option value="true">Importantes</option>
             <option value="false">No importantes</option>
           </select>
         </label>
         @if (todoListView() === 'project' || todoListProjectFilter()) {
-          <label class="todoList-filter">
-            <span>Sección</span>
+          <label class="todoList-filter todoList-filter--select">
             <select [ngModel]="todoListSectionId()" (ngModelChange)="todoListSelectSection($event)">
-              <option value="">Todas</option>
+              <option value="">Sección</option>
               @for (todoListSection of todoListSections(); track todoListSection.id) {
                 <option [value]="todoListSection.id">{{ todoListSection.name }}</option>
               }
             </select>
           </label>
         }
-        <label class="todoList-filter">
-          <span>Responsable</span>
-          <select [ngModel]="todoListAssigneeFilter()" (ngModelChange)="todoListUpdateAssignee($event)">
-            <option value="">Todos</option>
-            @for (todoListUser of todoListUsers(); track todoListUser.id) {
-              <option [value]="todoListUser.id">{{ todoListUser.firstName }} {{ todoListUser.lastName }}</option>
-            }
-          </select>
-        </label>
-        <label class="todoList-filter">
-          <span>Fecha exacta</span>
-          <input type="date" [ngModel]="todoListDueDateFilter()" (ngModelChange)="todoListUpdateDueDate($event)">
-        </label>
-        <label class="todoList-filter todoList-filter-check">
+        <label class="todoList-filter-check" [class.active]="todoListOverdueFilter()">
           <input type="checkbox" [checked]="todoListOverdueFilter()" (change)="todoListToggleOverdueFilter()">
-          <span>Vencidas</span>
+          Vencidas
         </label>
-        <label class="todoList-filter todoList-filter-check">
+        <label class="todoList-filter-check" [class.active]="todoListNoDueDateFilter()">
           <input type="checkbox" [checked]="todoListNoDueDateFilter()" (change)="todoListToggleNoDueDateFilter()">
-          <span>Sin fecha</span>
+          Sin fecha
         </label>
-        <label class="todoList-filter todoList-filter-check">
+        <label class="todoList-filter-check" [class.active]="todoListRecurringFilter()">
           <input type="checkbox" [checked]="todoListRecurringFilter()" (change)="todoListToggleRecurringFilter()">
-          <span>Recurrentes</span>
+          Recurrentes
         </label>
-        <button type="button" class="todoList-icon-button todoList-clear-filters"
-          (click)="todoListClearFilters()" aria-label="Limpiar filtros">Limpiar</button>
       </div>
 
       <div class="todoList-viewbar">
