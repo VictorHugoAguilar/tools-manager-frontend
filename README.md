@@ -498,3 +498,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: cambio de estilos visuales en los input, textarea y select
 
 <!-- CHANGELOG-PR-100-END -->
+
+<!-- CHANGELOG-PR-102-START -->
+### [7.6.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/102) (2026-11-03)
+
+- Changed: se añade una bandera roja SVG junto al título en las tareas de TODOList
+
+<!-- CHANGELOG-PR-102-END -->
