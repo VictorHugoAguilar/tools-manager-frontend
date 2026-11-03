@@ -808,6 +808,18 @@
   font-weight: 600;
 }
 
+.todoList-row-important-flag {
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-left: 0.35rem;
+  fill: #d33f37;
+  stroke: #9f2924;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+  vertical-align: -0.12rem;
+}
+
 .todoList-task-row .todoList-task-main {
   display: block;
   overflow: hidden;
