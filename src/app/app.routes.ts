@@ -9,6 +9,7 @@ import { SettingsPageComponent } from './pages/settings/settings-page.component'
 import { TechniciansPageComponent } from './pages/technicians/technicians-page.component';
 import { StoragePageComponent } from './pages/storage/storage-page.component';
 import { WorkshopStoragePageComponent } from './pages/workshop-storage/workshop-storage-page.component';
+import { drawingEditorCanDeactivateGuard } from './pages/drawing/drawing-editor.guard';
 import { adminGuard, authGuard } from './guards/auth.guard';
 
 export const appRoutes: Routes = [
@@ -98,6 +99,29 @@ export const appRoutes: Routes = [
           title: 'Tareas',
           description: 'Organiza, planifica y gestiona todas tus tareas de forma sencilla y eficiente.',
           showCreateAction: false,
+        }
+      },
+      {
+        path: 'dibujar',
+        loadComponent: () => import('./pages/drawing/drawing-library-page.component')
+          .then((module) => module.DrawingLibraryPageComponent),
+        data: {
+          eyebrow: 'Herramientas',
+          title: 'Dibujar',
+          description: 'Crea diagramas, esquemas y visualiza tus ideas de forma rápida y sencilla.',
+          showCreateAction: false
+        }
+      },
+      {
+        path: 'dibujar/:documentId',
+        loadComponent: () => import('./pages/drawing/drawing-editor-page.component')
+          .then((module) => module.DrawingEditorPageComponent),
+        canDeactivate: [drawingEditorCanDeactivateGuard],
+        data: {
+          eyebrow: 'Herramientas',
+          title: 'Dibujar',
+          description: 'Crea diagramas, esquemas y visualiza tus ideas de forma rápida y sencilla.',
+          showCreateAction: false
         }
       },
       {
