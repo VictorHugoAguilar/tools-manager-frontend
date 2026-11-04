@@ -505,3 +505,15 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se añade una bandera roja SVG junto al título en las tareas de TODOList
 
 <!-- CHANGELOG-PR-102-END -->
+
+<!-- CHANGELOG-PR-104-START -->
+### [7.7.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/104) (2026-11-04)
+
+- Added: se añade la ruta para la nueva pagina de dibujar
+- Added: se añade konva v10.9.1 para utilizar el canva
+- Added: se añaden los servicios para el uso de los nuevos endpoint
+- Added: se añaden en el sistema de rutas las nuevas rutas con sus propiedades
+- Added: se añade el nuevo modelo de datos para la página de dibujar
+- Added: se añade la nueva pagina drawing-canvas con todos los componentes necesarios
+
+<!-- CHANGELOG-PR-104-END -->
