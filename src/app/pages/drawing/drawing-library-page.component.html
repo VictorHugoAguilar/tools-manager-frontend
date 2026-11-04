@@ -1,0 +1,110 @@
+<section class="drawing-library">
+  <header class="library-toolbar">
+    <div>
+      <p class="eyebrow">Tus pizarras</p>
+      <h2>Biblioteca de dibujos</h2>
+      <p>Guarda diagramas e ideas visuales en un solo lugar.</p>
+    </div>
+    <div class="library-toolbar__actions">
+      <label class="library-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" placeholder="Buscar pizarras..." [ngModel]="search()"
+          (ngModelChange)="updateSearch($event)" aria-label="Buscar pizarras" />
+      </label>
+      <button type="button" class="drawing-button drawing-button--secondary"
+        [attr.aria-pressed]="showArchived()" (click)="toggleArchived()">
+        {{ showArchived() ? 'Ver activas' : 'Archivadas' }}
+      </button>
+      <button type="button" class="drawing-button drawing-button--primary" (click)="openCreateDialog()">
+        ＋ Nueva pizarra
+      </button>
+    </div>
+  </header>
+
+  @if (error()) { <p class="drawing-alert" role="alert">{{ error() }}</p> }
+
+  @if (loading()) {
+    <div class="drawing-empty"><strong>Cargando pizarras…</strong></div>
+  } @else if (visibleDocuments().length) {
+    <div class="drawing-cards">
+      @for (document of visibleDocuments(); track document.id) {
+        <article class="drawing-card" [class.drawing-card--archived]="document.isArchived">
+          <button type="button" class="drawing-card__preview" (click)="open(document)"
+            [attr.aria-label]="'Abrir ' + document.name">
+            <span class="preview-grid"></span>
+            <span class="preview-placeholder" aria-hidden="true">✎</span>
+            <span class="preview-caption">Vista del lienzo al abrir</span>
+            <span class="preview-open">Abrir pizarra →</span>
+          </button>
+          <div class="drawing-card__content">
+            <div class="drawing-card__title">
+              <div>
+                <h3>{{ document.name }}</h3>
+                <p>{{ document.description || 'Sin descripción' }}</p>
+              </div>
+              @if (document.isArchived) { <span class="archive-tag">Archivada</span> }
+            </div>
+            <div class="drawing-card__meta">
+              <span>{{ document.pageCount }} {{ document.pageCount === 1 ? 'página' : 'páginas' }}</span>
+              <time [attr.datetime]="document.updatedAt">Actualizada {{ document.updatedAt | date:'d MMM y' }}</time>
+              <span>Privada · Tu pizarra</span>
+            </div>
+            <div class="drawing-card__actions">
+              @if (document.isArchived) {
+                <button type="button" (click)="restore(document)">Restaurar</button>
+              } @else {
+                <button type="button" (click)="openRenameDialog(document)">Renombrar</button>
+                <button type="button" (click)="archive(document)">Archivar</button>
+              }
+              <button type="button" (click)="duplicate(document)">Duplicar</button>
+              <button type="button" class="is-danger" (click)="delete(document)">Eliminar</button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+    @if (nextCursor()) {
+      <button type="button" class="drawing-button drawing-button--secondary load-more"
+        [disabled]="loadingMore()" (click)="loadMore()">
+        {{ loadingMore() ? 'Cargando…' : 'Cargar más pizarras' }}
+      </button>
+    }
+  } @else {
+    <div class="drawing-empty">
+      <span class="empty-icon" aria-hidden="true">✎</span>
+      <strong>{{ search() ? 'No hay resultados' : 'Todavía no tienes pizarras' }}</strong>
+      <span>{{ search() ? 'Prueba con otro término.' : 'Crea una pizarra para empezar a dibujar tus ideas.' }}</span>
+      @if (!search()) {
+        <button type="button" class="drawing-button drawing-button--primary" (click)="openCreateDialog()">
+          Crear primera pizarra
+        </button>
+      }
+    </div>
+  }
+
+  @if (dialogOpen()) {
+    <div class="drawing-dialog-backdrop" (click)="closeDialog()">
+      <section class="drawing-dialog" role="dialog" aria-modal="true"
+        [attr.aria-labelledby]="'drawing-document-dialog-title'" (click)="$event.stopPropagation()">
+        <h2 id="drawing-document-dialog-title">
+          {{ editingDocumentId() ? 'Renombrar pizarra' : 'Nueva pizarra' }}
+        </h2>
+        <label>Nombre
+          <input type="text" maxlength="120" [ngModel]="draftName()"
+            (ngModelChange)="draftName.set($event)" autofocus />
+        </label>
+        <label>Descripción
+          <textarea rows="3" maxlength="2000" [ngModel]="draftDescription()"
+            (ngModelChange)="draftDescription.set($event)"></textarea>
+        </label>
+        <div class="drawing-dialog__actions">
+          <button type="button" class="drawing-button drawing-button--secondary" (click)="closeDialog()">Cancelar</button>
+          <button type="button" class="drawing-button drawing-button--primary"
+            [disabled]="!draftName().trim() || saving()" (click)="saveDocument()">
+            {{ saving() ? 'Guardando…' : editingDocumentId() ? 'Guardar cambios' : 'Crear pizarra' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</section>

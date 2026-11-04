@@ -1,0 +1,276 @@
+@if (loading()) {
+  <div class="drawing-editor-state"><strong>Cargando pizarra…</strong></div>
+} @else if (error() && !document()) {
+  <div class="drawing-editor-state drawing-editor-state--error" role="alert">
+    <strong>No se pudo abrir la pizarra</strong>
+    <span>{{ error() }}</span>
+    <a routerLink="/dibujar">Volver a la biblioteca</a>
+  </div>
+} @else if (document()) {
+  <section class="drawing-editor-page">
+    <header class="drawing-page-heading">
+      <div>
+        <p class="eyebrow">Herramientas</p>
+        <div class="drawing-title-line">
+          <h2>{{ document()?.name }}</h2>
+          <button type="button" class="plain-icon-button" aria-label="Cambiar nombre de la pizarra"
+            title="Cambiar nombre" (click)="renameDocument()">✎</button>
+        </div>
+        <p class="drawing-heading-description">Crea diagramas, esquemas y visualiza tus ideas de forma rápida y sencilla.</p>
+      </div>
+      <div class="drawing-heading-actions">
+        <span class="save-state" [class.save-state--error]="saveState() === 'Error al guardar' || saveState() === 'Sin conexión'">
+          <span class="save-state__dot"></span>{{ saveState() }}
+        </span>
+        <button type="button" class="editor-button editor-button--secondary" (click)="openHistory()">Historial</button>
+        <button type="button" class="editor-button editor-button--secondary" (click)="exportJson()">Exportar JSON</button>
+        <button type="button" class="editor-button editor-button--primary" [disabled]="saveState() === 'Guardando…'"
+          (click)="saveNow()">Guardar</button>
+      </div>
+    </header>
+
+    @if (error()) { <p class="drawing-error-banner" role="alert">{{ error() }}</p> }
+    @if (saveError()) { <p class="drawing-error-banner" role="alert">{{ saveError() }}</p> }
+
+    <section class="drawing-editor-shell" [class.drawing-editor-shell--left-closed]="!leftPanelOpen()"
+      [class.drawing-editor-shell--right-closed]="!rightPanelOpen()" #editorShell>
+      @if (leftPanelOpen()) {
+        <aside class="drawing-side-panel drawing-left-panel" aria-label="Herramientas y formas">
+          <div class="panel-heading">
+            <h3>Elementos</h3>
+            <button type="button" class="panel-close" aria-label="Cerrar herramientas"
+              (click)="leftPanelOpen.set(false)">×</button>
+          </div>
+          <div class="tool-list">
+            <button type="button" [class.is-active]="activeTool() === 'select'" (click)="chooseTool('select')">
+              <span aria-hidden="true">↖</span> Seleccionar
+            </button>
+            <button type="button" [class.is-active]="activeTool() === 'hand'" (click)="chooseTool('hand')">
+              <span aria-hidden="true">✋</span> Mano / desplazar
+            </button>
+            <button type="button" [class.is-active]="activeTool() === 'freehand'" (click)="chooseTool('freehand')">
+              <span aria-hidden="true">／</span> Dibujo libre
+            </button>
+            <button type="button" [class.is-active]="activeTool() === 'eraser'" (click)="chooseTool('eraser')">
+              <span aria-hidden="true">⌫</span> Borrador
+            </button>
+          </div>
+
+          <div class="panel-divider"></div>
+          <h3 class="panel-section-title">Formas</h3>
+          <div class="shape-list">
+            <button type="button" (click)="addShape('rect')"><span class="shape-symbol shape-symbol--rect"></span>Rectángulo</button>
+            <button type="button" (click)="addShape('ellipse')"><span class="shape-symbol shape-symbol--ellipse"></span>Elipse</button>
+            <button type="button" (click)="addShape('diamond')"><span class="shape-symbol shape-symbol--diamond"></span>Rombo</button>
+            <button type="button" (click)="addShape('line')"><span class="shape-symbol shape-symbol--line"></span>Línea</button>
+            <button type="button" (click)="addShape('arrow')"><span class="shape-symbol shape-symbol--arrow"></span>Flecha</button>
+            <button type="button" (click)="addShape('text')"><span class="shape-symbol shape-symbol--text">T</span>Texto</button>
+          </div>
+          @if (activeTool() === 'select' && !selectedObject()) {
+            <label class="text-draft">Texto para insertar
+              <input type="text" [ngModel]="textDraft()" (ngModelChange)="textDraft.set($event)"
+                placeholder="Escribe aquí..." />
+            </label>
+          }
+          <div class="panel-divider"></div>
+          <h3 class="panel-section-title">Colores rápidos</h3>
+          <div class="color-palette" role="group" aria-label="Color de relleno para nuevas formas">
+            @for (color of availableColors; track color) {
+              <button type="button" class="color-swatch" [style.background]="color"
+                [attr.aria-label]="'Usar color ' + color" [attr.aria-pressed]="selectedColor() === color"
+                (click)="setActiveFill(color)"
+                [class.is-selected]="selectedColor() === color"></button>
+            }
+          </div>
+          <p class="panel-hint">Selecciona una forma y arrástrala en el lienzo para moverla.</p>
+        </aside>
+      } @else {
+        <button type="button" class="panel-reopen panel-reopen--left" (click)="leftPanelOpen.set(true)">
+          Elementos
+        </button>
+      }
+
+      <main class="drawing-workspace">
+        <div class="canvas-toolbar">
+          <div class="canvas-toolbar__start">
+            <button type="button" class="toolbar-icon" [disabled]="!canvas?.canUndo"
+              aria-label="Deshacer" title="Deshacer (Ctrl+Z)" (click)="undo()">↶</button>
+            <button type="button" class="toolbar-icon" [disabled]="!canvas?.canRedo"
+              aria-label="Rehacer" title="Rehacer (Ctrl+Y)" (click)="redo()">↷</button>
+            <button type="button" class="toolbar-icon" aria-label="Alejar" title="Alejar"
+              (click)="setZoomBy(-0.1)">−</button>
+            <label class="zoom-select" aria-label="Nivel de zoom">
+              <span>{{ zoom() }}%</span>
+              <input type="range" min="10" max="400" step="10" [value]="zoom()"
+                (input)="setZoomFromEvent($event)" />
+            </label>
+            <button type="button" class="toolbar-icon" aria-label="Acercar" title="Acercar"
+              (click)="setZoomBy(0.1)">＋</button>
+            <button type="button" class="toolbar-icon toolbar-icon--fit" (click)="centerContent()">Centrar</button>
+            <button type="button" class="toolbar-icon toolbar-icon--fullscreen"
+              (click)="toggleFullscreen()">Pantalla completa</button>
+          </div>
+          <div class="canvas-toolbar__end">
+            @if (!leftPanelOpen()) {
+              <button type="button" class="toolbar-icon" (click)="leftPanelOpen.set(true)">Elementos</button>
+            }
+            @if (!rightPanelOpen()) {
+              <button type="button" class="toolbar-icon" (click)="rightPanelOpen.set(true)">Propiedades</button>
+            }
+            <button type="button" class="toolbar-icon" aria-label="Exportar PNG" title="Exportar imagen PNG"
+              (click)="exportPng()">PNG</button>
+          </div>
+        </div>
+
+        <div class="drawing-canvas-wrap" [class.is-loading]="loadingPage()">
+          @if (loadingPage()) { <div class="canvas-loading">Cargando página…</div> }
+          <app-drawing-canvas [snapshot]="snapshot()" [pageId]="activePageId()"
+            [background]="preferences().background" [gridEnabled]="preferences().gridEnabled"
+            [snapToGrid]="preferences().snapToGrid" [cameraState]="preferences().cameraState"
+            (snapshotChanged)="onSnapshotChanged($event)" (selectionChanged)="onSelectionChanged($event)"
+            (cameraChanged)="onCameraChanged($event)" (canvasError)="onCanvasError($event)" />
+        </div>
+
+        <footer class="page-tabs" aria-label="Páginas de la pizarra">
+          <div class="page-tab-list">
+            @for (page of pages(); track page.id) {
+              <button type="button" class="page-tab" [class.is-active]="page.id === activePageId()"
+                [disabled]="loadingPage()" (click)="selectPage(page)" (contextmenu)="$event.preventDefault(); renamePage(page)">
+                {{ page.name }}
+              </button>
+              @if (page.id === activePageId()) {
+                <div class="page-tab-actions">
+                  <button type="button" aria-label="Renombrar página" title="Renombrar página"
+                    (click)="renamePage(page)">✎</button>
+                  <button type="button" aria-label="Duplicar página" title="Duplicar página"
+                    (click)="duplicatePage(page)">⧉</button>
+                  <button type="button" aria-label="Eliminar página" title="Eliminar página"
+                    [disabled]="!canDeletePage()" (click)="deletePage(page)">×</button>
+                </div>
+              }
+            }
+            <button type="button" class="page-add" aria-label="Añadir página" title="Añadir página"
+              (click)="createPage()">＋</button>
+          </div>
+          <span class="page-count">{{ pages().length }} {{ pages().length === 1 ? 'página' : 'páginas' }}</span>
+        </footer>
+      </main>
+
+      @if (rightPanelOpen()) {
+        <aside class="drawing-side-panel drawing-properties-panel" aria-label="Propiedades">
+          <div class="panel-heading">
+            <h3>{{ selectedObject() ? 'Propiedades' : 'Documento' }}</h3>
+            <button type="button" class="panel-close" aria-label="Cerrar propiedades"
+              (click)="rightPanelOpen.set(false)">×</button>
+          </div>
+          @if (selectedObject(); as selected) {
+            <div class="property-content">
+              <p class="selected-kind">{{ selected.type === 'text' ? 'Texto' : selected.type === 'freehand' ? 'Trazo' : 'Forma seleccionada' }}</p>
+              @if (selected.type === 'text') {
+                <label>Texto
+                  <textarea rows="3" [ngModel]="textDraft()" (ngModelChange)="updateSelectedText($event)"></textarea>
+                </label>
+                <label>Tamaño de texto
+                  <input type="number" min="8" max="96" [ngModel]="selected.fontSize ?? 24"
+                    (ngModelChange)="setFontSize($event)" />
+                </label>
+              }
+              <div>
+                <span class="property-label">Relleno</span>
+                <div class="color-palette">
+                  @for (color of availableColors; track color) {
+                    <button type="button" class="color-swatch" [style.background]="color"
+                      [attr.aria-label]="'Relleno ' + color" (click)="setSelectedFill(color)"></button>
+                  }
+                  <button type="button" class="no-fill" aria-label="Sin relleno"
+                    (click)="setSelectedFill('transparent')">∕</button>
+                </div>
+              </div>
+              <div>
+                <span class="property-label">Color de línea</span>
+                <div class="color-palette">
+                  @for (color of availableColors; track color) {
+                    <button type="button" class="color-swatch" [style.background]="color"
+                      [attr.aria-label]="'Línea ' + color" (click)="setSelectedStroke(color)"></button>
+                  }
+                </div>
+              </div>
+              <label>Grosor de línea
+                <input type="range" min="1" max="12" [value]="selected.strokeWidth ?? 2"
+                  (input)="setStrokeWidthFromEvent($event)" />
+              </label>
+              <label>Opacidad
+                <input type="range" min="0.1" max="1" step="0.1" [value]="selected.opacity ?? 1"
+                  (input)="setOpacityFromEvent($event)" />
+              </label>
+              <button type="button" class="delete-object" (click)="canvas?.deleteSelected()">Eliminar elemento</button>
+            </div>
+          } @else {
+            <div class="property-content">
+              <label class="switch-row">
+                <span>Mostrar cuadrícula</span>
+                <input type="checkbox" [checked]="preferences().gridEnabled" (change)="toggleGrid()" />
+              </label>
+              <label class="switch-row">
+                <span>Ajustar a cuadrícula</span>
+                <input type="checkbox" [checked]="preferences().snapToGrid" (change)="toggleSnapToGrid()" />
+              </label>
+              <label>Fondo
+                <select [ngModel]="preferences().background"
+                  (ngModelChange)="changeBackground($event)">
+                  <option value="dots">Puntos</option>
+                  <option value="lines">Cuadrícula</option>
+                  <option value="white">Blanco</option>
+                  <option value="cream">Crema</option>
+                  <option value="none">Liso</option>
+                </select>
+              </label>
+              <div class="document-info">
+                <span>Nombre</span><strong>{{ document()?.name }}</strong>
+                <span>Último guardado</span><strong>{{ saveState() }}</strong>
+              </div>
+              <label class="import-control">
+                <span>Importar JSON</span>
+                <input type="file" accept=".json,application/json" (change)="importJson($event)" />
+              </label>
+            </div>
+          }
+          <div class="properties-footer">
+            <button type="button" class="editor-button editor-button--secondary" (click)="exportPng()">Exportar PNG</button>
+            <button type="button" class="editor-button editor-button--secondary" (click)="exportJson()">Exportar JSON</button>
+          </div>
+        </aside>
+      } @else {
+        <button type="button" class="panel-reopen panel-reopen--right" (click)="rightPanelOpen.set(true)">
+          Propiedades
+        </button>
+      }
+    </section>
+
+    @if (historyOpen()) {
+      <div class="drawing-modal-backdrop" (click)="historyOpen.set(false)">
+        <section class="drawing-history-dialog" role="dialog" aria-modal="true"
+          aria-labelledby="drawing-history-title" (click)="$event.stopPropagation()">
+          <header>
+            <div><p class="eyebrow">Recuperación</p><h2 id="drawing-history-title">Historial de versiones</h2></div>
+            <button type="button" class="plain-icon-button" aria-label="Cerrar historial"
+              (click)="historyOpen.set(false)">×</button>
+          </header>
+          @if (versions().length) {
+            <ol>
+              @for (version of versions(); track version.version) {
+                <li>
+                  <div><strong>Versión {{ version.version }}</strong><time>{{ version.createdAt | date:'d MMM y, HH:mm' }}</time></div>
+                  <button type="button" class="editor-button editor-button--secondary"
+                    (click)="restoreVersion(version.version)">Restaurar</button>
+                </li>
+              }
+            </ol>
+          } @else {
+            <p>Aún no hay versiones guardadas.</p>
+          }
+        </section>
+      </div>
+    }
+  </section>
+}

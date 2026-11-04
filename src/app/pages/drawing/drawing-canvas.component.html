@@ -1,0 +1,5 @@
+<div class="drawing-canvas" [class.drawing-canvas--dots]="gridEnabled && background === 'dots'"
+  [class.drawing-canvas--lines]="gridEnabled && background === 'lines'" [class.drawing-canvas--white]="background === 'white'"
+  [class.drawing-canvas--cream]="background === 'cream'" [class.drawing-canvas--plain]="background === 'none'"
+  #canvasHost tabindex="0" aria-label="Lienzo de dibujo" (keydown)="handleKeydown($event)">
+</div>
