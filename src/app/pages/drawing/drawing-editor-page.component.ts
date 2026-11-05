@@ -6,25 +6,32 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   DrawingBackground,
+  DrawingConnectionState,
   DrawingDocument,
   DrawingObject,
   DrawingPage,
+  DrawingPresenceUser,
   DrawingPreferences,
+  DrawingRole,
   DrawingShapeType,
   DrawingSnapshot,
   DrawingTool,
   normalizeDrawingSnapshot
 } from '../../models/drawing.model';
+import { AuthService } from '../../services/auth.service';
 import { ConfirmService } from '../../services/confirm.service';
+import { DrawingCollaborationConnection, DrawingCollaborationService } from '../../services/drawing-collaboration.service';
 import { DrawingApiService } from '../../services/drawing-api.service';
 import { DrawingCanvasComponent } from './drawing-canvas.component';
+import { DrawingShareDialogComponent } from './drawing-share-dialog.component';
+import type * as Y from 'yjs';
 
 type SaveState = 'Guardado' | 'Cambios pendientes' | 'Guardando…' | 'Error al guardar' | 'Sin conexión';
 
 @Component({
   selector: 'app-drawing-editor-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, DrawingCanvasComponent],
+  imports: [CommonModule, FormsModule, RouterLink, DrawingCanvasComponent, DrawingShareDialogComponent],
   templateUrl: './drawing-editor-page.component.html',
   styleUrl: './drawing-editor-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -34,6 +41,8 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
+  private readonly auth = inject(AuthService);
+  private readonly collaborationService = inject(DrawingCollaborationService);
   private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private cameraSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private savePromise: Promise<boolean> | null = null;
@@ -43,11 +52,21 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   private editRevision = 0;
   private dirty = false;
   private documentId = '';
+  private collaboration: DrawingCollaborationConnection | null = null;
 
   @ViewChild(DrawingCanvasComponent) protected canvas?: DrawingCanvasComponent;
   @ViewChild('editorShell') private editorShell?: ElementRef<HTMLElement>;
 
   protected readonly document = signal<DrawingDocument | null>(null);
+  protected readonly collaborationDocument = signal<Y.Doc | null>(null);
+  protected readonly connectionState = signal<DrawingConnectionState>('connecting');
+  protected readonly participants = signal<DrawingPresenceUser[]>([]);
+  protected readonly shareDialogOpen = signal(false);
+  protected readonly accessRole = signal<DrawingRole>('Owner');
+  protected readonly collaborationReady = signal(false);
+  protected readonly readOnly = computed(() => this.accessRole() === 'Viewer');
+  protected readonly isOwner = computed(() => this.accessRole() === 'Owner');
+  protected readonly canEdit = computed(() => !this.readOnly() && this.collaborationReady());
   protected readonly pages = signal<DrawingPage[]>([]);
   protected readonly activePageId = signal('');
   protected readonly snapshot = signal<DrawingSnapshot>({ objects: [] });
@@ -68,7 +87,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   protected readonly leftPanelOpen = signal(true);
   protected readonly rightPanelOpen = signal(true);
   protected readonly historyOpen = signal(false);
-  protected readonly versions = signal<Array<{ version: number; createdAt: string; contentHash: string }>>([]);
+  protected readonly versions = signal<{ version: number; createdAt: string; contentHash: string }[]>([]);
   protected readonly textDraft = signal('');
   protected readonly activeFill = signal('#f6d768');
   protected readonly availableColors = ['#f6d768', '#8edfc0', '#9fc9ff', '#ffb5c5', '#cdb4ff', '#fffdf8'];
@@ -80,14 +99,17 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
       void this.router.navigate(['/dibujar']);
       return;
     }
+    this.api.setActiveDocument(this.documentId);
     void this.loadDocument();
   }
 
   ngOnDestroy(): void {
     if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
     if (this.cameraSaveTimer) clearTimeout(this.cameraSaveTimer);
-    if (this.dirty) void this.persistSnapshot();
+    if (this.dirty && !this.collaboration) void this.persistSnapshot();
     if (this.activePageId()) void this.persistCameraPreferences();
+    this.destroyCollaboration();
+    this.api.setActiveDocument(null);
   }
 
   protected async loadDocument(): Promise<void> {
@@ -96,6 +118,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
     try {
       const { document } = await firstValueFrom(this.api.getDocument(this.documentId));
       this.document.set(document);
+      this.accessRole.set(document.accessRole ?? 'Owner');
       this.pages.set(document.pages ?? []);
       const firstPageId = document.firstPageId && document.pages?.some((page) => page.id === document.firstPageId)
         ? document.firstPageId
@@ -118,6 +141,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected onSnapshotChanged(snapshot: DrawingSnapshot): void {
+    if (!this.canEdit()) return;
     this.snapshot.set(snapshot);
     this.editRevision += 1;
     this.dirty = true;
@@ -129,6 +153,11 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
     this.selectedObject.set(object);
     this.textDraft.set(object?.text ?? '');
     if (object?.fill && object.fill !== 'transparent') this.activeFill.set(object.fill);
+    this.collaboration?.setSelection(object ? [object.id] : []);
+  }
+
+  protected onCursorChanged(cursor: { x: number; y: number } | null): void {
+    this.collaboration?.setCursor(cursor);
   }
 
   protected onCanvasError(message: string): void {
@@ -139,6 +168,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
     this.preferences.update((current) => ({ ...current, cameraState }));
     this.preferencesRevision += 1;
     this.zoom.set(Math.round(cameraState.zoom * 100));
+    if (this.readOnly()) return;
     if (this.cameraSaveTimer) clearTimeout(this.cameraSaveTimer);
     this.cameraSaveTimer = setTimeout(() => {
       this.cameraSaveTimer = null;
@@ -147,11 +177,13 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected chooseTool(tool: DrawingTool): void {
+    if (!this.canEdit() && tool !== 'hand' && tool !== 'select') return;
     this.activeTool.set(tool);
     this.canvas?.setTool(tool);
   }
 
   protected addShape(type: DrawingShapeType): void {
+    if (!this.canEdit()) return;
     const fill = type === 'line' || type === 'arrow' ? 'transparent' : this.activeFill();
     this.canvas?.addShape(type, fill, type === 'text' ? this.textDraft() : '');
     this.activeTool.set('select');
@@ -163,29 +195,39 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected setActiveFill(fill: string): void {
+    if (!this.canEdit()) return;
     if (this.selectedObject()) this.setSelectedFill(fill);
     else this.activeFill.set(fill);
   }
 
+  protected openShareDialog(): void {
+    if (this.isOwner()) this.shareDialogOpen.set(true);
+  }
+
   protected setSelectedFill(fill: string): void {
+    if (!this.canEdit()) return;
     this.canvas?.updateSelected({ fill });
   }
 
   protected setSelectedStroke(stroke: string): void {
+    if (!this.canEdit()) return;
     this.canvas?.updateSelected({ stroke });
   }
 
   protected setSelectedStrokeWidth(value: string): void {
+    if (!this.canEdit()) return;
     const strokeWidth = Number(value);
     if (Number.isFinite(strokeWidth)) this.canvas?.updateSelected({ strokeWidth });
   }
 
   protected setSelectedOpacity(value: string): void {
+    if (!this.canEdit()) return;
     const opacity = Number(value);
     if (Number.isFinite(opacity)) this.canvas?.updateSelected({ opacity });
   }
 
   protected setFontSize(value: string | number): void {
+    if (!this.canEdit()) return;
     const fontSize = Number(value);
     if (Number.isFinite(fontSize)) this.canvas?.updateSelected({ fontSize });
   }
@@ -206,6 +248,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected updateSelectedText(value: string): void {
+    if (!this.canEdit()) return;
     this.textDraft.set(value);
     this.canvas?.updateSelected({ text: value });
   }
@@ -238,6 +281,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async createPage(): Promise<void> {
+    if (!this.isOwner()) return;
     const name = window.prompt('Nombre de la nueva página', `Página ${this.pages().length + 1}`)?.trim();
     if (!name) return;
     if (!await this.persistSnapshot()) return;
@@ -252,6 +296,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async renamePage(page: DrawingPage): Promise<void> {
+    if (!this.isOwner()) return;
     const name = window.prompt('Nombre de la página', page.name)?.trim();
     if (!name || name === page.name) return;
     try {
@@ -263,6 +308,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async duplicatePage(page: DrawingPage): Promise<void> {
+    if (!this.isOwner()) return;
     if (!await this.persistSnapshot()) return;
     await this.persistCameraPreferences();
     try {
@@ -275,6 +321,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async deletePage(page: DrawingPage): Promise<void> {
+    if (!this.isOwner()) return;
     if (!this.canDeletePage()) return;
     const accepted = await this.confirm.confirm({
       title: 'Eliminar página',
@@ -296,6 +343,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async renameDocument(): Promise<void> {
+    if (!this.isOwner()) return;
     const current = this.document();
     if (!current) return;
     const name = window.prompt('Nombre de la pizarra', current.name)?.trim();
@@ -309,14 +357,17 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async toggleGrid(): Promise<void> {
+    if (!this.canEdit()) return;
     await this.updatePreferences({ gridEnabled: !this.preferences().gridEnabled });
   }
 
   protected async toggleSnapToGrid(): Promise<void> {
+    if (!this.canEdit()) return;
     await this.updatePreferences({ snapToGrid: !this.preferences().snapToGrid });
   }
 
   protected async changeBackground(background: DrawingBackground): Promise<void> {
+    if (!this.canEdit()) return;
     await this.updatePreferences({ background });
   }
 
@@ -329,10 +380,12 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected undo(): void {
+    if (!this.canEdit()) return;
     this.canvas?.undo();
   }
 
   protected redo(): void {
+    if (!this.canEdit()) return;
     this.canvas?.redo();
   }
 
@@ -349,6 +402,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async restoreVersion(version: number): Promise<void> {
+    if (!this.canEdit()) return;
     const accepted = await this.confirm.confirm({
       title: 'Restaurar versión',
       message: `Se creará una nueva versión con el contenido de la versión ${version}.`,
@@ -356,15 +410,11 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
     });
     if (!accepted || !await this.persistSnapshot()) return;
     try {
-      const result = await firstValueFrom(this.api.restoreVersion(this.activePageId(), version));
-      this.expectedVersion = result.version;
-      const response = await firstValueFrom(this.api.getSnapshot(this.activePageId()));
+      const response = await firstValueFrom(this.api.getVersion(this.activePageId(), version));
       const restoredSnapshot = normalizeDrawingSnapshot(response.snapshot);
       if (!restoredSnapshot) throw new Error('La versión guardada no tiene un formato válido.');
-      this.snapshot.set(restoredSnapshot);
       this.canvas?.loadSnapshot(restoredSnapshot);
-      this.dirty = false;
-      this.saveState.set('Guardado');
+      if (!await this.persistSnapshot()) return;
       this.historyOpen.set(false);
     } catch (error: unknown) {
       this.error.set(this.errorMessage(error));
@@ -395,6 +445,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   protected async importJson(event: Event): Promise<void> {
+    if (!this.canEdit()) return;
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -416,14 +467,8 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
         tone: 'danger'
       });
       if (!accepted || !await this.persistSnapshot()) return;
-      const response = await firstValueFrom(this.api.saveSnapshot(
-        this.activePageId(), this.expectedVersion, importedSnapshot
-      ));
-      this.expectedVersion = response.version;
-      this.snapshot.set(importedSnapshot);
       this.canvas?.loadSnapshot(importedSnapshot);
-      this.dirty = false;
-      this.saveState.set('Guardado');
+      if (!await this.persistSnapshot()) return;
     } catch (error: unknown) {
       this.error.set(this.errorMessage(error));
     } finally {
@@ -451,6 +496,11 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
     this.loadingPage.set(true);
     this.saveError.set('');
     this.error.set('');
+    this.destroyCollaboration();
+    this.collaborationDocument.set(null);
+    this.collaborationReady.set(false);
+    this.connectionState.set('connecting');
+    this.participants.set([]);
     try {
       const [snapshotResponse, preferencesResponse] = await Promise.all([
         firstValueFrom(this.api.getSnapshot(pageId)),
@@ -470,7 +520,43 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
       this.dirty = false;
       this.saveState.set('Guardado');
       this.error.set('');
+      const user = this.auth.user() ?? await this.auth.initialize();
+      if (!user) throw new Error('La sesión ha caducado. Vuelve a iniciar sesión.');
+      const connection = await this.collaborationService.connect(this.documentId, pageId, user);
+      if (this.activePageId() !== pageId) {
+        connection.destroy();
+        return;
+      }
+      this.collaboration = connection;
+      this.collaborationReady.set(true);
+      this.collaborationDocument.set(connection.document);
+      connection.role$.subscribe((role) => {
+        const previousRole = this.accessRole();
+        this.accessRole.set(role);
+        this.document.update((current) => current ? { ...current, accessRole: role } : current);
+        if (role === 'Viewer' && previousRole !== 'Viewer') {
+          void this.reloadAsViewer(pageId);
+        }
+      });
+      connection.state$.subscribe((state) => {
+        this.connectionState.set(state);
+        if (state === 'revoked') {
+          this.dirty = false;
+          this.snapshot.set({ objects: [] });
+          this.collaborationDocument.set(null);
+          this.destroyCollaboration();
+          this.error.set('Se ha revocado el acceso a esta pizarra.');
+          void this.router.navigate(['/dibujar']);
+        } else if (state === 'offline') {
+          this.saveState.set('Sin conexión');
+        } else if (state === 'connected' && !this.dirty) {
+          this.saveState.set('Guardado');
+        }
+      });
+      connection.participants$.subscribe((users) => this.participants.set(users));
     } catch (error: unknown) {
+      this.collaborationReady.set(false);
+      this.connectionState.set('offline');
       this.error.set(this.errorMessage(error));
     } finally {
       this.loadingPage.set(false);
@@ -490,41 +576,61 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
       clearTimeout(this.autoSaveTimer);
       this.autoSaveTimer = null;
     }
+
     if (!this.dirty) return true;
     if (this.savePromise) {
       const saved = await this.savePromise;
       return saved && (this.dirty ? this.persistSnapshot() : true);
     }
-    const pageId = this.activePageId();
-    if (!pageId) return false;
-    const revision = this.editRevision;
-    const snapshot = this.snapshot();
-    const expectedVersion = this.expectedVersion;
-    this.saveState.set('Guardando…');
-    const operation = (async () => {
-      try {
-        const result = await firstValueFrom(this.api.saveSnapshot(pageId, expectedVersion, snapshot));
-        this.expectedVersion = result.version;
-        this.saveError.set('');
-        this.dirty = revision !== this.editRevision;
-        this.saveState.set(this.dirty ? 'Cambios pendientes' : 'Guardado');
-        if (this.dirty) this.scheduleAutoSave();
-        return true;
-      } catch (error: unknown) {
-        this.saveState.set(error instanceof HttpErrorResponse && error.status === 0
-          ? 'Sin conexión'
-          : 'Error al guardar');
-        this.saveError.set(this.errorMessage(error));
-        return false;
-      } finally {
-        this.savePromise = null;
-      }
-    })();
-    this.savePromise = operation;
-    return operation;
+    if (this.collaboration && this.collaborationReady()) {
+      const revision = this.editRevision;
+      this.saveState.set('Guardando…');
+      const operation = (async () => {
+        try {
+          await this.collaboration!.persist();
+          this.dirty = revision !== this.editRevision;
+          this.saveError.set('');
+          this.saveState.set(this.dirty ? 'Cambios pendientes' : 'Guardado');
+          if (this.dirty) this.scheduleAutoSave();
+          return true;
+        } catch (error: unknown) {
+          this.saveState.set(this.connectionState() === 'offline' ? 'Sin conexión' : 'Error al guardar');
+          this.saveError.set(this.errorMessage(error));
+          return false;
+        } finally {
+          this.savePromise = null;
+        }
+      })();
+      this.savePromise = operation;
+      return operation;
+    }
+    this.saveState.set('Error al guardar');
+    this.saveError.set('La conexión colaborativa no está disponible; no se han enviado los cambios.');
+    return false;
+  }
+
+  private async reloadAsViewer(pageId: string): Promise<void> {
+    if (this.activePageId() !== pageId || !this.collaboration) return;
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+      this.autoSaveTimer = null;
+    }
+    this.dirty = false;
+    this.saveState.set('Guardado');
+    try {
+      await this.collaboration.clearLocalCache();
+      if (this.activePageId() === pageId) await this.loadPage(pageId);
+    } catch (error: unknown) {
+      this.destroyCollaboration();
+      this.collaborationDocument.set(null);
+      this.collaborationReady.set(false);
+      this.error.set(this.errorMessage(error));
+      void this.router.navigate(['/dibujar']);
+    }
   }
 
   private async updatePreferences(changes: Partial<DrawingPreferences>): Promise<void> {
+    if (!this.canEdit()) return;
     const pageId = this.activePageId();
     if (!pageId) return;
     this.preferences.update((current) => ({ ...current, ...changes }));
@@ -533,6 +639,7 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
   }
 
   private async persistPreferences(pageId: string): Promise<void> {
+    if (this.readOnly()) return;
     while (this.preferencesSavePromise) await this.preferencesSavePromise;
     if (pageId !== this.activePageId()) return;
     const revision = this.preferencesRevision;
@@ -564,8 +671,13 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
       this.cameraSaveTimer = null;
     }
     const pageId = this.activePageId();
-    if (!pageId) return;
+    if (!pageId || this.readOnly()) return;
     await this.persistPreferences(pageId);
+  }
+
+  private destroyCollaboration(): void {
+    this.collaboration?.destroy();
+    this.collaboration = null;
   }
 
   private downloadFile(name: string, content: string, type: string): void {

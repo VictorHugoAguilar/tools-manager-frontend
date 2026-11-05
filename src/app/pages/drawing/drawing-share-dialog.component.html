@@ -1,0 +1,137 @@
+<div class="drawing-modal-backdrop">
+  <section class="share-dialog" role="dialog" aria-modal="true" aria-labelledby="share-dialog-title">
+    <header class="share-dialog__header">
+      <div>
+        <p class="eyebrow">Colaboración</p>
+        <h2 id="share-dialog-title">Compartir «{{ document.name }}»</h2>
+      </div>
+      <button type="button" class="plain-icon-button" aria-label="Cerrar"
+        (click)="closed.emit()">×</button>
+    </header>
+
+    @if (error()) { <p class="drawing-error-banner" role="alert">{{ error() }}</p> }
+    @if (message()) { <p class="share-message" role="status">{{ message() }}</p> }
+    @if (loading()) {
+      <p class="share-empty">Cargando acceso…</p>
+    } @else {
+      <section class="share-section">
+        <h3>Invitar a una persona</h3>
+        <label class="share-search">Buscar por nombre o correo
+          <input type="search" [ngModel]="search()" (ngModelChange)="updateSearch($event)"
+            placeholder="Escribe al menos 2 caracteres" />
+        </label>
+        @if (users().length) {
+          <div class="share-search-results">
+            @for (user of users(); track user.id) {
+              <div class="share-user">
+                <div class="share-user__identity">
+                  @if (user.profileImage) {
+                    <img [src]="user.profileImage" alt="" />
+                  } @else {
+                    <span class="share-avatar">{{ user.firstName[0] }}{{ user.lastName[0] }}</span>
+                  }
+                  <span><strong>{{ user.firstName }} {{ user.lastName }}</strong><small>{{ user.email }}</small></span>
+                </div>
+                <button type="button" class="share-button" [disabled]="saving()" (click)="invite(user)">
+                  Invitar
+                </button>
+              </div>
+            }
+          </div>
+        } @else if (search().trim().length >= 2) {
+          <p class="share-empty">No se encontraron usuarios para esta búsqueda.</p>
+        }
+        <label class="share-role">Permiso de invitación
+          <select [ngModel]="invitationRole()" (ngModelChange)="invitationRole.set($event)">
+            <option value="Editor">Editor: puede editar</option>
+            <option value="Viewer">Lector: solo puede ver</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="share-section">
+        <h3>Personas con acceso</h3>
+        @if (permissions().length) {
+          <div class="share-member-list">
+            @for (permission of permissions(); track permission.userId) {
+              <div class="share-user">
+                <div class="share-user__identity">
+                  @if (permission.profileImage) {
+                    <img [src]="permission.profileImage" alt="" />
+                  } @else {
+                    <span class="share-avatar">{{ permission.firstName[0] || 'U' }}{{ permission.lastName[0] || '' }}</span>
+                  }
+                  <span><strong>{{ permission.firstName }} {{ permission.lastName }}</strong>
+                    <small>{{ permission.role === 'Owner' ? 'Propietario' : permission.role === 'Editor' ? 'Editor' : 'Lector' }}</small>
+                  </span>
+                </div>
+                @if (permission.role !== 'Owner' && permission.id) {
+                  <div class="share-member-actions">
+                    <select aria-label="Cambiar permiso"
+                      [ngModel]="permission.role"
+                      (ngModelChange)="changeRole(permission, $event)">
+                      <option value="Editor">Editor</option>
+                      <option value="Viewer">Lector</option>
+                    </select>
+                    <button type="button" class="share-remove" [disabled]="saving()"
+                      (click)="revokePermission(permission)">Quitar</button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="share-empty">Aún no hay otras personas con acceso.</p>
+        }
+      </section>
+
+      @if (invitations().length) {
+        <section class="share-section">
+          <h3>Invitaciones pendientes</h3>
+          <div class="share-member-list">
+            @for (invitation of invitations(); track invitation.id) {
+              @if (invitation.status === 'Pending') {
+                <div class="share-user">
+                  <span>{{ invitation.recipient?.firstName }} {{ invitation.recipient?.lastName }}</span>
+                  <div class="share-member-actions">
+                    <small>{{ invitation.role === 'Editor' ? 'Editor' : 'Lector' }}</small>
+                    <button type="button" class="share-remove" [disabled]="saving()"
+                      (click)="cancelInvitation(invitation)">Cancelar</button>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </section>
+      }
+
+      <section class="share-section">
+        <h3>Enlace de solo lectura</h3>
+        <p class="share-description">Cualquier usuario autenticado con el enlace podrá ver esta pizarra, pero no editarla.</p>
+        @if (generatedLink()) {
+          <div class="share-link">
+            <input aria-label="Enlace de solo lectura" readonly [value]="generatedLink()" />
+            <button type="button" class="share-button" (click)="copyLink()">Copiar</button>
+          </div>
+        } @else if (shareLink()?.isActive) {
+          <p class="share-empty">Hay un enlace activo que ya no se puede volver a mostrar. Puedes revocarlo y crear uno nuevo.</p>
+        }
+        <div class="share-link-actions">
+          @if (!shareLink()?.isActive) {
+            <button type="button" class="share-button" [disabled]="saving()" (click)="createShareLink()">
+              Crear enlace
+            </button>
+          } @else {
+            <button type="button" class="share-remove" [disabled]="saving()" (click)="revokeShareLink()">
+              Revocar enlace
+            </button>
+          }
+        </div>
+      </section>
+    }
+
+    <footer class="share-dialog__footer">
+      <button type="button" class="editor-button editor-button--secondary" (click)="closed.emit()">Cerrar</button>
+    </footer>
+  </section>
+</div>

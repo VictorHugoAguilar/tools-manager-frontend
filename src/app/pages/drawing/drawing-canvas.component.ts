@@ -1,12 +1,14 @@
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, Input, OnChanges, OnDestroy, SimpleChanges, ViewChild, output } from '@angular/core';
 import {
   DrawingObject,
+  DrawingPresenceUser,
   DrawingPreferences,
   DrawingShapeType,
   DrawingSnapshot,
   DrawingTool,
   normalizeDrawingSnapshot
 } from '../../models/drawing.model';
+import * as Y from 'yjs';
 import { DrawingCanvasAdapter } from './drawing-canvas-adapter';
 
 @Component({
@@ -23,11 +25,15 @@ export class DrawingCanvasComponent implements AfterViewInit, OnChanges, OnDestr
   @Input() gridEnabled = true;
   @Input() snapToGrid = false;
   @Input() cameraState: DrawingPreferences['cameraState'] = { x: 0, y: 0, zoom: 1 };
+  @Input() readOnly = false;
+  @Input() collaborationDocument: Y.Doc | null = null;
+  @Input() presenceUsers: DrawingPresenceUser[] = [];
   @ViewChild('canvasHost') private readonly canvasHost!: ElementRef<HTMLDivElement>;
 
   readonly snapshotChanged = output<DrawingSnapshot>();
   readonly selectionChanged = output<DrawingObject | null>();
   readonly cameraChanged = output<DrawingPreferences['cameraState']>();
+  readonly cursorChanged = output<{ x: number; y: number } | null>();
   readonly canvasError = output<string>();
   private readonly adapter = new DrawingCanvasAdapter();
   private resizeObserver: ResizeObserver | null = null;
@@ -44,9 +50,13 @@ export class DrawingCanvasComponent implements AfterViewInit, OnChanges, OnDestr
       (snapshot) => this.snapshotChanged.emit(snapshot),
       (selection) => this.selectionChanged.emit(selection),
       this.cameraState,
-      (camera) => this.cameraChanged.emit(camera)
+      (camera) => this.cameraChanged.emit(camera),
+      (cursor) => this.cursorChanged.emit(cursor)
     );
     this.adapter.setSnapToGrid(this.snapToGrid);
+    this.adapter.setReadOnly(this.readOnly);
+    this.adapter.setCollaborationDocument(this.collaborationDocument);
+    this.adapter.setRemotePresence(this.presenceUsers);
     this.initialized = true;
     this.resizeObserver = new ResizeObserver((entries) => {
       const bounds = entries[0]?.contentRect;
@@ -68,6 +78,15 @@ export class DrawingCanvasComponent implements AfterViewInit, OnChanges, OnDestr
     if (changes['snapToGrid'] && this.initialized) {
       this.adapter.setSnapToGrid(this.snapToGrid);
     }
+    if (changes['readOnly'] && this.initialized) {
+      this.adapter.setReadOnly(this.readOnly);
+    }
+    if (changes['collaborationDocument'] && this.initialized) {
+      this.adapter.setCollaborationDocument(this.collaborationDocument);
+    }
+    if (changes['presenceUsers'] && this.initialized) {
+      this.adapter.setRemotePresence(this.presenceUsers);
+    }
   }
 
   ngOnDestroy(): void {
@@ -85,7 +104,7 @@ export class DrawingCanvasComponent implements AfterViewInit, OnChanges, OnDestr
       this.canvasError.emit('El contenido de la página no tiene un formato válido.');
       return;
     }
-    this.adapter.load(validSnapshot);
+    this.adapter.replaceSnapshot(validSnapshot);
   }
 
   addShape(type: DrawingShapeType, fill?: string, text?: string): void {
@@ -133,9 +152,14 @@ export class DrawingCanvasComponent implements AfterViewInit, OnChanges, OnDestr
   }
 
   handleKeydown(event: KeyboardEvent): void {
+    if (this.readOnly) return;
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
       event.preventDefault();
-      event.shiftKey ? this.redo() : this.undo();
+      if (event.shiftKey) {
+        this.redo();
+      } else {
+        this.undo();
+      }
     } else if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'y') {
       event.preventDefault();
       this.redo();

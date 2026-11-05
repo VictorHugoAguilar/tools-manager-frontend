@@ -1,0 +1,274 @@
+.drawing-modal-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(26 39 67 / 48%);
+}
+
+.share-dialog {
+  width: min(100%, 720px);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  padding: 1.4rem;
+  border: 1px solid #e4e9f1;
+  border-radius: 1.1rem;
+  background: #fff;
+  box-shadow: 0 24px 80px rgb(22 37 66 / 20%);
+}
+
+.eyebrow {
+  margin: 0;
+  color: #344a76;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.plain-icon-button,
+.editor-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.7rem;
+  border: 1.5px solid #23345a;
+  border-radius: 999px;
+  background: #fffdf8;
+  color: #23345a;
+  font-weight: 800;
+}
+
+.plain-icon-button {
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  font-size: 1.05rem;
+}
+
+.editor-button--secondary {
+  background: #fffdf8;
+}
+
+.drawing-error-banner {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgb(215 104 95 / 55%);
+  border-radius: 12px;
+  background: #fff0ed;
+  color: #8d302a;
+  font-size: 0.85rem;
+}
+
+.share-dialog__header,
+.share-dialog__footer,
+.share-user,
+.share-user__identity,
+.share-member-actions,
+.share-link,
+.share-link-actions {
+  display: flex;
+  align-items: center;
+}
+
+.share-dialog__header {
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0.15rem 0 0;
+  }
+}
+
+.share-section {
+  padding: 1rem 0;
+  border-top: 1px solid #e7ebf2;
+
+  h3 {
+    margin: 0 0 0.75rem;
+    color: #23345a;
+    font-size: 0.98rem;
+  }
+}
+
+.share-search,
+.share-role {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  color: #58647a;
+  font-size: 0.84rem;
+
+  input,
+  select {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #d5dce8;
+    border-radius: 0.6rem;
+    background: #fff;
+    color: #1d2b45;
+  }
+}
+
+.share-search-results,
+.share-member-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.share-user {
+  justify-content: space-between;
+  gap: 0.8rem;
+  min-width: 0;
+  padding: 0.55rem 0;
+}
+
+.share-user__identity {
+  min-width: 0;
+  gap: 0.65rem;
+
+  > span:last-child {
+    display: grid;
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    color: #263654;
+    font-size: 0.88rem;
+  }
+
+  small {
+    margin-top: 0.15rem;
+    color: #78849a;
+    font-size: 0.76rem;
+  }
+
+  img,
+  .share-avatar {
+    width: 2.2rem;
+    height: 2.2rem;
+    flex: 0 0 2.2rem;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .share-avatar {
+    display: grid;
+    place-items: center;
+    background: #eaf0fb;
+    color: #38558a;
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+}
+
+.share-member-actions {
+  justify-content: flex-end;
+  gap: 0.5rem;
+
+  select {
+    min-height: 2rem;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid #d5dce8;
+    border-radius: 0.5rem;
+    background: #fff;
+    color: #34425e;
+    font-size: 0.78rem;
+  }
+}
+
+.share-button,
+.share-remove {
+  flex: 0 0 auto;
+  min-height: 2rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #cfd9ec;
+  border-radius: 0.55rem;
+  background: #f5f8fe;
+  color: #294779;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 650;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+}
+
+.share-remove {
+  border-color: #f0d7d4;
+  background: #fff7f6;
+  color: #9c3932;
+}
+
+.share-description,
+.share-empty {
+  margin: 0.3rem 0 0.7rem;
+  color: #6a7589;
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.share-link {
+  gap: 0.5rem;
+
+  input {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.4rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #d5dce8;
+    border-radius: 0.55rem;
+    color: #3a4965;
+    font-size: 0.78rem;
+  }
+}
+
+.share-link-actions {
+  justify-content: flex-end;
+  margin-top: 0.65rem;
+}
+
+.share-dialog__footer {
+  justify-content: flex-end;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e7ebf2;
+}
+
+.share-message {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.55rem;
+  background: #eef8f3;
+  color: #286044;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 600px) {
+  .share-dialog {
+    padding: 1rem;
+  }
+
+  .share-user {
+    align-items: flex-start;
+  }
+
+  .share-member-actions {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}

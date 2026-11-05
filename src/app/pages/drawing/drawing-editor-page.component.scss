@@ -58,6 +58,70 @@
   font-size: 0.85rem;
 }
 
+.drawing-role-badge {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid #d8e0ef;
+  border-radius: 999px;
+  background: #f3f6fc;
+  color: #435878;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.collaboration-presence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.collaboration-status,
+.participant-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 1.55rem;
+  padding: 0.22rem 0.5rem;
+  border: 1px solid #cce7d7;
+  border-radius: 999px;
+  background: #f0faf4;
+  color: #286044;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.collaboration-status::before {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: #3c9b64;
+  content: '';
+}
+
+.collaboration-status--offline {
+  border-color: #efdfb9;
+  background: #fff9e9;
+  color: #80621f;
+}
+
+.collaboration-status--offline::before {
+  background: #d3a33c;
+}
+
+.participant-chip {
+  border-color: #e0e5ef;
+  background: #fff;
+  color: #45536b;
+  font-weight: 650;
+}
+
+.participant-chip__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+}
+
 .drawing-heading-actions {
   justify-content: flex-end;
   flex-wrap: wrap;

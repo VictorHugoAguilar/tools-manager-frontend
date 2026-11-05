@@ -23,6 +23,28 @@
 
   @if (error()) { <p class="drawing-alert" role="alert">{{ error() }}</p> }
 
+  @if (pendingInvitations().length) {
+    <section class="drawing-invitations">
+      <header>
+        <div><p class="eyebrow">Acceso recibido</p><h3>Invitaciones pendientes</h3></div>
+      </header>
+      @for (invitation of pendingInvitations(); track invitation.id) {
+        <article class="drawing-invitation">
+          <div>
+            <strong>{{ invitation.documentName }}</strong>
+            <span>{{ invitation.role === 'Editor' ? 'Te invitan como editor' : 'Te invitan con acceso de lectura' }}</span>
+          </div>
+          <div class="drawing-invitation__actions">
+            <button type="button" class="drawing-button drawing-button--primary"
+              (click)="acceptInvitation(invitation)">Aceptar</button>
+            <button type="button" class="drawing-button drawing-button--secondary"
+              (click)="declineInvitation(invitation)">Rechazar</button>
+          </div>
+        </article>
+      }
+    </section>
+  }
+
   @if (loading()) {
     <div class="drawing-empty"><strong>Cargando pizarras…</strong></div>
   } @else if (visibleDocuments().length) {
@@ -72,8 +94,10 @@
   } @else {
     <div class="drawing-empty">
       <span class="empty-icon" aria-hidden="true">✎</span>
-      <strong>{{ search() ? 'No hay resultados' : 'Todavía no tienes pizarras' }}</strong>
-      <span>{{ search() ? 'Prueba con otro término.' : 'Crea una pizarra para empezar a dibujar tus ideas.' }}</span>
+      <strong>{{ search() ? 'No hay resultados' : sharedDocuments().length ? 'No hay pizarras propias' : 'Todavía no tienes pizarras' }}</strong>
+      <span>{{ search() ? 'Prueba con otro término.' : sharedDocuments().length
+        ? 'Las pizarras que otras personas comparten contigo aparecen debajo.'
+        : 'Crea una pizarra para empezar a dibujar tus ideas.' }}</span>
       @if (!search()) {
         <button type="button" class="drawing-button drawing-button--primary" (click)="openCreateDialog()">
           Crear primera pizarra
@@ -82,16 +106,48 @@
     </div>
   }
 
+  @if (visibleSharedDocuments().length) {
+    <section class="drawing-shared-section">
+      <header>
+        <div><p class="eyebrow">Colaboración</p><h3>Compartidas conmigo</h3></div>
+        <span>{{ visibleSharedDocuments().length }} pizarras</span>
+      </header>
+      <div class="drawing-cards">
+        @for (document of visibleSharedDocuments(); track document.id) {
+          <article class="drawing-card">
+            <button type="button" class="drawing-card__preview" (click)="open(document)"
+              [attr.aria-label]="'Abrir ' + document.name">
+              <span class="preview-grid"></span>
+              <span class="preview-placeholder" aria-hidden="true">✎</span>
+              <span class="preview-caption">Pizarra compartida</span>
+              <span class="preview-open">Abrir pizarra →</span>
+            </button>
+            <div class="drawing-card__content">
+              <div class="drawing-card__title">
+                <div><h3>{{ document.name }}</h3><p>{{ document.description || 'Sin descripción' }}</p></div>
+                <span class="archive-tag">{{ document.accessRole === 'Editor' ? 'Editor' : 'Solo lectura' }}</span>
+              </div>
+              <div class="drawing-card__meta">
+                <span>{{ document.pageCount }} {{ document.pageCount === 1 ? 'página' : 'páginas' }}</span>
+                <time [attr.datetime]="document.updatedAt">Actualizada {{ document.updatedAt | date:'d MMM y' }}</time>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+  }
+
   @if (dialogOpen()) {
-    <div class="drawing-dialog-backdrop" (click)="closeDialog()">
+    <div class="drawing-dialog-backdrop">
       <section class="drawing-dialog" role="dialog" aria-modal="true"
-        [attr.aria-labelledby]="'drawing-document-dialog-title'" (click)="$event.stopPropagation()">
+        [attr.aria-labelledby]="'drawing-document-dialog-title'">
         <h2 id="drawing-document-dialog-title">
           {{ editingDocumentId() ? 'Renombrar pizarra' : 'Nueva pizarra' }}
         </h2>
         <label>Nombre
           <input type="text" maxlength="120" [ngModel]="draftName()"
-            (ngModelChange)="draftName.set($event)" autofocus />
+            (ngModelChange)="draftName.set($event)" />
         </label>
         <label>Descripción
           <textarea rows="3" maxlength="2000" [ngModel]="draftDescription()"

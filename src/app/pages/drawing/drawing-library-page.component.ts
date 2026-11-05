@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { DrawingDocument } from '../../models/drawing.model';
+import { DrawingDocument, DrawingInvitation } from '../../models/drawing.model';
 import { ConfirmService } from '../../services/confirm.service';
 import { DrawingApiService } from '../../services/drawing-api.service';
 
@@ -22,6 +22,8 @@ export class DrawingLibraryPageComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
 
   protected readonly documents = signal<DrawingDocument[]>([]);
+  protected readonly sharedDocuments = signal<DrawingDocument[]>([]);
+  protected readonly receivedInvitations = signal<DrawingInvitation[]>([]);
   protected readonly loading = signal(true);
   protected readonly loadingMore = signal(false);
   protected readonly saving = signal(false);
@@ -41,6 +43,15 @@ export class DrawingLibraryPageComponent implements OnInit, OnDestroy {
       !query || `${document.name} ${document.description}`.toLocaleLowerCase().includes(query)
     );
   });
+  protected readonly visibleSharedDocuments = computed(() => {
+    const query = this.search().trim().toLocaleLowerCase();
+    return this.sharedDocuments().filter((document) =>
+      !query || `${document.name} ${document.description}`.toLocaleLowerCase().includes(query)
+    );
+  });
+  protected readonly pendingInvitations = computed(() =>
+    this.receivedInvitations().filter((invitation) => invitation.status === 'Pending')
+  );
 
   ngOnInit(): void {
     void this.loadDocuments();
@@ -65,16 +76,29 @@ export class DrawingLibraryPageComponent implements OnInit, OnDestroy {
     this.error.set('');
     this.loading.set(true);
     try {
-      const result = await firstValueFrom(this.api.listDocuments({
-        includeArchived: this.showArchived(),
-        search: this.search()
-      }));
+      const [result, shared, invitations] = await Promise.all([
+        firstValueFrom(this.api.listDocuments({
+          includeArchived: this.showArchived(),
+          search: this.search()
+        })),
+        firstValueFrom(this.api.listDocuments({
+          includeArchived: this.showArchived(),
+          search: this.search(),
+          limit: 100,
+          scope: 'shared'
+        })),
+        firstValueFrom(this.api.listReceivedInvitations())
+      ]);
       if (requestId !== this.loadRequestId) return;
       this.documents.set(result.documents);
+      this.sharedDocuments.set(shared.documents);
+      this.receivedInvitations.set(invitations.invitations);
       this.nextCursor.set(result.nextCursor);
     } catch (error: unknown) {
       if (requestId === this.loadRequestId) {
         this.documents.set([]);
+        this.sharedDocuments.set([]);
+        this.receivedInvitations.set([]);
         this.nextCursor.set(null);
         this.error.set(this.errorMessage(error));
       }
@@ -191,6 +215,28 @@ export class DrawingLibraryPageComponent implements OnInit, OnDestroy {
 
   protected open(document: DrawingDocument): void {
     void this.router.navigate(['/dibujar', document.id]);
+  }
+
+  protected async acceptInvitation(invitation: DrawingInvitation): Promise<void> {
+    this.error.set('');
+    try {
+      await firstValueFrom(this.api.acceptInvitation(invitation.id));
+      await this.loadDocuments();
+    } catch (error: unknown) {
+      this.error.set(this.errorMessage(error));
+    }
+  }
+
+  protected async declineInvitation(invitation: DrawingInvitation): Promise<void> {
+    this.error.set('');
+    try {
+      await firstValueFrom(this.api.declineInvitation(invitation.id));
+      this.receivedInvitations.update((items) =>
+        items.map((item) => item.id === invitation.id ? { ...item, status: 'Declined' } : item)
+      );
+    } catch (error: unknown) {
+      this.error.set(this.errorMessage(error));
+    }
   }
 
   private async performDocumentAction(

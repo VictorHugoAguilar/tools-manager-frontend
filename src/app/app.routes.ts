@@ -113,6 +113,17 @@ export const appRoutes: Routes = [
         }
       },
       {
+        path: 'dibujar/shared/:token',
+        loadComponent: () => import('./pages/drawing/drawing-share-link-page.component')
+          .then((module) => module.DrawingShareLinkPageComponent),
+        data: {
+          eyebrow: 'Herramientas',
+          title: 'Pizarra compartida',
+          description: 'Abriendo una pizarra compartida.',
+          showCreateAction: false
+        }
+      },
+      {
         path: 'dibujar/:documentId',
         loadComponent: () => import('./pages/drawing/drawing-editor-page.component')
           .then((module) => module.DrawingEditorPageComponent),

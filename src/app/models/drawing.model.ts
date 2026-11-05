@@ -63,6 +63,7 @@ export interface DrawingDocument {
   name: string;
   description: string;
   ownerUserId: string;
+  accessRole?: DrawingRole;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -72,6 +73,61 @@ export interface DrawingDocument {
   firstPageId: string | null;
   pages?: DrawingPage[];
 }
+
+export type DrawingRole = 'Owner' | 'Editor' | 'Viewer';
+
+export interface DrawingUserSearchResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  profileImage: string;
+  email: string;
+}
+
+export interface DrawingPermission {
+  id: string | null;
+  userId: string;
+  role: DrawingRole;
+  firstName: string;
+  lastName: string;
+  profileImage: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DrawingInvitation {
+  id: string;
+  documentId: string;
+  documentName: string;
+  invitedUserId: string;
+  role: Exclude<DrawingRole, 'Owner'>;
+  status: 'Pending' | 'Accepted' | 'Declined' | 'Cancelled' | 'Expired' | 'Revoked';
+  invitedByUserId: string;
+  invitedByName?: string;
+  createdAt: string;
+  expiresAt: number;
+  recipient?: Pick<DrawingUserSearchResult, 'id' | 'firstName' | 'lastName' | 'profileImage'>;
+}
+
+export interface DrawingShareLink {
+  id: string;
+  documentId: string;
+  permission: 'Viewer';
+  isActive: boolean;
+  createdAt?: string;
+  expiresAt: number | null;
+}
+
+export interface DrawingPresenceUser {
+  id: string;
+  name: string;
+  profileImage: string;
+  color: string;
+  cursor: { x: number; y: number } | null;
+  selectedIds: string[];
+}
+
+export type DrawingConnectionState = 'connecting' | 'connected' | 'offline' | 'revoked';
 
 export interface DrawingSnapshotResponse {
   pageId: string;
