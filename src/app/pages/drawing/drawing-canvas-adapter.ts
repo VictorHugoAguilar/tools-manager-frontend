@@ -1,18 +1,80 @@
 import Konva from 'konva';
-import { DrawingObject, DrawingShapeType, DrawingSnapshot, DrawingTool } from '../../models/drawing.model';
+import * as Y from 'yjs';
+import {
+  DrawingObject,
+  DrawingPresenceUser,
+  DrawingShapeType,
+  DrawingSnapshot,
+  DrawingTool
+} from '../../models/drawing.model';
 
 type SnapshotListener = (snapshot: DrawingSnapshot) => void;
 type SelectionListener = (object: DrawingObject | null) => void;
-type CameraState = { x: number; y: number; zoom: number };
+interface CameraState {
+  x: number;
+  y: number;
+  zoom: number;
+}
 type CameraListener = (camera: CameraState) => void;
+type CursorListener = (cursor: { x: number; y: number } | null) => void;
 
 const DEFAULT_STROKE = '#23345a';
 const DEFAULT_FILL = '#f6d768';
 
+function objectFromSharedFields(id: string, fields: Y.Map<unknown>): DrawingObject | null {
+  const typeValue = fields.get('type');
+  let type: DrawingShapeType;
+  switch (typeValue) {
+    case 'rect':
+    case 'ellipse':
+    case 'diamond':
+    case 'line':
+    case 'arrow':
+    case 'text':
+    case 'freehand':
+      type = typeValue;
+      break;
+    default:
+      return null;
+  }
+  const x = fields.get('x');
+  const y = fields.get('y');
+  if (typeof x !== 'number' || !Number.isFinite(x) ||
+      typeof y !== 'number' || !Number.isFinite(y)) return null;
+  const object: DrawingObject = { id, type, x, y };
+  const width = fields.get('width');
+  const height = fields.get('height');
+  const strokeWidth = fields.get('strokeWidth');
+  const fontSize = fields.get('fontSize');
+  const rotation = fields.get('rotation');
+  const opacity = fields.get('opacity');
+  if (typeof width === 'number') object.width = width;
+  if (typeof height === 'number') object.height = height;
+  if (typeof strokeWidth === 'number') object.strokeWidth = strokeWidth;
+  if (typeof fontSize === 'number') object.fontSize = fontSize;
+  if (typeof rotation === 'number') object.rotation = rotation;
+  if (typeof opacity === 'number') object.opacity = opacity;
+  const fill = fields.get('fill');
+  const stroke = fields.get('stroke');
+  const text = fields.get('text');
+  const points = fields.get('points');
+  if (typeof fill === 'string') object.fill = fill;
+  if (typeof stroke === 'string') object.stroke = stroke;
+  if (typeof text === 'string') object.text = text;
+  if (Array.isArray(points) && points.every((point) => typeof point === 'number')) {
+    object.points = points;
+  }
+  return object;
+}
+
 export class DrawingCanvasAdapter {
   private stage: Konva.Stage | null = null;
   private layer: Konva.Layer | null = null;
+  private presenceLayer: Konva.Layer | null = null;
   private transformer: Konva.Transformer | null = null;
+  private sharedDocument: Y.Doc | null = null;
+  private sharedObjects: Y.Map<Y.Map<unknown>> | null = null;
+  private undoManager: Y.UndoManager | null = null;
   private tool: DrawingTool = 'select';
   private activeStroke: Konva.Line | null = null;
   private history: DrawingSnapshot[] = [];
@@ -22,7 +84,22 @@ export class DrawingCanvasAdapter {
   private snapshotListener: SnapshotListener | null = null;
   private selectionListener: SelectionListener | null = null;
   private cameraListener: CameraListener | null = null;
+  private cursorListener: CursorListener | null = null;
   private snapToGrid = false;
+  private readOnly = false;
+  private applyingLocalChanges = false;
+  private lastCursorUpdate = 0;
+  private remotePresence: DrawingPresenceUser[] = [];
+
+  private readonly handleSharedObjectsChanged = (): void => {
+    if (this.applyingLocalChanges || !this.sharedObjects) return;
+    this.load({
+      objects: [...this.sharedObjects.entries()].flatMap(([id, fields]) => {
+        const object = objectFromSharedFields(id, fields);
+        return object ? [object] : [];
+      })
+    });
+  };
 
   initialize(
     container: HTMLDivElement,
@@ -30,12 +107,14 @@ export class DrawingCanvasAdapter {
     onSnapshot: SnapshotListener,
     onSelection: SelectionListener,
     camera: CameraState,
-    onCamera: CameraListener
+    onCamera: CameraListener,
+    onCursor: CursorListener
   ): void {
     this.destroy();
     this.snapshotListener = onSnapshot;
     this.selectionListener = onSelection;
     this.cameraListener = onCamera;
+    this.cursorListener = onCursor;
     this.stage = new Konva.Stage({
       container,
       width: Math.max(container.clientWidth, 1),
@@ -47,6 +126,8 @@ export class DrawingCanvasAdapter {
     });
     this.layer = new Konva.Layer();
     this.stage.add(this.layer);
+    this.presenceLayer = new Konva.Layer({ listening: false });
+    this.stage.add(this.presenceLayer);
     this.load(snapshot);
     this.stage.on('click tap', this.handleStageClick);
     this.stage.on('mousedown touchstart', this.startFreehand);
@@ -54,6 +135,36 @@ export class DrawingCanvasAdapter {
     this.stage.on('mouseup touchend', this.finishFreehand);
     this.stage.on('dragend', this.emitCamera);
     this.stage.on('wheel', this.handleWheel);
+    this.stage.on('mousemove touchmove', this.updatePointer);
+    this.stage.on('mouseleave touchend', this.clearPointer);
+  }
+
+  setCollaborationDocument(document: Y.Doc | null): void {
+    if (this.sharedObjects) this.sharedObjects.unobserveDeep(this.handleSharedObjectsChanged);
+    this.undoManager?.destroy();
+    this.sharedDocument = document;
+    this.sharedObjects = document?.getMap<Y.Map<unknown>>('objects') ?? null;
+    this.undoManager = this.sharedObjects
+      ? new Y.UndoManager(this.sharedObjects, { trackedOrigins: new Set([this]) })
+      : null;
+    if (!this.sharedObjects) return;
+    if (this.sharedObjects.size === 0) {
+      if (!this.readOnly) this.writeSnapshotToSharedObjects(this.getSnapshot(), 'drawing-initial');
+    } else {
+      this.handleSharedObjectsChanged();
+    }
+    this.sharedObjects.observeDeep(this.handleSharedObjectsChanged);
+  }
+
+  setReadOnly(readOnly: boolean): void {
+    this.readOnly = readOnly;
+    if (readOnly && this.tool !== 'hand') this.tool = 'select';
+    this.applyTool();
+  }
+
+  setRemotePresence(users: DrawingPresenceUser[]): void {
+    this.remotePresence = users;
+    this.renderRemotePresence();
   }
 
   resize(width: number, height: number): void {
@@ -73,6 +184,13 @@ export class DrawingCanvasAdapter {
     this.layer.batchDraw();
     this.restoring = false;
     this.selectionListener?.(null);
+    this.renderRemotePresence();
+  }
+
+  replaceSnapshot(snapshot: DrawingSnapshot): void {
+    if (this.readOnly) return;
+    this.load(snapshot);
+    this.emitSnapshot();
   }
 
   getSnapshot(): DrawingSnapshot {
@@ -85,7 +203,7 @@ export class DrawingCanvasAdapter {
   }
 
   addShape(type: DrawingShapeType, fill = DEFAULT_FILL, text = ''): void {
-    if (!this.stage || !this.layer) return;
+    if (this.readOnly || !this.stage || !this.layer) return;
     this.recordUndo();
     const center = this.stage.getPointerPosition() ?? {
       x: this.stage.width() / 2,
@@ -116,7 +234,7 @@ export class DrawingCanvasAdapter {
   }
 
   setTool(tool: DrawingTool): void {
-    this.tool = tool;
+    this.tool = this.readOnly && tool !== 'hand' ? 'select' : tool;
     this.activeStroke = null;
     this.applyTool();
   }
@@ -214,6 +332,11 @@ export class DrawingCanvasAdapter {
   }
 
   undo(): void {
+    if (this.readOnly) return;
+    if (this.undoManager) {
+      this.undoManager.undo();
+      return;
+    }
     const previous = this.history.pop();
     if (!previous) return;
     this.redoHistory.push(this.getSnapshot());
@@ -222,6 +345,11 @@ export class DrawingCanvasAdapter {
   }
 
   redo(): void {
+    if (this.readOnly) return;
+    if (this.undoManager) {
+      this.undoManager.redo();
+      return;
+    }
     const next = this.redoHistory.pop();
     if (!next) return;
     this.history.push(this.getSnapshot());
@@ -230,7 +358,7 @@ export class DrawingCanvasAdapter {
   }
 
   updateSelected(changes: Partial<DrawingObject>): void {
-    if (!this.layer || !this.selectedId) return;
+    if (this.readOnly || !this.layer || !this.selectedId) return;
     const node = this.layer.getChildren()
       .find((child): child is Konva.Shape =>
         child instanceof Konva.Shape && child.id() === this.selectedId);
@@ -248,7 +376,7 @@ export class DrawingCanvasAdapter {
   }
 
   deleteSelected(): void {
-    if (!this.layer || !this.selectedId) return;
+    if (this.readOnly || !this.layer || !this.selectedId) return;
     const node = this.layer.getChildren()
       .find((child): child is Konva.Shape =>
         child instanceof Konva.Shape && child.id() === this.selectedId);
@@ -275,19 +403,25 @@ export class DrawingCanvasAdapter {
   }
 
   get canUndo(): boolean {
-    return this.history.length > 0;
+    return this.undoManager ? this.undoManager.undoStack.length > 0 : this.history.length > 0;
   }
 
   get canRedo(): boolean {
-    return this.redoHistory.length > 0;
+    return this.undoManager ? this.undoManager.redoStack.length > 0 : this.redoHistory.length > 0;
   }
 
   destroy(): void {
+    this.sharedObjects?.unobserveDeep(this.handleSharedObjectsChanged);
+    this.undoManager?.destroy();
     this.stage?.off();
     this.stage?.destroy();
     this.stage = null;
     this.layer = null;
+    this.presenceLayer = null;
     this.transformer = null;
+    this.sharedDocument = null;
+    this.sharedObjects = null;
+    this.undoManager = null;
     this.activeStroke = null;
     this.history = [];
     this.redoHistory = [];
@@ -295,10 +429,14 @@ export class DrawingCanvasAdapter {
     this.snapshotListener = null;
     this.selectionListener = null;
     this.cameraListener = null;
+    this.cursorListener = null;
     this.snapToGrid = false;
+    this.readOnly = false;
+    this.remotePresence = [];
   }
 
   private readonly handleStageClick = (event: Konva.KonvaEventObject<MouseEvent | TouchEvent>): void => {
+    if (this.readOnly && this.tool !== 'select') return;
     const target = event.target;
     const drawingType = target instanceof Konva.Shape
       ? target.getAttr('drawingType') as DrawingShapeType | undefined
@@ -316,7 +454,7 @@ export class DrawingCanvasAdapter {
   };
 
   private readonly startFreehand = (): void => {
-    if (this.tool !== 'freehand' || !this.stage || !this.layer) return;
+    if (this.readOnly || this.tool !== 'freehand' || !this.stage || !this.layer) return;
     const pointer = this.pointerToWorld();
     if (!pointer) return;
     this.recordUndo();
@@ -372,6 +510,17 @@ export class DrawingCanvasAdapter {
     this.emitCamera();
   };
 
+  private readonly updatePointer = (): void => {
+    const now = Date.now();
+    if (now - this.lastCursorUpdate < 50) return;
+    this.lastCursorUpdate = now;
+    this.cursorListener?.(this.pointerToWorld());
+  };
+
+  private readonly clearPointer = (): void => {
+    this.cursorListener?.(null);
+  };
+
   private readonly emitCamera = (): void => {
     if (!this.stage) return;
     this.cameraListener?.({
@@ -402,7 +551,7 @@ export class DrawingCanvasAdapter {
       strokeWidth: object.strokeWidth ?? 2,
       opacity: object.opacity ?? 1,
       rotation: object.rotation ?? 0,
-      draggable: true
+      draggable: !this.readOnly
     };
     let node: Konva.Shape;
     switch (object.type) {
@@ -531,6 +680,7 @@ export class DrawingCanvasAdapter {
   }
 
   private handleNodeChanged(node: Konva.Node): void {
+    if (this.readOnly) return;
     if (node.scaleX() !== 1 || node.scaleY() !== 1) {
       if (node instanceof Konva.Rect || node instanceof Konva.Text) {
         node.width(node.width() * node.scaleX());
@@ -581,17 +731,18 @@ export class DrawingCanvasAdapter {
     this.stage.draggable(isHand);
     this.layer.getChildren((node) => node.getAttr('drawingType') !== 'transformer')
       .forEach((node) => {
-        node.draggable(this.tool === 'select');
+        node.draggable(!this.readOnly && this.tool === 'select');
         node.listening(this.tool !== 'hand' && this.tool !== 'freehand');
       });
-    this.transformer?.visible(this.tool === 'select');
+    this.transformer?.visible(!this.readOnly && this.tool === 'select');
+    if (this.readOnly) this.transformer?.nodes([]);
     this.stage.container().style.cursor = isHand ? 'grab' :
       this.tool === 'freehand' ? 'crosshair' : this.tool === 'eraser' ? 'cell' : 'default';
     this.layer.batchDraw();
   }
 
   private recordUndo(): void {
-    if (this.restoring || !this.layer) return;
+    if (this.restoring || !this.layer || this.undoManager) return;
     this.history.push(this.getSnapshot());
     if (this.history.length > 80) this.history.shift();
     this.redoHistory = [];
@@ -599,6 +750,93 @@ export class DrawingCanvasAdapter {
 
   private emitSnapshot(): void {
     if (this.restoring) return;
-    this.snapshotListener?.(this.getSnapshot());
+    const snapshot = this.getSnapshot();
+    this.snapshotListener?.(snapshot);
+    if (this.sharedObjects) this.writeSnapshotToSharedObjects(snapshot);
+  }
+
+  private writeSnapshotToSharedObjects(snapshot: DrawingSnapshot, origin: unknown = this): void {
+    if (!this.sharedDocument || !this.sharedObjects) return;
+    this.applyingLocalChanges = true;
+    try {
+      this.sharedDocument.transact(() => {
+        const remainingIds = new Set(snapshot.objects.map((object) => object.id));
+        for (const [id, sharedObject] of this.sharedObjects!.entries()) {
+          if (!remainingIds.has(id)) this.sharedObjects!.delete(id);
+          else {
+            const object = snapshot.objects.find((item) => item.id === id);
+            if (!object) continue;
+            const values = Object.fromEntries(
+              Object.entries(object).filter(([key]) => key !== 'id')
+            );
+            for (const key of [...sharedObject.keys()]) {
+              if (!Object.hasOwn(values, key)) sharedObject.delete(key);
+            }
+            for (const [key, value] of Object.entries(values)) {
+              if (!Object.hasOwn(sharedObject.toJSON(), key) ||
+                JSON.stringify(sharedObject.get(key)) !== JSON.stringify(value)) {
+                sharedObject.set(key, value);
+              }
+            }
+          }
+        }
+        for (const object of snapshot.objects) {
+          if (this.sharedObjects!.has(object.id)) continue;
+          const sharedObject = new Y.Map<unknown>();
+          for (const [key, value] of Object.entries(object)) {
+            if (key !== 'id') sharedObject.set(key, value);
+          }
+          this.sharedObjects!.set(object.id, sharedObject);
+        }
+      }, origin);
+    } finally {
+      this.applyingLocalChanges = false;
+    }
+  }
+
+  private renderRemotePresence(): void {
+    if (!this.presenceLayer) return;
+    this.presenceLayer.destroyChildren();
+    for (const user of this.remotePresence) {
+      for (const id of user.selectedIds) {
+        const node = this.layer?.findOne(`#${id}`);
+        if (!node || !this.stage) continue;
+        const bounds = node.getClientRect({ relativeTo: this.stage });
+        this.presenceLayer.add(new Konva.Rect({
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height,
+          stroke: user.color,
+          strokeWidth: 2,
+          dash: [6, 4],
+          listening: false
+        }));
+      }
+      if (!user.cursor) continue;
+      this.presenceLayer.add(new Konva.Circle({
+        x: user.cursor.x,
+        y: user.cursor.y,
+        radius: 5,
+        fill: user.color,
+        stroke: '#ffffff',
+        strokeWidth: 1.5,
+        listening: false
+      }));
+      const label = new Konva.Label({
+        x: user.cursor.x + 10,
+        y: user.cursor.y + 8,
+        listening: false
+      });
+      label.add(new Konva.Tag({ fill: user.color, cornerRadius: 4 }));
+      label.add(new Konva.Text({
+        text: user.name,
+        fontSize: 12,
+        fill: '#ffffff',
+        padding: 4
+      }));
+      this.presenceLayer.add(label);
+    }
+    this.presenceLayer.batchDraw();
   }
 }

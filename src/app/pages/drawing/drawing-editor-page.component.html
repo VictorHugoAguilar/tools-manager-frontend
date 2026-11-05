@@ -13,18 +13,41 @@
         <p class="eyebrow">Herramientas</p>
         <div class="drawing-title-line">
           <h2>{{ document()?.name }}</h2>
-          <button type="button" class="plain-icon-button" aria-label="Cambiar nombre de la pizarra"
-            title="Cambiar nombre" (click)="renameDocument()">✎</button>
+          @if (isOwner()) {
+            <button type="button" class="plain-icon-button" aria-label="Cambiar nombre de la pizarra"
+              title="Cambiar nombre" (click)="renameDocument()">✎</button>
+          } @else {
+            <span class="drawing-role-badge">{{ readOnly() ? 'Solo lectura' : 'Editor' }}</span>
+          }
         </div>
         <p class="drawing-heading-description">Crea diagramas, esquemas y visualiza tus ideas de forma rápida y sencilla.</p>
+        <div class="collaboration-presence" aria-live="polite">
+          <span class="collaboration-status"
+            [class.collaboration-status--offline]="connectionState() !== 'connected'">
+            {{ connectionState() === 'connected' ? 'En tiempo real' :
+              connectionState() === 'revoked' ? 'Acceso revocado' : 'Reconectando…' }}
+          </span>
+          @for (participant of participants(); track participant.id) {
+            <span class="participant-chip" [title]="participant.name">
+              <span class="participant-chip__dot" [style.background]="participant.color"></span>
+              {{ participant.name }}
+            </span>
+          }
+        </div>
       </div>
       <div class="drawing-heading-actions">
         <span class="save-state" [class.save-state--error]="saveState() === 'Error al guardar' || saveState() === 'Sin conexión'">
           <span class="save-state__dot"></span>{{ saveState() }}
         </span>
+        @if (isOwner()) {
+          <button type="button" class="editor-button editor-button--secondary" (click)="openShareDialog()">
+            Compartir
+          </button>
+        }
         <button type="button" class="editor-button editor-button--secondary" (click)="openHistory()">Historial</button>
         <button type="button" class="editor-button editor-button--secondary" (click)="exportJson()">Exportar JSON</button>
-        <button type="button" class="editor-button editor-button--primary" [disabled]="saveState() === 'Guardando…'"
+        <button type="button" class="editor-button editor-button--primary"
+          [disabled]="!canEdit() || saveState() === 'Guardando…'"
           (click)="saveNow()">Guardar</button>
         <button type="button" class="editor-button editor-button--primary" (click)="exitCanvas()">
           Salir del lienzo
@@ -51,40 +74,46 @@
             <button type="button" [class.is-active]="activeTool() === 'hand'" (click)="chooseTool('hand')">
               <span aria-hidden="true">✋</span> Mano / desplazar
             </button>
-            <button type="button" [class.is-active]="activeTool() === 'freehand'" (click)="chooseTool('freehand')">
+            <button type="button" [disabled]="!canEdit()" [class.is-active]="activeTool() === 'freehand'"
+              (click)="chooseTool('freehand')">
               <span aria-hidden="true">／</span> Dibujo libre
             </button>
-            <button type="button" [class.is-active]="activeTool() === 'eraser'" (click)="chooseTool('eraser')">
+            <button type="button" [disabled]="!canEdit()" [class.is-active]="activeTool() === 'eraser'"
+              (click)="chooseTool('eraser')">
               <span aria-hidden="true">⌫</span> Borrador
             </button>
           </div>
 
-          <div class="panel-divider"></div>
-          <h3 class="panel-section-title">Formas</h3>
-          <div class="shape-list">
-            <button type="button" (click)="addShape('rect')"><span class="shape-symbol shape-symbol--rect"></span>Rectángulo</button>
-            <button type="button" (click)="addShape('ellipse')"><span class="shape-symbol shape-symbol--ellipse"></span>Elipse</button>
-            <button type="button" (click)="addShape('diamond')"><span class="shape-symbol shape-symbol--diamond"></span>Rombo</button>
-            <button type="button" (click)="addShape('line')"><span class="shape-symbol shape-symbol--line"></span>Línea</button>
-            <button type="button" (click)="addShape('arrow')"><span class="shape-symbol shape-symbol--arrow"></span>Flecha</button>
-            <button type="button" (click)="addShape('text')"><span class="shape-symbol shape-symbol--text">T</span>Texto</button>
-          </div>
-          @if (activeTool() === 'select' && !selectedObject()) {
-            <label class="text-draft">Texto para insertar
-              <input type="text" [ngModel]="textDraft()" (ngModelChange)="textDraft.set($event)"
-                placeholder="Escribe aquí..." />
-            </label>
-          }
-          <div class="panel-divider"></div>
-          <h3 class="panel-section-title">Colores rápidos</h3>
-          <div class="color-palette" role="group" aria-label="Color de relleno para nuevas formas">
-            @for (color of availableColors; track color) {
-              <button type="button" class="color-swatch" [style.background]="color"
-                [attr.aria-label]="'Usar color ' + color" [attr.aria-pressed]="selectedColor() === color"
-                (click)="setActiveFill(color)"
-                [class.is-selected]="selectedColor() === color"></button>
+          @if (canEdit()) {
+            <div class="panel-divider"></div>
+            <h3 class="panel-section-title">Formas</h3>
+            <div class="shape-list">
+              <button type="button" (click)="addShape('rect')"><span class="shape-symbol shape-symbol--rect"></span>Rectángulo</button>
+              <button type="button" (click)="addShape('ellipse')"><span class="shape-symbol shape-symbol--ellipse"></span>Elipse</button>
+              <button type="button" (click)="addShape('diamond')"><span class="shape-symbol shape-symbol--diamond"></span>Rombo</button>
+              <button type="button" (click)="addShape('line')"><span class="shape-symbol shape-symbol--line"></span>Línea</button>
+              <button type="button" (click)="addShape('arrow')"><span class="shape-symbol shape-symbol--arrow"></span>Flecha</button>
+              <button type="button" (click)="addShape('text')"><span class="shape-symbol shape-symbol--text">T</span>Texto</button>
+            </div>
+            @if (activeTool() === 'select' && !selectedObject()) {
+              <label class="text-draft">Texto para insertar
+                <input type="text" [ngModel]="textDraft()" (ngModelChange)="textDraft.set($event)"
+                  placeholder="Escribe aquí..." />
+              </label>
             }
-          </div>
+            <div class="panel-divider"></div>
+            <h3 class="panel-section-title">Colores rápidos</h3>
+            <div class="color-palette" role="group" aria-label="Color de relleno para nuevas formas">
+              @for (color of availableColors; track color) {
+                <button type="button" class="color-swatch" [style.background]="color"
+                  [attr.aria-label]="'Usar color ' + color" [attr.aria-pressed]="selectedColor() === color"
+                  (click)="setActiveFill(color)"
+                  [class.is-selected]="selectedColor() === color"></button>
+              }
+            </div>
+          } @else {
+            <p class="panel-hint">Tienes acceso de solo lectura a esta pizarra.</p>
+          }
           <p class="panel-hint">Selecciona una forma y arrástrala en el lienzo para moverla.</p>
         </aside>
       } @else {
@@ -130,8 +159,11 @@
           <app-drawing-canvas [snapshot]="snapshot()" [pageId]="activePageId()"
             [background]="preferences().background" [gridEnabled]="preferences().gridEnabled"
             [snapToGrid]="preferences().snapToGrid" [cameraState]="preferences().cameraState"
+            [readOnly]="!canEdit()" [collaborationDocument]="collaborationDocument()"
+            [presenceUsers]="participants()"
             (snapshotChanged)="onSnapshotChanged($event)" (selectionChanged)="onSelectionChanged($event)"
-            (cameraChanged)="onCameraChanged($event)" (canvasError)="onCanvasError($event)" />
+            (cameraChanged)="onCameraChanged($event)" (cursorChanged)="onCursorChanged($event)"
+            (canvasError)="onCanvasError($event)" />
         </div>
 
         <footer class="page-tabs" aria-label="Páginas de la pizarra">
@@ -141,7 +173,7 @@
                 [disabled]="loadingPage()" (click)="selectPage(page)" (contextmenu)="$event.preventDefault(); renamePage(page)">
                 {{ page.name }}
               </button>
-              @if (page.id === activePageId()) {
+              @if (page.id === activePageId() && isOwner()) {
                 <div class="page-tab-actions">
                   <button type="button" aria-label="Renombrar página" title="Renombrar página"
                     (click)="renamePage(page)">✎</button>
@@ -152,8 +184,10 @@
                 </div>
               }
             }
-            <button type="button" class="page-add" aria-label="Añadir página" title="Añadir página"
-              (click)="createPage()">＋</button>
+            @if (isOwner()) {
+              <button type="button" class="page-add" aria-label="Añadir página" title="Añadir página"
+                (click)="createPage()">＋</button>
+            }
           </div>
           <span class="page-count">{{ pages().length }} {{ pages().length === 1 ? 'página' : 'páginas' }}</span>
         </footer>
@@ -171,10 +205,11 @@
               <p class="selected-kind">{{ selected.type === 'text' ? 'Texto' : selected.type === 'freehand' ? 'Trazo' : 'Forma seleccionada' }}</p>
               @if (selected.type === 'text') {
                 <label>Texto
-                  <textarea rows="3" [ngModel]="textDraft()" (ngModelChange)="updateSelectedText($event)"></textarea>
+                  <textarea rows="3" [disabled]="!canEdit()" [ngModel]="textDraft()"
+                    (ngModelChange)="updateSelectedText($event)"></textarea>
                 </label>
                 <label>Tamaño de texto
-                  <input type="number" min="8" max="96" [ngModel]="selected.fontSize ?? 24"
+                  <input type="number" min="8" max="96" [disabled]="!canEdit()" [ngModel]="selected.fontSize ?? 24"
                     (ngModelChange)="setFontSize($event)" />
                 </label>
               }
@@ -183,9 +218,10 @@
                 <div class="color-palette">
                   @for (color of availableColors; track color) {
                     <button type="button" class="color-swatch" [style.background]="color"
-                      [attr.aria-label]="'Relleno ' + color" (click)="setSelectedFill(color)"></button>
+                      [attr.aria-label]="'Relleno ' + color" [disabled]="!canEdit()"
+                      (click)="setSelectedFill(color)"></button>
                   }
-                  <button type="button" class="no-fill" aria-label="Sin relleno"
+                  <button type="button" class="no-fill" aria-label="Sin relleno" [disabled]="!canEdit()"
                     (click)="setSelectedFill('transparent')">∕</button>
                 </div>
               </div>
@@ -194,32 +230,37 @@
                 <div class="color-palette">
                   @for (color of availableColors; track color) {
                     <button type="button" class="color-swatch" [style.background]="color"
-                      [attr.aria-label]="'Línea ' + color" (click)="setSelectedStroke(color)"></button>
+                      [attr.aria-label]="'Línea ' + color" [disabled]="!canEdit()"
+                      (click)="setSelectedStroke(color)"></button>
                   }
                 </div>
               </div>
               <label>Grosor de línea
-                <input type="range" min="1" max="12" [value]="selected.strokeWidth ?? 2"
+                <input type="range" min="1" max="12" [disabled]="!canEdit()" [value]="selected.strokeWidth ?? 2"
                   (input)="setStrokeWidthFromEvent($event)" />
               </label>
               <label>Opacidad
-                <input type="range" min="0.1" max="1" step="0.1" [value]="selected.opacity ?? 1"
+                <input type="range" min="0.1" max="1" step="0.1" [disabled]="!canEdit()"
+                  [value]="selected.opacity ?? 1"
                   (input)="setOpacityFromEvent($event)" />
               </label>
-              <button type="button" class="delete-object" (click)="canvas?.deleteSelected()">Eliminar elemento</button>
+              <button type="button" class="delete-object" [disabled]="!canEdit()"
+                (click)="canvas?.deleteSelected()">Eliminar elemento</button>
             </div>
           } @else {
             <div class="property-content">
               <label class="switch-row">
                 <span>Mostrar cuadrícula</span>
-                <input type="checkbox" [checked]="preferences().gridEnabled" (change)="toggleGrid()" />
+                <input type="checkbox" [checked]="preferences().gridEnabled" [disabled]="!canEdit()"
+                  (change)="toggleGrid()" />
               </label>
               <label class="switch-row">
                 <span>Ajustar a cuadrícula</span>
-                <input type="checkbox" [checked]="preferences().snapToGrid" (change)="toggleSnapToGrid()" />
+                <input type="checkbox" [checked]="preferences().snapToGrid" [disabled]="!canEdit()"
+                  (change)="toggleSnapToGrid()" />
               </label>
               <label>Fondo
-                <select [ngModel]="preferences().background"
+                <select [disabled]="!canEdit()" [ngModel]="preferences().background"
                   (ngModelChange)="changeBackground($event)">
                   <option value="dots">Puntos</option>
                   <option value="lines">Cuadrícula</option>
@@ -232,10 +273,12 @@
                 <span>Nombre</span><strong>{{ document()?.name }}</strong>
                 <span>Último guardado</span><strong>{{ saveState() }}</strong>
               </div>
-              <label class="import-control">
-                <span>Importar JSON</span>
-                <input type="file" accept=".json,application/json" (change)="importJson($event)" />
-              </label>
+              @if (canEdit()) {
+                <label class="import-control">
+                  <span>Importar JSON</span>
+                  <input type="file" accept=".json,application/json" (change)="importJson($event)" />
+                </label>
+              }
             </div>
           }
           <div class="properties-footer">
@@ -251,9 +294,9 @@
     </section>
 
     @if (historyOpen()) {
-      <div class="drawing-modal-backdrop" (click)="historyOpen.set(false)">
+      <div class="drawing-modal-backdrop">
         <section class="drawing-history-dialog" role="dialog" aria-modal="true"
-          aria-labelledby="drawing-history-title" (click)="$event.stopPropagation()">
+          aria-labelledby="drawing-history-title">
           <header>
             <div><p class="eyebrow">Recuperación</p><h2 id="drawing-history-title">Historial de versiones</h2></div>
             <button type="button" class="plain-icon-button" aria-label="Cerrar historial"
@@ -264,8 +307,10 @@
               @for (version of versions(); track version.version) {
                 <li>
                   <div><strong>Versión {{ version.version }}</strong><time>{{ version.createdAt | date:'d MMM y, HH:mm' }}</time></div>
-                  <button type="button" class="editor-button editor-button--secondary"
-                    (click)="restoreVersion(version.version)">Restaurar</button>
+                  @if (canEdit()) {
+                    <button type="button" class="editor-button editor-button--secondary"
+                      (click)="restoreVersion(version.version)">Restaurar</button>
+                  }
                 </li>
               }
             </ol>
@@ -276,4 +321,8 @@
       </div>
     }
   </section>
+}
+
+@if (shareDialogOpen() && document()) {
+  <app-drawing-share-dialog [document]="document()!" (closed)="shareDialogOpen.set(false)" />
 }
