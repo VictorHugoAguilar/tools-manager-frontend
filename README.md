@@ -517,3 +517,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se añade la nueva pagina drawing-canvas con todos los componentes necesarios
 
 <!-- CHANGELOG-PR-104-END -->
+
+<!-- CHANGELOG-PR-106-START -->
+### [7.8.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/106) (2026-11-05)
+
+- Added: se añade boton para salir del lienzo y volver a la lista de lienzos del usuario
+
+<!-- CHANGELOG-PR-106-END -->
