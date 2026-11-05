@@ -26,6 +26,9 @@
         <button type="button" class="editor-button editor-button--secondary" (click)="exportJson()">Exportar JSON</button>
         <button type="button" class="editor-button editor-button--primary" [disabled]="saveState() === 'Guardando…'"
           (click)="saveNow()">Guardar</button>
+        <button type="button" class="editor-button editor-button--primary" (click)="exitCanvas()">
+          Salir del lienzo
+        </button>
       </div>
     </header>
 

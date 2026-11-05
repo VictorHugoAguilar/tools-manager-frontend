@@ -324,6 +324,10 @@ export class DrawingEditorPageComponent implements OnInit, OnDestroy {
     await this.persistSnapshot();
   }
 
+  protected async exitCanvas(): Promise<void> {
+    await this.router.navigate(['/dibujar']);
+  }
+
   protected undo(): void {
     this.canvas?.undo();
   }

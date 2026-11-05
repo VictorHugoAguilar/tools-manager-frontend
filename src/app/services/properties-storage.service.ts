@@ -128,7 +128,7 @@ export class PropertiesStorageService {
 
         const className = this.constructor.name;
 
-        isDevMode() && console[type](`${timestamp} - [${className}] ${message}`);
+        // isDevMode() && console[type](`${timestamp} - [${className}] ${message}`);
     }
 
 }
