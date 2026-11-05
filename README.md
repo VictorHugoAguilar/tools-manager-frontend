@@ -537,3 +537,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se añade la configuracion para la conexion con el ws en local y en el servidor
 
 <!-- CHANGELOG-PR-108-END -->
+
+<!-- CHANGELOG-PR-110-START -->
+### [7.9.1](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/110) (2026-11-05)
+
+- Fixed: se modifica la url del websocket
+
+<!-- CHANGELOG-PR-110-END -->
