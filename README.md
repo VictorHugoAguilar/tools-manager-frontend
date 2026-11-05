@@ -524,3 +524,16 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se añade boton para salir del lienzo y volver a la lista de lienzos del usuario
 
 <!-- CHANGELOG-PR-106-END -->
+
+<!-- CHANGELOG-PR-108-START -->
+### [7.9.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/108) (2026-11-05)
+
+- Added: se añaden los servicios necesarios para compartir en tiempo real los dibujos
+- Added: se añade los package hocuspocus, y-indexeddb y yjs
+- Added: se añaden lo nuevos modelos de datos
+- Added: se añade nueva ruta para la nueva funcionalidad de compartir vista en tiempo real
+- Changed: se arregla en la pagina añadiendo lo necesario para compartir los lienzos, dar permisos y compartir en tiempo real
+- Added: se añaden los nuevos componentes para compartir los lienzos con los otros usuarios
+- Added: se añade la configuracion para la conexion con el ws en local y en el servidor
+
+<!-- CHANGELOG-PR-108-END -->
