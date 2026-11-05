@@ -544,3 +544,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Fixed: se modifica la url del websocket
 
 <!-- CHANGELOG-PR-110-END -->
+
+<!-- CHANGELOG-PR-111-START -->
+### [7.9.2](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/111) (2026-11-05)
+
+- Change drawingCollaborationUrl to use wss protocol
+
+<!-- CHANGELOG-PR-111-END -->
