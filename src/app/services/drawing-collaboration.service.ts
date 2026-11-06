@@ -202,6 +202,13 @@ export class DrawingCollaborationService {
         });
       },
       persist: async () => {
+        // si aun no se ha sincronizado forzar la sincronización antes de persistir
+        console.log('Forzando la sincronización de actualizaciones pendientes antes de persistir');
+        provider.flushPendingUpdates();
+        console.log('Actualizaciones pendientes procesadas');
+        
+        
+        
         if (!provider.isSynced) {
           // Esto ocurre si se intenta persistir cambios antes de que se hayan sincronizado con el servidor.
           console.warn('Intentando persistir cambios antes de que se hayan sincronizado con el servidor.');
