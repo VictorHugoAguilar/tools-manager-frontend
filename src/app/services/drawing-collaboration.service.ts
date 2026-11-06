@@ -106,7 +106,6 @@ export class DrawingCollaborationService {
       name: initialSession.roomName,
       document,
       token: async () => {
-        console.log('Requesting token for drawing collaboration');
         if (initialSession.token) {
           const token = initialSession.token;
           initialSession.token = '';
@@ -119,16 +118,13 @@ export class DrawingCollaborationService {
         return session.token;
       },
       onStatus: ({ status }) => {
-        console.log('Drawing collaboration status changed:', status);
         if (!revoked) state$.next(status === 'connected' ? 'connected' : 'offline');
       },
       onSynced: ({ state }) => {
-        console.log('Drawing collaboration synced state:', state);
         if (state && !revoked) state$.next('connected');
       },
       onAwarenessChange: updateParticipants,
       onStateless: ({ payload }) => {
-        console.log('Drawing collaboration received stateless payload:', payload);
         let message: unknown;
         try {
           message = JSON.parse(payload);
@@ -188,7 +184,7 @@ export class DrawingCollaborationService {
       setCursor: (cursor) => provider.setAwarenessField('cursor', cursor),
       setSelection: (ids) => provider.setAwarenessField('selectedIds', ids.slice(0, 100)),
       clearLocalCache: async () => {
-        console.log('Clearing local cache for drawing collaboration');
+        ('Clearing local cache for drawing collaboration');
         await persistence.clearData();
         await new Promise<void>((resolve, reject) => {
           const request = indexedDB.deleteDatabase(persistenceName);
@@ -202,16 +198,7 @@ export class DrawingCollaborationService {
         });
       },
       persist: async () => {
-        // si aun no se ha sincronizado forzar la sincronización antes de persistir
-        console.log('Forzando la sincronización de actualizaciones pendientes antes de persistir');
-        provider.flushPendingUpdates();
-        console.log('Actualizaciones pendientes procesadas');
-        
-        
-        
         if (!provider.isSynced) {
-          // Esto ocurre si se intenta persistir cambios antes de que se hayan sincronizado con el servidor.
-          console.warn('Intentando persistir cambios antes de que se hayan sincronizado con el servidor.');
           throw new Error('Los cambios aún no se han sincronizado con el servidor.');
         }
         const targetStateVector = Y.decodeStateVector(Y.encodeStateVector(document));
@@ -227,7 +214,6 @@ export class DrawingCollaborationService {
         await persisted;
       },
       destroy: () => {
-        console.log('Destroying drawing collaboration');
         for (const pending of pendingPersistence.splice(0)) {
           clearTimeout(pending.timeout);
           pending.reject(new Error('La conexión de colaboración se ha cerrado.'));
