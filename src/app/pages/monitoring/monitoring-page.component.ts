@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 import { StorageAuditHistoryComponent } from './storage-audit-history.component';
 import { activityChartData, latencyChartData } from './monitoring-charts';
+import { recentStorageActivity } from './monitoring-activity';
 
 @Component({
   selector: 'app-monitoring-page',
@@ -51,6 +52,7 @@ export class MonitoringPageComponent {
   protected searchTo = '';
   private searchFilters: MonitoringEventFilters | null = null;
   private pageCursors: (string | null)[] = [null];
+  protected readonly recentActivity = computed(() => recentStorageActivity(this.data()?.events ?? []));
   protected readonly latencyChart = computed<ChartData<'line'>>(() => {
     const metrics = this.data()?.httpMetrics;
     return metrics ? latencyChartData(metrics) ?? { labels: [], datasets: [] } : { labels: [], datasets: [] };
@@ -113,6 +115,17 @@ export class MonitoringPageComponent {
     if (this.searchLoading() || this.loading()) return;
     const range = this.activeRange() ?? this.searchRange();
     if (!range) return;
+    this.openTrace(traceId, range);
+  }
+
+  protected showActivityTrace(traceId: string): void {
+    if (this.searchLoading() || this.loading()) return;
+    const range = this.overviewRange();
+    if (!range) return;
+    this.openTrace(traceId, range);
+  }
+
+  private openTrace(traceId: string, range: { from: string; to: string }): void {
     this.searchTraceId = traceId;
     this.searchFilters = { ...range, traceId };
     this.traceView.set(traceId);
@@ -190,6 +203,10 @@ export class MonitoringPageComponent {
       }
       return { from: new Date(from).toISOString(), to: new Date(to).toISOString() };
     }
+    return this.overviewRange();
+  }
+
+  private overviewRange(): { from: string; to: string } | null {
     const generatedAt = this.data()?.generatedAt;
     if (!generatedAt) return null;
     const end = Date.parse(generatedAt);

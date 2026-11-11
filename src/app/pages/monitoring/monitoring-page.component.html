@@ -185,9 +185,25 @@
     </div>
 
     <div class="detail-grid">
-      <article class="card panel">
+      <article class="card panel recent-activity">
         <h2 class="panel-title"><span class="panel-icon accent" aria-hidden="true">ϟ</span>Actividad reciente</h2>
-        <p class="muted">Los eventos funcionales aún no están instrumentados.</p>
+        <p class="muted">Consultas de almacenamiento presentes entre los últimos 25 eventos recibidos del intervalo. Es telemetría que puede perderse, no un historial de auditoría ni una lista completa de actividad.</p>
+        @if (recentActivity().length) {
+          <ul>
+            @for (activity of recentActivity(); track activity.eventId) {
+              <li>
+                <time>{{ activity.receivedAt | date:'dd/MM HH:mm:ss' }}</time>
+                <strong>{{ activity.label }}</strong>
+                <span>Respuesta HTTP: {{ activity.statusCode ?? 'Sin datos' }}</span>
+                @if (activity.traceId; as traceId) {
+                  <button type="button" [disabled]="searchLoading() || loading()" (click)="showActivityTrace(traceId)">Ver traza en logs</button>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted activity-empty">No hay consultas de almacenamiento entre los últimos 25 eventos recibidos.</p>
+        }
       </article>
       <article class="card panel logs">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Logs recientes</h2>

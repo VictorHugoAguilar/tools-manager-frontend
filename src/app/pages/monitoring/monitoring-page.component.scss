@@ -96,6 +96,11 @@ select:focus-visible, button:focus-visible { outline: 3px solid #f47d00; outline
 .pagination, .trace-heading { margin-top: .75rem; }
 .pagination span { font-size: .75rem; }
 .logs .trace-button { min-height: 0; padding: .25rem .4rem; margin-top: .35rem; font-size: .7rem; }
+.recent-activity ul { list-style: none; padding: 0; margin: .75rem 0 0; max-height: 20rem; overflow: auto; }
+.recent-activity li { display: grid; gap: .3rem; padding: .55rem 0; border-top: 1px solid #eeeae2; font-size: .75rem; overflow-wrap: anywhere; }
+.recent-activity time, .recent-activity li span { color: #677692; }
+.recent-activity button { justify-self: start; min-height: 0; padding: .25rem .4rem; font-size: .7rem; }
+.activity-empty { margin-top: .75rem; }
 .monitoring-queries { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: .85rem; }
 .metric-table { max-height: 20rem; overflow: auto; margin-top: .75rem; }
 .monitoring-queries h3 { margin: 1rem 0 0; font-size: .82rem; }

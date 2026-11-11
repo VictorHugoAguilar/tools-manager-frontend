@@ -124,6 +124,19 @@ test('trace detail uses the active range and does not apply event filters', () =
   assert.equal(calls.at(-1).args[1].cursor, 'next');
 });
 
+test('activity traces use the overview interval instead of a previous filtered search', () => {
+  const { component, calls, requests } = setup();
+  component.searchFrom = '2026-11-09T10:00';
+  component.searchTo = '2026-11-09T11:00';
+  component.searchEvents();
+  requests.at(-1).observer.next({ events: [], nextCursor: null });
+  component.showActivityTrace('activity-trace');
+  assert.equal(calls.at(-1).name, 'trace');
+  assert.deepEqual(calls.at(-1).args, ['activity-trace', {
+    from: '2026-11-11T11:00:00.000Z', to: '2026-11-11T12:00:00.000Z'
+  }]);
+});
+
 test('custom dates are converted from local time to UTC and remain fixed during pagination', () => {
   const { component, calls, requests } = setup();
   component.searchFrom = '2026-11-10T10:00';
