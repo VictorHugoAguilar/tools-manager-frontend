@@ -183,7 +183,7 @@
           <div><dt>Última comprobación correcta</dt><dd>{{ audit.publisher.lastSuccessfulCheckAt ? (audit.publisher.lastSuccessfulCheckAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
           <div><dt>Último fallo</dt><dd>{{ audit.publisher.lastFailureAt ? (audit.publisher.lastFailureAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
         </dl>
-        <p class="muted">Consultado: {{ audit.checkedAt | date:'dd/MM HH:mm:ss' }}. La cola pertenece a toda la base; el estado del publicador corresponde solo a la instancia que responde y no garantiza que otros procesos funcionen. Un registro pendiente podría estar ya publicado.</p>
+        <p class="muted">Consultado: {{ audit.checkedAt | date:'dd/MM HH:mm:ss' }}. La cola pertenece a toda la base; el estado del publicador corresponde solo a la instancia que responde y no garantiza que otros procesos funcionen. Una comprobación correcta puede abarcar solo una página y no descarta registros bloqueados. Un registro pendiente podría estar ya publicado.</p>
       }
     </article>
   </div>
