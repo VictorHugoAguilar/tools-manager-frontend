@@ -7,6 +7,7 @@ import { ChartData, ChartOptions } from 'chart.js';
 import { FormsModule } from '@angular/forms';
 import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 import { StorageAuditHistoryComponent } from './storage-audit-history.component';
+import { activityChartData, latencyChartData } from './monitoring-charts';
 
 @Component({
   selector: 'app-monitoring-page',
@@ -52,31 +53,21 @@ export class MonitoringPageComponent {
   private pageCursors: (string | null)[] = [null];
   protected readonly latencyChart = computed<ChartData<'line'>>(() => {
     const metrics = this.data()?.httpMetrics;
-    if (!metrics) return { labels: [], datasets: [] };
-    const step = metrics.resolutionSeconds * 1000;
-    const points = new Map(metrics.points.map((point) => [Date.parse(point.start), point.averageMs]));
-    const labels: string[] = [];
-    const values: (number | null)[] = [];
-    for (let time = Math.floor(Date.parse(metrics.from) / step) * step; time < Date.parse(metrics.to); time += step) {
-      labels.push(new Intl.DateTimeFormat('es-ES', metrics.resolutionSeconds === 60
-        ? { hour: '2-digit', minute: '2-digit' }
-        : { day: '2-digit', month: '2-digit', hour: '2-digit' }).format(time));
-      values.push(points.get(time) ?? null);
-    }
-    return {
-      labels,
-      datasets: [{
-        label: 'Latencia media API (ms)',
-        data: values,
-        borderColor: '#208ff4',
-        backgroundColor: '#208ff41a',
-        fill: true,
-        pointRadius: 2,
-        tension: 0.2,
-        spanGaps: false
-      }]
-    };
+    return metrics ? latencyChartData(metrics) ?? { labels: [], datasets: [] } : { labels: [], datasets: [] };
   });
+  protected readonly metricActivityChart = computed(() => {
+    const metrics = this.metricResult();
+    return metrics ? activityChartData(metrics) : null;
+  });
+  protected readonly metricLatencyChart = computed(() => {
+    const metrics = this.metricResult();
+    return metrics?.service === 'backend' ? latencyChartData(metrics) : null;
+  });
+  protected readonly activityChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, title: { display: true, text: 'Eventos registrados' } } }
+  };
   protected readonly chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,

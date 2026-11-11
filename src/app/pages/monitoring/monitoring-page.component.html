@@ -61,6 +61,16 @@
             <p class="muted">Los percentiles son rangos estimados.</p>
           } @else { <p>Sin intervalos registrados.</p> }
           @if (metric.points.length) {
+            @if (metricActivityChart(); as chart) {
+              <h3>Actividad HTTP registrada</h3>
+              <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Peticiones HTTP y errores 5xx por intervalo" role="img"></canvas></div>
+              @if (metricLatencyChart(); as latency) {
+                <h3>Latencia media por intervalo</h3>
+                <div class="chart"><canvas baseChart [data]="latency" [options]="chartOptions" type="line" aria-label="Latencia media HTTP por intervalo" role="img"></canvas></div>
+              }
+            } @else {
+              <p class="muted">La gráfica admite hasta 1500 intervalos. Selecciona un rango menor o resolución de una hora; la tabla conserva todos los datos devueltos.</p>
+            }
             <div class="metric-table"><table>
               <thead><tr><th>Inicio</th><th>Peticiones</th><th>Errores 5xx</th><th>Media (ms)</th></tr></thead>
               <tbody>@for (point of metric.points; track point.start) {
@@ -70,6 +80,12 @@
           }
         } @else {
           @if (metric.points.length) {
+            @if (metricActivityChart(); as chart) {
+              <h3>Actividad WebSocket registrada</h3>
+              <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres y actualizaciones WebSocket por intervalo" role="img"></canvas></div>
+            } @else {
+              <p class="muted">La gráfica admite hasta 1500 intervalos. Selecciona un rango menor o resolución de una hora; la tabla conserva todos los datos devueltos.</p>
+            }
             <div class="metric-table"><table>
               <thead><tr><th>Inicio</th><th>Aperturas</th><th>Cierres</th><th>Actualizaciones</th></tr></thead>
               <tbody>@for (point of metric.points; track point.start) {
