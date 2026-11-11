@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { FormsModule } from '@angular/forms';
-import { MonitoringApiService, MonitoringEvent, MonitoringEventFilters, MonitoringOverview, MonitoringPeriod } from '../../services/monitoring-api.service';
+import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringOverview, MonitoringPeriod } from '../../services/monitoring-api.service';
 
 @Component({
   selector: 'app-monitoring-page',
@@ -25,6 +25,9 @@ export class MonitoringPageComponent {
   protected readonly searchError = signal('');
   protected readonly searchResults = signal<MonitoringEvent[] | null>(null);
   protected readonly nextCursor = signal<string | null>(null);
+  protected readonly auditStatus = signal<MonitoringAuditStatus | null>(null);
+  protected readonly auditStatusLoading = signal(false);
+  protected readonly auditStatusError = signal('');
   protected searchService = '';
   protected searchLevel = '';
   protected searchEventName = '';
@@ -127,6 +130,7 @@ export class MonitoringPageComponent {
     if (this.loading()) return;
     this.loading.set(true);
     this.error.set('');
+    this.loadAuditStatus();
     this.api.overview(this.period()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (data) => {
         this.data.set(data);
@@ -139,6 +143,23 @@ export class MonitoringPageComponent {
           ? error.error.message
           : 'No se pudo cargar la monitorización. Comprueba los permisos y la conexión con el servidor.');
         this.loading.set(false);
+      }
+    });
+  }
+
+  private loadAuditStatus(): void {
+    if (this.auditStatusLoading()) return;
+    this.auditStatus.set(null);
+    this.auditStatusError.set('');
+    this.auditStatusLoading.set(true);
+    this.api.auditStatus().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (status) => {
+        this.auditStatus.set(status);
+        this.auditStatusLoading.set(false);
+      },
+      error: () => {
+        this.auditStatusError.set('No se pudo consultar la outbox de auditoría. Revisa los permisos y las conexiones de Firebase.');
+        this.auditStatusLoading.set(false);
       }
     });
   }

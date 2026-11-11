@@ -167,4 +167,24 @@
       </article>
     </div>
   }
+  <div class="detail-grid">
+    <article class="card panel collector">
+      <h2 class="panel-title">Outbox de auditoría</h2>
+      @if (auditStatusLoading()) {
+        <p class="muted" role="status">Consultando auditoría pendiente…</p>
+      } @else if (auditStatusError()) {
+        <p class="notice error" role="alert">{{ auditStatusError() }}</p>
+      } @else if (auditStatus(); as audit) {
+        <dl>
+          <div><dt>Registros pendientes</dt><dd>{{ audit.pending.truncated ? 'Al menos ' : '' }}{{ audit.pending.count }}</dd></div>
+          <div><dt>Publicador de esta instancia</dt><dd>{{ audit.publisher.running ? 'Activado' : 'Detenido' }}{{ audit.publisher.inFlight ? ' · comprobando' : '' }}</dd></div>
+          <div><dt>Fallos consecutivos de esta instancia</dt><dd>{{ audit.publisher.lastAttemptAt ? audit.publisher.consecutiveFailures : 'Sin comprobar' }}</dd></div>
+          <div><dt>Último intento</dt><dd>{{ audit.publisher.lastAttemptAt ? (audit.publisher.lastAttemptAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>Última comprobación correcta</dt><dd>{{ audit.publisher.lastSuccessfulCheckAt ? (audit.publisher.lastSuccessfulCheckAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>Último fallo</dt><dd>{{ audit.publisher.lastFailureAt ? (audit.publisher.lastFailureAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
+        </dl>
+        <p class="muted">Consultado: {{ audit.checkedAt | date:'dd/MM HH:mm:ss' }}. La cola pertenece a toda la base; el estado del publicador corresponde solo a la instancia que responde y no garantiza que otros procesos funcionen. Un registro pendiente podría estar ya publicado.</p>
+      }
+    </article>
+  </div>
 </section>

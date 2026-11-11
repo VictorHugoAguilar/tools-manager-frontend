@@ -31,6 +31,19 @@ export interface MonitoringEventsPage {
   nextCursor: string | null;
 }
 
+export interface MonitoringAuditStatus {
+  checkedAt: string;
+  pending: { count: number; truncated: boolean };
+  publisher: {
+    running: boolean;
+    inFlight: boolean;
+    consecutiveFailures: number;
+    lastAttemptAt: string | null;
+    lastSuccessfulCheckAt: string | null;
+    lastFailureAt: string | null;
+  };
+}
+
 export interface MonitoringOverview {
   period: MonitoringPeriod;
   generatedAt: string;
@@ -107,5 +120,9 @@ export class MonitoringApiService {
       if (value) params = params.set(key, value);
     }
     return this.http.get<MonitoringEventsPage>(`${environment.apiUrl}/api/monitoring/events`, { params });
+  }
+
+  auditStatus() {
+    return this.http.get<MonitoringAuditStatus>(`${environment.apiUrl}/api/monitoring/audit-status`);
   }
 }
