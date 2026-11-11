@@ -122,6 +122,14 @@ export class MonitoringApiService {
     return this.http.get<MonitoringEventsPage>(`${environment.apiUrl}/api/monitoring/events`, { params });
   }
 
+  trace(traceId: string, filters: Pick<MonitoringEventFilters, 'from' | 'to' | 'cursor'>) {
+    let params = new HttpParams().set('from', filters.from).set('to', filters.to);
+    if (filters.cursor) params = params.set('cursor', filters.cursor);
+    return this.http.get<MonitoringEventsPage>(
+      `${environment.apiUrl}/api/monitoring/traces/${encodeURIComponent(traceId)}`, { params }
+    );
+  }
+
   auditStatus() {
     return this.http.get<MonitoringAuditStatus>(`${environment.apiUrl}/api/monitoring/audit-status`);
   }

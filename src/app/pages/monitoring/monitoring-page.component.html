@@ -101,7 +101,7 @@
       </article>
       <article class="card panel logs">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Logs recientes</h2>
-        <p class="muted">Hasta 25 eventos recibidos en el intervalo seleccionado.</p>
+        <p class="muted">Hasta 25 eventos por página, ordenados por recepción. Si no indicas fechas, se usa el intervalo del resumen.</p>
         <form class="event-filters" (ngSubmit)="searchEvents()">
           <label>Servicio
             <select name="service" [(ngModel)]="searchService" [disabled]="searchLoading()">
@@ -115,10 +115,21 @@
           </label>
           <label>Evento exacto <input name="eventName" [(ngModel)]="searchEventName" maxlength="100" [disabled]="searchLoading()"></label>
           <label>Trace ID <input name="traceId" [(ngModel)]="searchTraceId" maxlength="36" [disabled]="searchLoading()"></label>
-          <button type="submit" [disabled]="searchLoading()">Buscar</button>
+          <label>Desde (hora local) <input type="datetime-local" name="from" [(ngModel)]="searchFrom" [disabled]="searchLoading()"></label>
+          <label>Hasta (hora local) <input type="datetime-local" name="to" [(ngModel)]="searchTo" [disabled]="searchLoading()"></label>
+          <div class="filter-actions">
+            <button type="submit" [disabled]="searchLoading() || loading()">Buscar</button>
+            <button type="button" [disabled]="searchLoading() || loading()" (click)="clearSearch()">Limpiar filtros</button>
+          </div>
         </form>
         @if (searchError()) { <p class="notice error" role="alert">{{ searchError() }}</p> }
         @if (searchLoading()) { <p class="muted" role="status">Consultando eventos…</p> }
+        @if (traceView(); as traceId) {
+          <p class="muted trace-heading">Traza {{ traceId }} · todos los servicios y niveles, ordenados por recepción descendente.</p>
+        }
+        @if (activeRange(); as range) {
+          <p class="muted">Intervalo consultado: {{ range.from | date:'dd/MM/yyyy HH:mm:ss' }} – {{ range.to | date:'dd/MM/yyyy HH:mm:ss' }} · página {{ pageNumber() }}</p>
+        }
         @let visibleEvents = searchResults() ?? overview.events;
         @if (visibleEvents.length === 0 && !searchError() && !searchLoading()) {
           <p class="empty">No hay eventos en este intervalo.</p>
@@ -133,15 +144,23 @@
                   @if (event.http; as http) {
                     <span>{{ http.method }} {{ http.route }} · {{ http.statusCode }}</span>
                   }
-                  @if (event.traceId) { <span>Traza: {{ event.traceId }}</span> }
+                  @if (event.traceId; as traceId) {
+                    <span>Traza: {{ traceId }}</span>
+                    <button type="button" class="trace-button" [disabled]="searchLoading() || loading()" (click)="showTrace(traceId)">Ver traza</button>
+                  }
                   @if (event.connectionId) { <span>Conexión: {{ event.connectionId }}</span> }
+                  @if (event.durationMs !== undefined) { <span>Duración: {{ event.durationMs | number:'1.0-2' }} ms</span> }
                 </div>
               </li>
             }
           </ul>
         }
-        @if (nextCursor()) {
-          <button type="button" [disabled]="searchLoading()" (click)="loadMoreEvents()">Página siguiente</button>
+        @if (searchResults() !== null && (pageNumber() > 1 || nextCursor())) {
+          <div class="pagination">
+            <button type="button" [disabled]="searchLoading() || pageNumber() === 1" (click)="loadPreviousEvents()">Página anterior</button>
+            <span>Página {{ pageNumber() }}</span>
+            <button type="button" [disabled]="searchLoading() || !nextCursor()" (click)="loadMoreEvents()">Página siguiente</button>
+          </div>
         }
       </article>
       <article class="card panel collector">

@@ -25,6 +25,9 @@ export class MonitoringPageComponent {
   protected readonly searchError = signal('');
   protected readonly searchResults = signal<MonitoringEvent[] | null>(null);
   protected readonly nextCursor = signal<string | null>(null);
+  protected readonly pageNumber = signal(1);
+  protected readonly traceView = signal<string | null>(null);
+  protected readonly activeRange = signal<{ from: string; to: string } | null>(null);
   protected readonly auditStatus = signal<MonitoringAuditStatus | null>(null);
   protected readonly auditStatusLoading = signal(false);
   protected readonly auditStatusError = signal('');
@@ -32,7 +35,10 @@ export class MonitoringPageComponent {
   protected searchLevel = '';
   protected searchEventName = '';
   protected searchTraceId = '';
+  protected searchFrom = '';
+  protected searchTo = '';
   private searchFilters: MonitoringEventFilters | null = null;
+  private pageCursors: (string | null)[] = [null];
   protected readonly latencyChart = computed<ChartData<'line'>>(() => {
     const metrics = this.data()?.httpMetrics;
     if (!metrics) return { labels: [], datasets: [] };
@@ -73,50 +79,116 @@ export class MonitoringPageComponent {
   protected changePeriod(value: string): void {
     if (value !== '1h' && value !== '24h' && value !== '7d') return;
     this.period.set(value);
-    this.searchResults.set(null);
-    this.nextCursor.set(null);
-    this.searchFilters = null;
     this.refresh();
   }
 
   protected searchEvents(): void {
-    const now = this.data()?.generatedAt;
-    if (!now || this.searchLoading()) return;
-    const end = Date.parse(now);
-    const duration = this.period() === '1h' ? 3600000 : this.period() === '24h' ? 86400000 : 604800000;
+    if (this.searchLoading() || this.loading()) return;
+    const range = this.searchRange();
+    if (!range) return;
     this.searchFilters = {
-      from: new Date(end - duration).toISOString(),
-      to: new Date(end).toISOString(),
+      ...range,
       service: this.searchService,
       level: this.searchLevel,
       eventName: this.searchEventName.trim(),
       traceId: this.searchTraceId.trim()
     };
-    this.searchResults.set([]);
-    this.nextCursor.set(null);
-    this.loadEvents(false);
+    this.traceView.set(null);
+    this.startSearch();
   }
 
   protected loadMoreEvents(): void {
-    this.loadEvents(true);
+    const cursor = this.nextCursor();
+    if (cursor) this.loadEvents(cursor, this.pageNumber() + 1);
   }
 
-  private loadEvents(append: boolean): void {
+  protected loadPreviousEvents(): void {
+    const previousPage = this.pageNumber() - 1;
+    if (previousPage >= 1) this.loadEvents(this.pageCursors[previousPage - 1], previousPage);
+  }
+
+  protected showTrace(traceId: string): void {
+    if (this.searchLoading() || this.loading()) return;
+    const range = this.activeRange() ?? this.searchRange();
+    if (!range) return;
+    this.searchTraceId = traceId;
+    this.searchFilters = { ...range, traceId };
+    this.traceView.set(traceId);
+    this.startSearch();
+  }
+
+  protected clearSearch(): void {
+    if (this.searchLoading() || this.loading()) return;
+    this.searchService = '';
+    this.searchLevel = '';
+    this.searchEventName = '';
+    this.searchTraceId = '';
+    this.searchFrom = '';
+    this.searchTo = '';
+    this.resetResults();
+  }
+
+  private searchRange(): { from: string; to: string } | null {
+    if (this.searchFrom || this.searchTo) {
+      const from = Date.parse(this.searchFrom);
+      const to = Date.parse(this.searchTo);
+      if (!this.searchFrom || !this.searchTo || !Number.isFinite(from) || !Number.isFinite(to) ||
+        from >= to || to - from > 7 * 86400000) {
+        this.searchError.set('Indica fechas válidas en orden, con un intervalo máximo de siete días.');
+        return null;
+      }
+      return { from: new Date(from).toISOString(), to: new Date(to).toISOString() };
+    }
+    const generatedAt = this.data()?.generatedAt;
+    if (!generatedAt) return null;
+    const end = Date.parse(generatedAt);
+    const duration = this.period() === '1h' ? 3600000 : this.period() === '24h' ? 86400000 : 604800000;
+    return { from: new Date(end - duration).toISOString(), to: new Date(end).toISOString() };
+  }
+
+  private startSearch(): void {
+    this.searchResults.set([]);
+    this.nextCursor.set(null);
+    this.pageCursors = [null];
+    this.pageNumber.set(1);
+    this.activeRange.set(null);
+    this.loadEvents(null, 1);
+  }
+
+  private resetResults(): void {
+    this.searchResults.set(null);
+    this.searchError.set('');
+    this.nextCursor.set(null);
+    this.traceView.set(null);
+    this.activeRange.set(null);
+    this.searchFilters = null;
+    this.pageCursors = [null];
+    this.pageNumber.set(1);
+  }
+
+  private loadEvents(cursor: string | null, pageNumber: number): void {
     if (!this.searchFilters || this.searchLoading()) return;
-    const cursor = append ? this.nextCursor() : null;
-    if (append && !cursor) return;
     this.searchLoading.set(true);
     this.searchError.set('');
-    this.api.events({ ...this.searchFilters, ...(cursor ? { cursor } : {}) })
+    const filters = { ...this.searchFilters, ...(cursor ? { cursor } : {}) };
+    const traceId = this.traceView();
+    const request = traceId ? this.api.trace(traceId, {
+      from: filters.from, to: filters.to, ...(cursor ? { cursor } : {})
+    }) : this.api.events(filters);
+    request
       .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (page) => {
           this.searchResults.set(page.events);
           this.nextCursor.set(page.nextCursor);
+          this.pageCursors = this.pageCursors.slice(0, pageNumber - 1);
+          this.pageCursors.push(cursor);
+          this.pageNumber.set(pageNumber);
+          this.activeRange.set({ from: filters.from, to: filters.to });
           this.searchLoading.set(false);
         },
         error: (error: unknown) => {
           this.searchError.set(error instanceof HttpErrorResponse && error.status === 400
-            ? 'Comprueba los filtros y el identificador de traza.'
+            ? 'Comprueba los filtros, fechas y el identificador de traza. Si un cursor ha caducado, inicia una nueva búsqueda.'
             : error instanceof HttpErrorResponse && error.status === 503 &&
               error.error?.code === 'MONITORING_INDEX_UNAVAILABLE'
               ? 'Faltan índices de Firestore o aún se están creando. Contacta con el administrador y vuelve a intentarlo cuando estén listos.'
@@ -128,6 +200,7 @@ export class MonitoringPageComponent {
 
   protected refresh(): void {
     if (this.loading()) return;
+    this.resetResults();
     this.loading.set(true);
     this.error.set('');
     this.loadAuditStatus();
