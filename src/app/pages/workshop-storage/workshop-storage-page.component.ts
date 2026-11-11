@@ -19,6 +19,7 @@ import {
 import { ConfirmService } from '../../services/confirm.service';
 import { WorkshopMaterialCategoryStoreService } from '../../services/workshop-material-category-store.service';
 import { WorkshopStorageApiService } from '../../services/workshop-storage-api.service';
+import { StorageAuditHistoryComponent } from '../monitoring/storage-audit-history.component';
 
 type EntityType = 'shelf' | 'level' | 'organizer' | 'compartment' | 'material';
 
@@ -88,7 +89,7 @@ function createEmptyDraft(): WorkshopStorageDraft {
 
 @Component({
   selector: 'app-workshop-storage-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StorageAuditHistoryComponent],
   templateUrl: './workshop-storage-page.component.html',
   styleUrl: './workshop-storage-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
