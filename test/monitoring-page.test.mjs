@@ -70,7 +70,7 @@ function setup() {
     }
   };
   const component = new MonitoringPageComponent();
-  requests.find((entry) => entry.name === 'overview').observer.next({ generatedAt: '2026-11-11T12:00:00.000Z' });
+  requests.find((entry) => entry.name === 'overview').observer.next({ period: '1h', generatedAt: '2026-11-11T12:00:00.000Z' });
   requests.find((entry) => entry.name === 'auditStatus').observer.next({});
   return { component, calls, requests };
 }
@@ -135,6 +135,97 @@ test('activity traces use the overview interval instead of a previous filtered s
   assert.deepEqual(calls.at(-1).args, ['activity-trace', {
     from: '2026-11-11T11:00:00.000Z', to: '2026-11-11T12:00:00.000Z'
   }]);
+});
+
+test('returning from a trace restores the previous page, applied filters and pagination without a request', () => {
+  const { component, calls, requests } = setup();
+  component.searchService = 'backend';
+  component.searchEventName = 'storage.box.viewed';
+  component.searchEvents();
+  requests.at(-1).observer.next({ events: [{ eventId: 'first' }], nextCursor: 'first-cursor' });
+  component.loadMoreEvents();
+  requests.at(-1).observer.next({ events: [{ eventId: 'second' }], nextCursor: 'second-cursor' });
+  component.searchService = 'frontend';
+  component.searchTraceId = 'draft';
+  component.showTrace('trace-id');
+  assert.equal(component.searchTraceId, 'draft');
+  requests.at(-1).observer.next({ events: [{ eventId: 'trace' }], nextCursor: null });
+  const count = calls.length;
+  component.returnToEvents();
+  assert.equal(calls.length, count);
+  assert.equal(component.traceView(), null);
+  assert.equal(component.canReturnToEvents(), false);
+  assert.equal(component.pageNumber(), 2);
+  assert.equal(component.nextCursor(), 'second-cursor');
+  assert.equal(component.searchResults()[0].eventId, 'second');
+  assert.equal(component.activeFilters().service, 'backend');
+  assert.equal(component.activeFilters().eventName, 'storage.box.viewed');
+  component.loadPreviousEvents();
+  assert.equal(calls.at(-1).args[0].service, 'backend');
+  assert.equal(calls.at(-1).args[0].cursor, undefined);
+});
+
+test('overview traces ignore unsubmitted custom dates and return to the overview', () => {
+  const { component, calls, requests } = setup();
+  component.searchFrom = '2026-11-09T10:00';
+  component.searchTo = '2026-11-09T11:00';
+  component.showTrace('trace-id');
+  assert.deepEqual(calls.at(-1).args[1], {
+    from: '2026-11-11T11:00:00.000Z', to: '2026-11-11T12:00:00.000Z'
+  });
+  requests.at(-1).observer.error(new Error('offline'));
+  component.returnToEvents();
+  assert.equal(component.searchResults(), null);
+  assert.equal(component.activeRange(), null);
+  assert.equal(component.searchError(), '');
+});
+
+test('overview queries use the period returned with the displayed data', () => {
+  const { component, calls } = setup();
+  component.period.set('7d');
+  component.showActivityTrace('trace-id');
+  assert.deepEqual(calls.at(-1).args[1], {
+    from: '2026-11-11T11:00:00.000Z', to: '2026-11-11T12:00:00.000Z'
+  });
+});
+
+test('returning from a trace preserves a failed search instead of presenting it as empty', () => {
+  const { component, requests } = setup();
+  component.searchEvents();
+  requests.at(-1).observer.error(new Error('offline'));
+  component.showActivityTrace('trace-id');
+  requests.at(-1).observer.next({ events: [], nextCursor: null });
+  component.returnToEvents();
+  assert.match(component.searchError(), /No se pudieron consultar/);
+  assert.equal(component.activeFilters(), null);
+  assert.equal(component.activeRange(), null);
+});
+
+test('opening another trace preserves the original return view and clearing removes it', () => {
+  const { component, requests } = setup();
+  component.showTrace('first-trace');
+  requests.at(-1).observer.next({ events: [], nextCursor: null });
+  component.showActivityTrace('second-trace');
+  requests.at(-1).observer.next({ events: [], nextCursor: null });
+  component.returnToEvents();
+  assert.equal(component.searchResults(), null);
+  component.showTrace('third-trace');
+  requests.at(-1).observer.next({ events: [], nextCursor: null });
+  component.clearSearch();
+  assert.equal(component.canReturnToEvents(), false);
+});
+
+test('a new search from a trace discards the previous view and applies the draft filters', () => {
+  const { component, calls, requests } = setup();
+  component.showTrace('trace-id');
+  requests.at(-1).observer.next({ events: [], nextCursor: null });
+  component.searchService = 'frontend';
+  component.searchEvents();
+  assert.equal(component.canReturnToEvents(), false);
+  assert.equal(component.traceView(), null);
+  assert.equal(calls.at(-1).args[0].service, 'frontend');
+  requests.at(-1).observer.next({ events: [], nextCursor: null });
+  assert.equal(component.activeFilters().service, 'frontend');
 });
 
 test('custom dates are converted from local time to UTC and remain fixed during pagination', () => {

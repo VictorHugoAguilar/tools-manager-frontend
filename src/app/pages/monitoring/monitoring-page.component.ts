@@ -10,6 +10,17 @@ import { StorageAuditHistoryComponent } from './storage-audit-history.component'
 import { activityChartData, latencyChartData } from './monitoring-charts';
 import { recentStorageActivity } from './monitoring-activity';
 
+interface PreviousEventView {
+  results: MonitoringEvent[] | null;
+  filters: MonitoringEventFilters | null;
+  activeFilters: MonitoringEventFilters | null;
+  activeRange: { from: string; to: string } | null;
+  error: string;
+  nextCursor: string | null;
+  pageNumber: number;
+  pageCursors: (string | null)[];
+}
+
 @Component({
   selector: 'app-monitoring-page',
   imports: [CommonModule, FormsModule, BaseChartDirective, StorageAuditHistoryComponent],
@@ -31,6 +42,8 @@ export class MonitoringPageComponent {
   protected readonly pageNumber = signal(1);
   protected readonly traceView = signal<string | null>(null);
   protected readonly activeRange = signal<{ from: string; to: string } | null>(null);
+  protected readonly activeFilters = signal<MonitoringEventFilters | null>(null);
+  protected readonly canReturnToEvents = signal(false);
   protected readonly auditStatus = signal<MonitoringAuditStatus | null>(null);
   protected readonly auditStatusLoading = signal(false);
   protected readonly auditStatusError = signal('');
@@ -52,6 +65,7 @@ export class MonitoringPageComponent {
   protected searchTo = '';
   private searchFilters: MonitoringEventFilters | null = null;
   private pageCursors: (string | null)[] = [null];
+  private previousEventView: PreviousEventView | null = null;
   protected readonly recentActivity = computed(() => recentStorageActivity(this.data()?.events ?? []));
   protected readonly latencyChart = computed<ChartData<'line'>>(() => {
     const metrics = this.data()?.httpMetrics;
@@ -97,6 +111,8 @@ export class MonitoringPageComponent {
       eventName: this.searchEventName.trim(),
       traceId: this.searchTraceId.trim()
     };
+    this.previousEventView = null;
+    this.canReturnToEvents.set(false);
     this.traceView.set(null);
     this.startSearch();
   }
@@ -113,7 +129,7 @@ export class MonitoringPageComponent {
 
   protected showTrace(traceId: string): void {
     if (this.searchLoading() || this.loading()) return;
-    const range = this.activeRange() ?? this.searchRange();
+    const range = this.searchResults() === null ? this.overviewRange() : this.activeRange();
     if (!range) return;
     this.openTrace(traceId, range);
   }
@@ -126,10 +142,38 @@ export class MonitoringPageComponent {
   }
 
   private openTrace(traceId: string, range: { from: string; to: string }): void {
-    this.searchTraceId = traceId;
+    if (!this.traceView()) {
+      this.previousEventView = {
+        results: this.searchResults(),
+        filters: this.searchFilters,
+        activeFilters: this.activeFilters(),
+        activeRange: this.activeRange(),
+        error: this.searchError(),
+        nextCursor: this.nextCursor(),
+        pageNumber: this.pageNumber(),
+        pageCursors: [...this.pageCursors]
+      };
+      this.canReturnToEvents.set(true);
+    }
     this.searchFilters = { ...range, traceId };
     this.traceView.set(traceId);
     this.startSearch();
+  }
+
+  protected returnToEvents(): void {
+    if (this.searchLoading() || this.loading() || !this.previousEventView) return;
+    const previous = this.previousEventView;
+    this.searchResults.set(previous.results);
+    this.searchFilters = previous.filters;
+    this.activeFilters.set(previous.activeFilters);
+    this.activeRange.set(previous.activeRange);
+    this.nextCursor.set(previous.nextCursor);
+    this.pageNumber.set(previous.pageNumber);
+    this.pageCursors = previous.pageCursors;
+    this.traceView.set(null);
+    this.searchError.set(previous.error);
+    this.previousEventView = null;
+    this.canReturnToEvents.set(false);
   }
 
   protected clearSearch(): void {
@@ -207,10 +251,10 @@ export class MonitoringPageComponent {
   }
 
   private overviewRange(): { from: string; to: string } | null {
-    const generatedAt = this.data()?.generatedAt;
-    if (!generatedAt) return null;
-    const end = Date.parse(generatedAt);
-    const duration = this.period() === '1h' ? 3600000 : this.period() === '24h' ? 86400000 : 604800000;
+    const overview = this.data();
+    if (!overview) return null;
+    const end = Date.parse(overview.generatedAt);
+    const duration = overview.period === '1h' ? 3600000 : overview.period === '24h' ? 86400000 : 604800000;
     return { from: new Date(end - duration).toISOString(), to: new Date(end).toISOString() };
   }
 
@@ -220,6 +264,7 @@ export class MonitoringPageComponent {
     this.pageCursors = [null];
     this.pageNumber.set(1);
     this.activeRange.set(null);
+    this.activeFilters.set(null);
     this.loadEvents(null, 1);
   }
 
@@ -229,9 +274,12 @@ export class MonitoringPageComponent {
     this.nextCursor.set(null);
     this.traceView.set(null);
     this.activeRange.set(null);
+    this.activeFilters.set(null);
     this.searchFilters = null;
     this.pageCursors = [null];
     this.pageNumber.set(1);
+    this.previousEventView = null;
+    this.canReturnToEvents.set(false);
   }
 
   private loadEvents(cursor: string | null, pageNumber: number): void {
@@ -252,6 +300,7 @@ export class MonitoringPageComponent {
           this.pageCursors.push(cursor);
           this.pageNumber.set(pageNumber);
           this.activeRange.set({ from: filters.from, to: filters.to });
+          this.activeFilters.set(this.searchFilters);
           this.searchLoading.set(false);
         },
         error: (error: unknown) => {

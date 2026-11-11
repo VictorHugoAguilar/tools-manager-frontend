@@ -233,8 +233,16 @@
         @if (traceView(); as traceId) {
           <p class="muted trace-heading">Traza {{ traceId }} · todos los servicios y niveles, ordenados por recepción descendente.</p>
         }
+        @if (canReturnToEvents()) {
+          <button type="button" class="return-events" [disabled]="searchLoading() || loading()" (click)="returnToEvents()">Volver a los eventos anteriores</button>
+        }
         @if (activeRange(); as range) {
           <p class="muted">Intervalo consultado: {{ range.from | date:'dd/MM/yyyy HH:mm:ss' }} – {{ range.to | date:'dd/MM/yyyy HH:mm:ss' }} · página {{ pageNumber() }}</p>
+        }
+        @if (activeFilters(); as filters) {
+          @if (!traceView()) {
+            <p class="muted">Filtros aplicados: servicio {{ filters.service || 'todos' }} · nivel {{ filters.level || 'todos' }} · evento {{ filters.eventName || 'todos' }} · traza {{ filters.traceId || 'todas' }}. Los cambios del formulario se aplican al buscar.</p>
+          }
         }
         @let visibleEvents = searchResults() ?? overview.events;
         @if (visibleEvents.length === 0 && !searchError() && !searchLoading()) {
