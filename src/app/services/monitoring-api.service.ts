@@ -59,6 +59,7 @@ export interface MonitoringResources {
 export interface MonitoringOverview {
   period: MonitoringPeriod;
   generatedAt: string;
+  activeUsers?: { count: number; windowMinutes: number; checkedAt: string } | null;
   events: MonitoringEvent[];
   heartbeats: {
     freshnessSeconds: number;

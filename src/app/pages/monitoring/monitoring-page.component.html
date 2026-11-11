@@ -138,7 +138,12 @@
       </article>
       <article class="card summary">
         <span class="icon orange" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M6 19v-1a6 6 0 0 1 12 0v1M5 10a3 3 0 0 0-1 6M19 10a3 3 0 0 1 1 6"/></svg></span>
-        <div><h2>Usuarios activos</h2><strong>Sin datos</strong><small>Sin fuente configurada</small></div>
+        <div><h2>Usuarios activos</h2>
+          @if (overview.activeUsers; as active) {
+            <strong>{{ active.count }}</strong><small>Usuarios únicos con interacción registrada en los últimos {{ active.windowMinutes }} min</small>
+            <small>Estimación: puede faltar actividad si falla la señal o hay clientes sin actualizar.</small>
+          } @else { <strong>Sin datos</strong><small>No se pudo consultar la actividad</small> }
+        </div>
       </article>
       <article class="card summary">
         <span class="icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
