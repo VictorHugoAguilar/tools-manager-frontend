@@ -96,6 +96,10 @@ select:focus-visible, button:focus-visible { outline: 3px solid #f47d00; outline
 .pagination, .trace-heading { margin-top: .75rem; }
 .pagination span { font-size: .75rem; }
 .logs .trace-button { min-height: 0; padding: .25rem .4rem; margin-top: .35rem; font-size: .7rem; }
+.monitoring-queries { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: .85rem; }
+.metric-table { max-height: 20rem; overflow: auto; margin-top: .75rem; }
+.metric-table table { width: 100%; border-collapse: collapse; font-size: .75rem; }
+.metric-table th, .metric-table td { padding: .4rem; text-align: left; border-bottom: 1px solid #eeeae2; }
 .logs li { display: flex; align-items: flex-start; gap: .5rem; padding: .55rem 0; border-top: 1px solid #eeeae2; font-size: .75rem; }
 .logs li div { min-width: 0; overflow-wrap: anywhere; }
 .logs li div span { display: block; color: #677692; margin-top: .2rem; }
@@ -118,6 +122,7 @@ dd { margin: 0; font-weight: 600; text-align: right; }
   .monitoring { padding: 1rem; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .main-grid, .detail-grid { grid-template-columns: 1fr; }
+  .monitoring-queries { grid-template-columns: 1fr; }
   .controls { flex-wrap: wrap; }
 }
 @media (max-width: 400px) {

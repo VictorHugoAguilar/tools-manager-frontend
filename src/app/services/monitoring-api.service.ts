@@ -104,6 +104,26 @@ export interface MonitoringOverview {
   };
 }
 
+export type MonitoringMetricInterval = '1m' | '1h';
+export type MonitoringMetricRequest = {
+  from: string;
+  to: string;
+  interval: MonitoringMetricInterval;
+} & (
+  | { service: 'backend'; metric: 'http_requests' }
+  | { service: 'websocket'; metric: 'websocket_activity' }
+);
+
+export type MonitoringMetricResult =
+  | ({ service: 'backend'; metric: 'http_requests' } & MonitoringOverview['httpMetrics'])
+  | ({ service: 'websocket'; metric: 'websocket_activity' } & MonitoringOverview['webSocketMetrics']);
+
+export interface MonitoringServices {
+  generatedAt: string;
+  freshnessSeconds: number;
+  services: MonitoringOverview['heartbeats']['services'] & { frontend: null; storage: null };
+}
+
 @Injectable({ providedIn: 'root' })
 export class MonitoringApiService {
   private readonly http = inject(HttpClient);
@@ -128,6 +148,17 @@ export class MonitoringApiService {
     return this.http.get<MonitoringEventsPage>(
       `${environment.apiUrl}/api/monitoring/traces/${encodeURIComponent(traceId)}`, { params }
     );
+  }
+
+  metrics(filters: MonitoringMetricRequest) {
+    const params = new HttpParams()
+      .set('from', filters.from).set('to', filters.to)
+      .set('service', filters.service).set('metric', filters.metric).set('interval', filters.interval);
+    return this.http.get<MonitoringMetricResult>(`${environment.apiUrl}/api/monitoring/metrics`, { params });
+  }
+
+  services() {
+    return this.http.get<MonitoringServices>(`${environment.apiUrl}/api/monitoring/services`);
   }
 
   auditStatus() {

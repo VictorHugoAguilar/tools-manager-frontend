@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { FormsModule } from '@angular/forms';
-import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringOverview, MonitoringPeriod } from '../../services/monitoring-api.service';
+import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 
 @Component({
   selector: 'app-monitoring-page',
@@ -31,6 +31,16 @@ export class MonitoringPageComponent {
   protected readonly auditStatus = signal<MonitoringAuditStatus | null>(null);
   protected readonly auditStatusLoading = signal(false);
   protected readonly auditStatusError = signal('');
+  protected readonly metricResult = signal<MonitoringMetricResult | null>(null);
+  protected readonly metricLoading = signal(false);
+  protected readonly metricError = signal('');
+  protected readonly servicesResult = signal<MonitoringServices | null>(null);
+  protected readonly servicesLoading = signal(false);
+  protected readonly servicesError = signal('');
+  protected metricService: 'backend' | 'websocket' = 'backend';
+  protected metricInterval: MonitoringMetricInterval = '1h';
+  protected metricFrom = '';
+  protected metricTo = '';
   protected searchService = '';
   protected searchLevel = '';
   protected searchEventName = '';
@@ -126,6 +136,55 @@ export class MonitoringPageComponent {
     this.searchFrom = '';
     this.searchTo = '';
     this.resetResults();
+  }
+
+  protected queryMetrics(): void {
+    if (this.metricLoading()) return;
+    const from = Date.parse(this.metricFrom);
+    const to = Date.parse(this.metricTo);
+    if (!this.metricFrom || !this.metricTo || !Number.isFinite(from) || !Number.isFinite(to) ||
+      to - from < 60000 || to - from > 7 * 86400000) {
+      this.metricError.set('Indica un intervalo válido entre un minuto y siete días.');
+      return;
+    }
+    const range = { from: new Date(from).toISOString(), to: new Date(to).toISOString(), interval: this.metricInterval };
+    const filters: MonitoringMetricRequest = this.metricService === 'backend'
+      ? { ...range, service: 'backend', metric: 'http_requests' }
+      : { ...range, service: 'websocket', metric: 'websocket_activity' };
+    this.metricLoading.set(true);
+    this.metricError.set('');
+    this.metricResult.set(null);
+    this.api.metrics(filters).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => { this.metricResult.set(result); this.metricLoading.set(false); },
+      error: (error: unknown) => {
+        this.metricError.set(this.queryError(error, 'métricas'));
+        this.metricLoading.set(false);
+      }
+    });
+  }
+
+  protected queryServices(): void {
+    if (this.servicesLoading()) return;
+    this.servicesLoading.set(true);
+    this.servicesError.set('');
+    this.servicesResult.set(null);
+    this.api.services().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => { this.servicesResult.set(result); this.servicesLoading.set(false); },
+      error: (error: unknown) => {
+        this.servicesError.set(this.queryError(error, 'servicios'));
+        this.servicesLoading.set(false);
+      }
+    });
+  }
+
+  private queryError(error: unknown, subject: string): string {
+    if (error instanceof HttpErrorResponse && error.status === 400) {
+      return 'Comprueba las fechas y los filtros; la fecha final no puede estar en el futuro.';
+    }
+    if (error instanceof HttpErrorResponse && error.status === 503 && typeof error.error?.message === 'string') {
+      return error.error.message;
+    }
+    return `No se pudieron consultar ${subject}. Comprueba los permisos y la conexión.`;
   }
 
   private searchRange(): { from: string; to: string } | null {

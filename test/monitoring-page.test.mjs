@@ -61,7 +61,9 @@ function setup() {
       overview: (...args) => observable('overview', args),
       auditStatus: (...args) => observable('auditStatus', args),
       events: (...args) => observable('events', args),
-      trace: (...args) => observable('trace', args)
+      trace: (...args) => observable('trace', args),
+      metrics: (...args) => observable('metrics', args),
+      services: (...args) => observable('services', args)
     }
   };
   const component = new MonitoringPageComponent();
@@ -150,4 +152,49 @@ test('failed page navigation preserves the current page; refresh and clear reset
   component.clearSearch();
   assert.equal(component.searchFrom, '');
   assert.equal(component.traceView(), null);
+});
+
+test('metrics validate range and query the correct service and resolution', () => {
+  const { component, calls, requests } = setup();
+  component.queryMetrics();
+  assert.match(component.metricError(), /un minuto y siete días/);
+  assert.equal(calls.filter((call) => call.name === 'metrics').length, 0);
+  component.metricFrom = '2026-11-10T10:00';
+  component.metricTo = '2026-11-11T10:00';
+  component.metricInterval = '1m';
+  component.metricService = 'websocket';
+  component.queryMetrics();
+  assert.deepEqual(calls.at(-1), { name: 'metrics', args: [{
+    from: new Date('2026-11-10T10:00').toISOString(),
+    to: new Date('2026-11-11T10:00').toISOString(),
+    service: 'websocket', metric: 'websocket_activity', interval: '1m'
+  }] });
+  component.queryMetrics();
+  assert.equal(calls.filter((call) => call.name === 'metrics').length, 1);
+  const result = { service: 'websocket', metric: 'websocket_activity', points: [] };
+  requests.at(-1).observer.next(result);
+  assert.equal(component.metricResult(), result);
+  component.metricService = 'backend';
+  component.queryMetrics();
+  assert.equal(calls.at(-1).args[0].metric, 'http_requests');
+  assert.equal(component.metricResult(), null);
+  requests.at(-1).observer.error(new Error('offline'));
+  assert.match(component.metricError(), /No se pudieron consultar métricas/);
+  assert.equal(component.metricLoading(), false);
+});
+
+test('services are requested on demand and failures do not appear as healthy data', () => {
+  const { component, calls, requests } = setup();
+  assert.equal(calls.some((call) => call.name === 'services'), false);
+  component.queryServices();
+  component.queryServices();
+  assert.equal(calls.filter((call) => call.name === 'services').length, 1);
+  const result = { services: { frontend: null, storage: null } };
+  requests.at(-1).observer.next(result);
+  assert.equal(component.servicesResult(), result);
+  component.queryServices();
+  assert.equal(component.servicesResult(), null);
+  requests.at(-1).observer.error(new Error('offline'));
+  assert.match(component.servicesError(), /No se pudieron consultar servicios/);
+  assert.equal(component.servicesLoading(), false);
 });

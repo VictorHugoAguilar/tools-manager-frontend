@@ -31,6 +31,80 @@
   @if (error()) {
     <p class="notice error" role="alert">{{ error() }}</p>
   }
+  <div class="detail-grid monitoring-queries">
+    <article class="card panel">
+      <h2>Consultar métricas históricas</h2>
+      <p class="muted">Fechas en hora local. Solo se incluyen minutos completos; los grupos horarios de los extremos pueden ser parciales. Los huecos no indican cero actividad.</p>
+      <form class="event-filters" (ngSubmit)="queryMetrics()">
+        <label>Servicio
+          <select name="metricService" [(ngModel)]="metricService" [disabled]="metricLoading()">
+            <option value="backend">Backend · peticiones HTTP</option>
+            <option value="websocket">WebSocket · actividad</option>
+          </select>
+        </label>
+        <label>Resolución
+          <select name="metricInterval" [(ngModel)]="metricInterval" [disabled]="metricLoading()">
+            <option value="1m">Un minuto</option><option value="1h">Una hora</option>
+          </select>
+        </label>
+        <label>Desde <input type="datetime-local" name="metricFrom" [(ngModel)]="metricFrom" [disabled]="metricLoading()" required></label>
+        <label>Hasta <input type="datetime-local" name="metricTo" [(ngModel)]="metricTo" [disabled]="metricLoading()" required></label>
+        <button type="submit" [disabled]="metricLoading()">Consultar métricas</button>
+      </form>
+      @if (metricLoading()) { <p class="muted" role="status">Consultando métricas…</p> }
+      @if (metricError()) { <p class="notice error" role="alert">{{ metricError() }}</p> }
+      @if (metricResult(); as metric) {
+        <p class="muted">Minutos incluidos: {{ metric.from | date:'dd/MM/yyyy HH:mm' }} – {{ metric.to | date:'dd/MM/yyyy HH:mm' }} (final excluido). Resolución: {{ metric.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}.</p>
+        @if (metric.service === 'backend') {
+          @if (metric.count) {
+            <p>Peticiones: {{ metric.count }} · errores 5xx: {{ metric.errors }} · media: {{ metric.averageMs | number:'1.0-1' }} ms · p95: {{ metric.p95Range }} ms · p99: {{ metric.p99Range }} ms</p>
+            <p class="muted">Los percentiles son rangos estimados.</p>
+          } @else { <p>Sin intervalos registrados.</p> }
+          @if (metric.points.length) {
+            <div class="metric-table"><table>
+              <thead><tr><th>Inicio</th><th>Peticiones</th><th>Errores 5xx</th><th>Media (ms)</th></tr></thead>
+              <tbody>@for (point of metric.points; track point.start) {
+                <tr><td>{{ point.start | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ point.count }}</td><td>{{ point.errors }}</td><td>{{ point.averageMs | number:'1.0-1' }}</td></tr>
+              }</tbody>
+            </table></div>
+          }
+        } @else {
+          @if (metric.points.length) {
+            <div class="metric-table"><table>
+              <thead><tr><th>Inicio</th><th>Aperturas</th><th>Cierres</th><th>Actualizaciones</th></tr></thead>
+              <tbody>@for (point of metric.points; track point.start) {
+                <tr><td>{{ point.start | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ point.opened }}</td><td>{{ point.closed }}</td><td>{{ point.updates }}</td></tr>
+              }</tbody>
+            </table></div>
+          } @else { <p>Sin intervalos registrados.</p> }
+        }
+      }
+    </article>
+    <article class="card panel">
+      <h2>Señales por servicio</h2>
+      <p class="muted">Las señales recientes no garantizan la disponibilidad; las instancias sin señal reciente no se cuentan.</p>
+      <button type="button" [disabled]="servicesLoading()" (click)="queryServices()">Consultar servicios</button>
+      @if (servicesLoading()) { <p class="muted" role="status">Consultando servicios…</p> }
+      @if (servicesError()) { <p class="notice error" role="alert">{{ servicesError() }}</p> }
+      @if (servicesResult(); as result) {
+        <p class="muted">Consultado: {{ result.generatedAt | date:'dd/MM/yyyy HH:mm:ss' }} · señal reciente: hasta {{ result.freshnessSeconds }} segundos.</p>
+        <dl>
+          <div><dt>Backend: instancias con señal reciente</dt><dd>{{ result.services.backend.recentInstances }}</dd></div>
+          <div><dt>Backend: última señal</dt><dd>{{ result.services.backend.lastHeartbeatAt ? (result.services.backend.lastHeartbeatAt | date:'dd/MM/yyyy HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>WebSocket: instancias con señal reciente</dt><dd>{{ result.services.websocket.recentInstances }}</dd></div>
+          <div><dt>WebSocket: última señal</dt><dd>{{ result.services.websocket.lastHeartbeatAt ? (result.services.websocket.lastHeartbeatAt | date:'dd/MM/yyyy HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>WebSocket: conexiones en instancias recientes</dt><dd>{{ result.services.websocket.activeConnections ?? 'Sin datos' }}</dd></div>
+          <div><dt>Frontend: disponibilidad</dt><dd>Sin datos</dd></div>
+          <div><dt>Almacenamiento: disponibilidad</dt><dd>Sin datos</dd></div>
+        </dl>
+        @if (result.services.websocket.metricHealth; as health) {
+          <p class="muted">Métricas WebSocket de instancias recientes: {{ health.pending }} intervalos pendientes, {{ health.activeIntervals }} activos, {{ health.dropped }} descartados, {{ health.failed }} fallidos, {{ health.droppedSamples }} muestras descartadas y {{ health.consecutiveFailures }} fallos consecutivos sumados.</p>
+        } @else {
+          <p class="muted">Salud de métricas WebSocket no disponible para todas las instancias con señal reciente.</p>
+        }
+      }
+    </article>
+  </div>
   @if (data(); as overview) {
     <p class="updated">Última actualización: {{ overview.generatedAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
     <div class="summary-grid">
