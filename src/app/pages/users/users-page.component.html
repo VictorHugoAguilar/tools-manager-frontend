@@ -56,7 +56,9 @@
               <td>{{ user.firstName }}</td>
               <td>{{ user.lastName }}</td>
               <td>{{ user.email }}</td>
-              <td><span class="role-badge" [class.role-badge--admin]="user.roleId === 'admin'">{{ user.roleName }}</span></td>
+              <td><span class="role-badge" [class.role-badge--admin]="user.roleId === 'admin'"
+                [class.role-badge--super]="user.roleId === 'super'"
+                >{{ user.roleName }}</span></td>
               <td><span class="status-badge" [class.status-badge--inactive]="!user.isActive">
                 {{ user.isActive ? 'Activo' : 'Inactivo' }}
               </span></td>

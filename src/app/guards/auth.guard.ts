@@ -33,3 +33,21 @@ export const adminGuard: CanActivateFn = async (_route, state) => {
     });
   }
 };
+
+export const monitoringGuard: CanActivateFn = async (_route, state) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  try {
+    const user = await auth.refreshCurrentUser();
+    if (!user) {
+      return router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+    }
+    return user.permissions.includes('monitoring:app')
+      ? true
+      : router.createUrlTree(['/acceso-denegado'], { queryParams: { returnUrl: state.url } });
+  } catch {
+    return router.createUrlTree(['/login'], {
+      queryParams: { returnUrl: state.url, sessionCheck: 'failed' }
+    });
+  }
+};

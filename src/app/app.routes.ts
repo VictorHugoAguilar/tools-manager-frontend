@@ -10,7 +10,7 @@ import { TechniciansPageComponent } from './pages/technicians/technicians-page.c
 import { StoragePageComponent } from './pages/storage/storage-page.component';
 import { WorkshopStoragePageComponent } from './pages/workshop-storage/workshop-storage-page.component';
 import { drawingEditorCanDeactivateGuard } from './pages/drawing/drawing-editor.guard';
-import { adminGuard, authGuard } from './guards/auth.guard';
+import { adminGuard, authGuard, monitoringGuard } from './guards/auth.guard';
 
 export const appRoutes: Routes = [
   { path: 'login', loadComponent: () => import('./pages/login/login-page.component').then((module) => module.LoginPageComponent) },
@@ -154,6 +154,19 @@ export const appRoutes: Routes = [
           title: 'Reportes',
           description: 'Lectura rapida del estado general, uso y composicion del inventario.',
           showCreateAction: false
+        }
+      },
+      {
+        path: 'monitorizacion',
+        canActivate: [monitoringGuard],
+        loadComponent: () => import('./pages/monitoring/monitoring-page.component')
+          .then((module) => module.MonitoringPageComponent),
+        data: {
+          eyebrow: 'Administración',
+          title: 'Monitorización',
+          description: 'Salud y actividad de la aplicación.',
+          showCreateAction: false,
+          showPageHeader: false
         }
       },
       {

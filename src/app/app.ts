@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastStackComponent } from './components/toast-stack.component';
 import { ConfirmDialogComponent } from './components/confirm-dialog.component';
+import { TelemetryService } from './services/telemetry.service';
 
 @Component({
   selector: 'app-root',
@@ -10,4 +11,6 @@ import { ConfirmDialogComponent } from './components/confirm-dialog.component';
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppComponent {}
+export class AppComponent {
+  private readonly telemetry = inject(TelemetryService);
+}
