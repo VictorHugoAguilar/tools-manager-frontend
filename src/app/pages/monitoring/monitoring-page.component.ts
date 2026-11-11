@@ -6,10 +6,11 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { FormsModule } from '@angular/forms';
 import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
+import { StorageAuditHistoryComponent } from './storage-audit-history.component';
 
 @Component({
   selector: 'app-monitoring-page',
-  imports: [CommonModule, FormsModule, BaseChartDirective],
+  imports: [CommonModule, FormsModule, BaseChartDirective, StorageAuditHistoryComponent],
   templateUrl: './monitoring-page.component.html',
   styleUrl: './monitoring-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

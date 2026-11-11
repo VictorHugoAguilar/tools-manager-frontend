@@ -21,7 +21,8 @@ const mocks = {
   '@angular/common/http': `export class HttpErrorResponse extends Error {}`,
   '@angular/forms': `export const FormsModule = {};`,
   'ng2-charts': `export const BaseChartDirective = {};`,
-  'monitoring-api': `export const MonitoringApiService = 'api';`
+  'monitoring-api': `export const MonitoringApiService = 'api';`,
+  'storage-history': `export const StorageAuditHistoryComponent = {};`
 };
 
 const compiled = await build({
@@ -38,6 +39,8 @@ const compiled = await build({
         ({ path }) => ({ path, namespace: 'mock' }));
       plugin.onResolve({ filter: /monitoring-api\.service$/ },
         () => ({ path: 'monitoring-api', namespace: 'mock' }));
+      plugin.onResolve({ filter: /storage-audit-history\.component$/ },
+        () => ({ path: 'storage-history', namespace: 'mock' }));
       plugin.onLoad({ filter: /.*/, namespace: 'mock' }, ({ path }) => ({ contents: mocks[path], loader: 'js' }));
     }
   }]

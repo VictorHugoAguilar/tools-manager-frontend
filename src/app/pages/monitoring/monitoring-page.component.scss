@@ -100,6 +100,8 @@ select:focus-visible, button:focus-visible { outline: 3px solid #f47d00; outline
 .metric-table { max-height: 20rem; overflow: auto; margin-top: .75rem; }
 .metric-table table { width: 100%; border-collapse: collapse; font-size: .75rem; }
 .metric-table th, .metric-table td { padding: .4rem; text-align: left; border-bottom: 1px solid #eeeae2; }
+.audit-histories { margin-top: .85rem; }
+.audit-histories-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .logs li { display: flex; align-items: flex-start; gap: .5rem; padding: .55rem 0; border-top: 1px solid #eeeae2; font-size: .75rem; }
 .logs li div { min-width: 0; overflow-wrap: anywhere; }
 .logs li div span { display: block; color: #677692; margin-top: .2rem; }
@@ -123,6 +125,7 @@ dd { margin: 0; font-weight: 600; text-align: right; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .main-grid, .detail-grid { grid-template-columns: 1fr; }
   .monitoring-queries { grid-template-columns: 1fr; }
+  .audit-histories-grid { grid-template-columns: 1fr; }
   .controls { flex-wrap: wrap; }
 }
 @media (max-width: 400px) {

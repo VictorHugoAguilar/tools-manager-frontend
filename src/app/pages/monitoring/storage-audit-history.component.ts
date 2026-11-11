@@ -22,9 +22,10 @@ interface StorageAuditEvent {
   template: `
     @if (auth.user()?.permissions?.includes('monitoring:app')) {
       <section class="history">
-        <h2>Historial de auditoría</h2>
+        <h2>Historial de auditoría: {{ scope() === 'boxes' ? 'cajas' : 'taller' }}</h2>
         <p>Últimos 25 cambios publicados de la base compartida, sin separación por entorno. Los registros pendientes y los anteriores a esta función pueden no aparecer; las lecturas se registran por separado en monitorización. Si la auditoría está desactivada, los cambios no se registran.</p>
-        <button type="button" [disabled]="loading()" (click)="load()">Consultar historial</button>
+        <button type="button" [disabled]="loading()" (click)="load()"
+          [attr.aria-label]="scope() === 'boxes' ? 'Consultar historial de cajas' : 'Consultar historial del taller'">Consultar historial</button>
         @if (loading()) { <p role="status">Consultando historial…</p> }
         @if (error()) { <p role="alert">{{ error() }}</p> }
         @if (events(); as records) {
