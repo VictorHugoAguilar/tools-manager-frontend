@@ -189,6 +189,19 @@ test('overview queries use the period returned with the displayed data', () => {
   });
 });
 
+test('resource panel preserves per-service instances and handles older overview responses', () => {
+  const { component } = setup();
+  component.data.set({ heartbeats: { resources: {
+    backend: [{ instanceId: 'b', process: { cpuPercent: 0, rssBytes: 0 }, disk: null }],
+    websocket: [{ instanceId: 'w', process: null, disk: { totalBytes: 100, usedBytes: 20 } }]
+  } } });
+  assert.deepEqual(component.resourceInstances().map(({ service, instanceId }) => [service, instanceId]),
+    [['Backend', 'b'], ['WebSocket', 'w']]);
+  assert.equal(component.resourceInstances()[0].process.cpuPercent, 0);
+  component.data.set({ heartbeats: {} });
+  assert.deepEqual(component.resourceInstances(), []);
+});
+
 test('returning from a trace preserves a failed search instead of presenting it as empty', () => {
   const { component, requests } = setup();
   component.searchEvents();

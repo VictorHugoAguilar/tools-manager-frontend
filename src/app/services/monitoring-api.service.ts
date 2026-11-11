@@ -44,12 +44,25 @@ export interface MonitoringAuditStatus {
   };
 }
 
+export interface MonitoringResourceInstance {
+  instanceId: string;
+  heartbeatAt: string;
+  process: { sampledAt: string; cpuPercent: number | null; rssBytes: number } | null;
+  disk: { sampledAt: string; totalBytes: number; usedBytes: number; availableBytes: number } | null;
+}
+
+export interface MonitoringResources {
+  backend: MonitoringResourceInstance[];
+  websocket: MonitoringResourceInstance[];
+}
+
 export interface MonitoringOverview {
   period: MonitoringPeriod;
   generatedAt: string;
   events: MonitoringEvent[];
   heartbeats: {
     freshnessSeconds: number;
+    resources?: MonitoringResources;
     services: {
       backend: { recentInstances: number; lastHeartbeatAt: string | null };
       websocket: {
@@ -122,6 +135,7 @@ export interface MonitoringServices {
   generatedAt: string;
   freshnessSeconds: number;
   services: MonitoringOverview['heartbeats']['services'] & { frontend: null; storage: null };
+  resources?: MonitoringResources;
 }
 
 @Injectable({ providedIn: 'root' })

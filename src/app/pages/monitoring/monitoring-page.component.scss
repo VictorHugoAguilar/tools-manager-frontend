@@ -81,10 +81,10 @@ select:focus-visible, button:focus-visible { outline: 3px solid #f47d00; outline
 .panel-icon.accent { color: #f27b00; }
 .empty-chart, .empty { color: #8190a6; text-align: center; padding: 4rem 1rem; }
 .chart { height: 15rem; margin-top: .75rem; }
-.resources { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; padding: 2rem 0 1.5rem; }
-.resources div { display: grid; justify-items: center; gap: .5rem; min-width: 0; font-size: .8rem; font-weight: 700; }
-.resources div + div { border-left: 1px solid #e1ded6; }
-.empty-gauge { display: grid; place-items: center; width: clamp(3.75rem, 7vw, 5.5rem); aspect-ratio: 1; border: .5rem solid #e4e3df; border-radius: 50%; font-size: 1.5rem; color: #9da9b7; }
+.resource-list { max-height: 28rem; overflow: auto; margin: .75rem 0; }
+.resource-instance { padding: .6rem 0; border-top: 1px solid #eeeae2; }
+.resource-instance h3 { margin: 0 0 .25rem; font-size: .75rem; overflow-wrap: anywhere; }
+.resource-instance dl { margin-bottom: 0; }
 .logs ul { list-style: none; padding: 0; margin: .8rem 0 0; max-height: 20rem; overflow: auto; }
 .event-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; margin-top: .75rem; }
 .event-filters label { display: grid; gap: .25rem; min-width: 0; font-size: .72rem; font-weight: 700; }

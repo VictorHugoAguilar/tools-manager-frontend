@@ -157,12 +157,33 @@
         }
       </article>
       <article class="card panel">
-        <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Carga del sistema</h2>
-        <div class="resources">
-          <div><span>CPU</span><strong class="empty-gauge">—</strong><small>Sin datos</small></div>
-          <div><span>Memoria</span><strong class="empty-gauge">—</strong><small>Sin datos</small></div>
-          <div><span>Disco</span><strong class="empty-gauge">—</strong><small>Sin datos</small></div>
-        </div>
+        <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Recursos por instancia</h2>
+        <p class="muted">Solo instancias con señal reciente (hasta {{ overview.heartbeats.freshnessSeconds }} s). La CPU y la memoria corresponden al proceso; el disco es el sistema de archivos de /, no Firebase Storage. Los discos pueden estar compartidos y no se suman.</p>
+        @if (resourceInstances().length) {
+          <div class="resource-list">
+            @for (instance of resourceInstances(); track instance.service + instance.instanceId) {
+              <section class="resource-instance">
+                <h3>{{ instance.service }} · {{ instance.instanceId }}</h3>
+                <p class="muted">Última señal: {{ instance.heartbeatAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+                <dl>
+                  <div><dt>CPU del proceso</dt><dd>@if (instance.process; as process) { {{ process.cpuPercent !== null ? ((process.cpuPercent | number:'1.0-1') + ' %') : 'Sin datos' }} } @else { Sin datos }</dd></div>
+                  <div><dt>Memoria residente (RSS)</dt><dd>{{ instance.process ? ((instance.process.rssBytes / 1048576 | number:'1.0-1') + ' MiB') : 'Sin datos' }}</dd></div>
+                  <div><dt>Disco usado en /</dt><dd>{{ instance.disk ? ((instance.disk.usedBytes / instance.disk.totalBytes * 100 | number:'1.0-1') + ' %') : 'Sin datos' }}</dd></div>
+                  @if (instance.disk; as disk) {
+                    <div><dt>Disco disponible / total</dt><dd>{{ disk.availableBytes / 1073741824 | number:'1.0-2' }} / {{ disk.totalBytes / 1073741824 | number:'1.0-2' }} GiB</dd></div>
+                    <div><dt>Muestra de disco</dt><dd>{{ disk.sampledAt | date:'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+                  }
+                  @if (instance.process; as process) {
+                    <div><dt>Muestra del proceso</dt><dd>{{ process.sampledAt | date:'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+                  }
+                </dl>
+              </section>
+            }
+          </div>
+          <p class="muted">CPU media entre muestras: 100 % equivale a un núcleo y puede superar el 100 %. La memoria RSS no es un porcentaje del límite del contenedor. Los valores antiguos o no disponibles se indican como «Sin datos».</p>
+        } @else {
+          <p class="muted">Sin datos de instancias recientes.</p>
+        }
       </article>
       <article class="card panel">
         <h2 class="panel-title">Actividad WebSocket registrada</h2>

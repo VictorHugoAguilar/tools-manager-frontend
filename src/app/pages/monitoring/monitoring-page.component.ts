@@ -66,6 +66,13 @@ export class MonitoringPageComponent {
   private searchFilters: MonitoringEventFilters | null = null;
   private pageCursors: (string | null)[] = [null];
   private previousEventView: PreviousEventView | null = null;
+  protected readonly resourceInstances = computed(() => {
+    const resources = this.data()?.heartbeats.resources;
+    return resources ? [
+      ...resources.backend.map((instance) => ({ ...instance, service: 'Backend' })),
+      ...resources.websocket.map((instance) => ({ ...instance, service: 'WebSocket' }))
+    ] : [];
+  });
   protected readonly recentActivity = computed(() => recentStorageActivity(this.data()?.events ?? []));
   protected readonly latencyChart = computed<ChartData<'line'>>(() => {
     const metrics = this.data()?.httpMetrics;
