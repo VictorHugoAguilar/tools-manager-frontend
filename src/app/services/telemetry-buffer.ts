@@ -1,12 +1,22 @@
 export type FrontendTelemetryName = 'frontend.runtime.error' | 'frontend.api.request.failed' |
   'frontend.route.changed' | 'frontend.performance.measurement' | 'frontend.tools.search.completed' |
   'frontend.collaboration.sync.completed' | 'frontend.collaboration.reconnected' |
-  'frontend.collaboration.persist.completed';
+  'frontend.collaboration.persist.completed' |
+  'frontend.performance.page.loaded' |
+  'frontend.performance.first_contentful_paint' |
+  'frontend.performance.largest_contentful_paint' |
+  'frontend.performance.long_task' |
+  'frontend.performance.route_transition';
 
 const LOW_PRIORITY = new Set<FrontendTelemetryName>([
   'frontend.route.changed', 'frontend.performance.measurement', 'frontend.tools.search.completed',
   'frontend.collaboration.sync.completed', 'frontend.collaboration.reconnected',
-  'frontend.collaboration.persist.completed'
+  'frontend.collaboration.persist.completed',
+  'frontend.performance.page.loaded',
+  'frontend.performance.first_contentful_paint',
+  'frontend.performance.largest_contentful_paint',
+  'frontend.performance.long_task',
+  'frontend.performance.route_transition'
 ]);
 
 export interface FrontendTelemetryEvent {
