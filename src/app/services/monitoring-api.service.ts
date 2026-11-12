@@ -148,6 +148,45 @@ export interface MonitoringServices {
   resources?: MonitoringResources;
 }
 
+export interface BaselineOperation {
+  source: 'rtdb' | 'firestore';
+  resource: string;
+  kind: 'read' | 'write' | 'transaction';
+  scope: 'collection' | 'item';
+  count: number;
+  errors: number;
+  units: number;
+  repeatedWithin5s: number;
+  averageMs: number | null;
+  maxMs: number;
+}
+
+export interface BaselineRequest {
+  method: string;
+  route: string;
+  count: number;
+  errors5xx: number;
+  averageMs: number | null;
+  maxMs: number;
+  rtdbReads: number;
+  rtdbWrites: number;
+  firestoreReads: number;
+  firestoreWrites: number;
+  rtdbReadsPerRequest: number | null;
+  databaseAverageMs: number | null;
+}
+
+export interface MonitoringBaseline {
+  generatedAt: string;
+  instanceId?: string;
+  enabled: boolean;
+  since: string;
+  elapsedSeconds: number;
+  overflowedKeys: number;
+  operations: BaselineOperation[];
+  requests: BaselineRequest[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class MonitoringApiService {
   private readonly http = inject(HttpClient);
@@ -183,6 +222,10 @@ export class MonitoringApiService {
 
   services() {
     return this.http.get<MonitoringServices>(`${environment.apiUrl}/api/monitoring/services`);
+  }
+
+  baseline() {
+    return this.http.get<MonitoringBaseline>(`${environment.apiUrl}/api/monitoring/baseline`);
   }
 
   auditStatus() {

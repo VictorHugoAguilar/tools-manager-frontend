@@ -536,6 +536,59 @@
       }
     </article>
   </div>
+  <section class="card panel baseline">
+    <h2>Línea base de lecturas y escrituras</h2>
+    <p class="muted">Operaciones del backend sobre Realtime Database y Firestore desde el último arranque de esta instancia. Sirve para decidir qué cachear; consultarla queda auditado.</p>
+    <button type="button" class="btn" (click)="loadBaseline()" [disabled]="baselineLoading()">{{ baseline() ? 'Actualizar' : 'Consultar línea base' }}</button>
+    @if (baselineLoading()) {
+      <p class="muted" role="status">Consultando línea base…</p>
+    } @else if (baselineError()) {
+      <p class="notice error" role="alert">{{ baselineError() }}</p>
+    } @else if (baseline(); as base) {
+      @if (!base.enabled) {
+        <p class="notice">La línea base está desactivada (TELEMETRY_BASELINE=false).</p>
+      } @else {
+        <p class="muted">Desde {{ base.since | date:'dd/MM HH:mm:ss' }} ({{ base.elapsedSeconds }} s). Contadores por instancia; se reinician al reiniciar el proceso.@if (base.overflowedKeys > 0) { Hay {{ base.overflowedKeys }} claves agrupadas en «other».}</p>
+        <h3>Operaciones por recurso</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Fuente</th><th>Recurso</th><th>Tipo</th><th>Alcance</th><th>Total</th><th>Repetidas &lt;5 s</th><th>Errores</th><th>Medio (ms)</th><th>Máx (ms)</th></tr></thead>
+            <tbody>
+              @for (op of baselineTopOperations(); track op.source + op.resource + op.kind + op.scope) {
+                <tr>
+                  <td>{{ op.source === 'rtdb' ? 'RTDB' : 'Firestore' }}</td><td>{{ op.resource }}</td>
+                  <td>{{ op.kind === 'read' ? 'Lectura' : op.kind === 'write' ? 'Escritura' : 'Transacción' }}</td>
+                  <td>{{ op.scope === 'collection' ? 'Colección' : 'Ítem' }}</td>
+                  <td>{{ op.count }}</td><td>{{ op.repeatedWithin5s }}</td><td>{{ op.errors }}</td>
+                  <td>{{ op.averageMs ?? '—' }}</td><td>{{ op.maxMs }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="9">Sin operaciones registradas todavía.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <h3>Endpoints con más lecturas</h3>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Endpoint</th><th>Peticiones</th><th>Lecturas RTDB</th><th>Lecturas/petición</th><th>Escrituras RTDB</th><th>Lecturas FS</th><th>Escrituras FS</th><th>Tiempo en BD (ms)</th></tr></thead>
+            <tbody>
+              @for (req of baselineTopRequests(); track req.method + req.route) {
+                <tr>
+                  <td>{{ req.method }} {{ req.route }}</td><td>{{ req.count }}</td><td>{{ req.rtdbReads }}</td>
+                  <td>{{ req.rtdbReadsPerRequest ?? '—' }}</td><td>{{ req.rtdbWrites }}</td>
+                  <td>{{ req.firestoreReads }}</td><td>{{ req.firestoreWrites }}</td><td>{{ req.databaseAverageMs ?? '—' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8">Sin peticiones registradas todavía.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">No cubre el proceso WebSocket ni oyentes en tiempo real. Cada lectura RTDB cuenta 1 sin importar el tamaño. Las escrituras de telemetría a Firestore también aparecen.</p>
+      }
+    }
+  </section>
   <section class="card panel audit-histories">
     <h2>Historiales de auditoría</h2>
     <p class="muted">Consultas independientes por ámbito. Tablero, inventario y categorías comparten datos de herramientas; reportes y preferencias locales no tienen historial propio.</p>
