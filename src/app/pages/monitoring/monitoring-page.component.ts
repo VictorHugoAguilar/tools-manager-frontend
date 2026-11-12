@@ -22,6 +22,7 @@ interface PreviousEventView {
   pageCursors: (string | null)[];
 }
 
+export type AutoRefreshSeconds = 0 | 30 | 60 | 300;
 export type ServiceView = 'all' | 'backend' | 'database' | 'websocket' | 'frontend';
 
 @Component({
@@ -37,6 +38,10 @@ export class MonitoringPageComponent {
   private readonly document = inject(DOCUMENT);
   protected readonly period = signal<MonitoringPeriod>('1h');
   protected readonly serviceView = signal<ServiceView>('all');
+  protected readonly autoRefreshSeconds = signal<AutoRefreshSeconds>(0);
+  protected readonly liveError = signal('');
+  private liveTimer: ReturnType<typeof setInterval> | null = null;
+  private liveInFlight = false;
   protected readonly data = signal<MonitoringOverview | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -111,6 +116,39 @@ export class MonitoringPageComponent {
 
   constructor() {
     this.refresh();
+    this.destroyRef.onDestroy?.(() => this.stopLiveTimer());
+  }
+
+  protected setAutoRefresh(value: string | number): void {
+    const seconds = Number(value);
+    if (seconds !== 0 && seconds !== 30 && seconds !== 60 && seconds !== 300) return;
+    this.stopLiveTimer();
+    this.autoRefreshSeconds.set(seconds);
+    this.liveError.set('');
+    if (seconds) this.liveTimer = setInterval(() => this.liveRefresh(), seconds * 1000);
+  }
+
+  // Actualiza solo el resumen: no borra búsquedas, trazas ni métricas consultadas.
+  protected liveRefresh(): void {
+    if (this.loading() || this.liveInFlight || this.document.hidden) return;
+    this.liveInFlight = true;
+    this.api.overview(this.period()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        this.data.set(data);
+        this.error.set('');
+        this.liveError.set('');
+        this.liveInFlight = false;
+      },
+      error: () => {
+        this.liveError.set('No se pudo actualizar automáticamente; se muestran los últimos datos recibidos.');
+        this.liveInFlight = false;
+      }
+    });
+  }
+
+  private stopLiveTimer(): void {
+    if (this.liveTimer !== null) clearInterval(this.liveTimer);
+    this.liveTimer = null;
   }
 
   protected shows(...views: Exclude<ServiceView, 'all'>[]): boolean {
@@ -356,6 +394,7 @@ export class MonitoringPageComponent {
 
   protected refresh(): void {
     if (this.loading()) return;
+    this.liveError.set('');
     this.resetResults();
     this.loading.set(true);
     this.error.set('');

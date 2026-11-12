@@ -67,7 +67,10 @@ select:focus-visible, button:focus-visible, input:focus-visible, summary:focus-v
 .refresh-button { display: grid; place-items: center; width: 2.6rem; padding: .4rem; }
 .refresh-button svg { width: 1.2rem; height: 1.2rem; }
 .update-mode { padding: .6rem .75rem; border: 1px solid #b6c4d2; border-radius: .65rem; color: #516783; background: #f2f4f4; font-size: .72rem; font-weight: 700; }
-.update-mode span { display: inline-block; width: .5rem; height: .5rem; margin-right: .4rem; border-radius: 50%; background: #8d9cad; }
+.update-mode select { min-height: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; }
+.update-mode.live { border-color: #35ad71; color: #1f6f48; background: #eaf7f0; }
+.update-mode.live > span:first-child { background: #35ad71; }
+.update-mode > span:first-child { display: inline-block; width: .5rem; height: .5rem; margin-right: .4rem; border-radius: 50%; background: #8d9cad; }
 .updated { margin: 0; }
 .dashboard-nav {
   display: flex;

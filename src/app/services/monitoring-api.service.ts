@@ -105,6 +105,8 @@ export interface MonitoringOverview {
     queuePending: number;
     queueCapacity: number;
     droppedByLevel: Record<string, number>;
+    sampledOutByLevel?: Record<string, number>;
+    sampleRates?: Record<string, number>;
     failedEvents: number;
     lastSuccessfulFlushAt: string | null;
     lastFlushDurationMs: number | null;

@@ -320,6 +320,44 @@ test('service views preselect the metric service and event filter without queryi
   assert.equal(calls.length, count);
 });
 
+test('live refresh updates only the overview and keeps queried results', () => {
+  const { component, calls, requests } = setup();
+  const timers = [];
+  const originalSet = globalThis.setInterval;
+  const originalClear = globalThis.clearInterval;
+  globalThis.setInterval = (callback, ms) => { timers.push({ callback, ms, cleared: false }); return timers.length - 1; };
+  globalThis.clearInterval = (id) => { timers[id].cleared = true; };
+  try {
+    component.setAutoRefresh('45');
+    assert.equal(timers.length, 0);
+    component.setAutoRefresh('30');
+    assert.equal(timers[0].ms, 30000);
+    component.metricResult.set({ marker: true });
+    const before = calls.filter((call) => call.name === 'overview').length;
+    timers[0].callback();
+    timers[0].callback();
+    assert.equal(calls.filter((call) => call.name === 'overview').length, before + 1);
+    assert.equal(calls.filter((call) => call.name === 'auditStatus').length, 1);
+    requests.at(-1).observer.error(new Error('offline'));
+    assert.match(component.liveError(), /actualizar automáticamente/);
+    assert.ok(component.data());
+    assert.deepEqual(component.metricResult(), { marker: true });
+    globalThis.monitoringTest.document.hidden = true;
+    timers[0].callback();
+    assert.equal(calls.filter((call) => call.name === 'overview').length, before + 1);
+    globalThis.monitoringTest.document.hidden = false;
+    timers[0].callback();
+    requests.at(-1).observer.next({ period: '1h', generatedAt: '2026-11-11T12:01:00.000Z' });
+    assert.equal(component.liveError(), '');
+    assert.equal(component.data().generatedAt, '2026-11-11T12:01:00.000Z');
+    component.setAutoRefresh('0');
+    assert.equal(timers[0].cleared, true);
+  } finally {
+    globalThis.setInterval = originalSet;
+    globalThis.clearInterval = originalClear;
+  }
+});
+
 test('metrics validate range and query the correct service and resolution', () => {
   const { component, calls, requests } = setup();
   component.queryMetrics();

@@ -19,7 +19,16 @@
           <option value="7d">Últimos 7 días</option>
         </select>
       </label>
-      <span class="update-mode"><span aria-hidden="true"></span>Actualización manual</span>
+      <label class="update-mode" [class.live]="autoRefreshSeconds() > 0">
+        <span aria-hidden="true"></span>
+        <span class="sr-only">Actualización automática del resumen</span>
+        <select [value]="autoRefreshSeconds()" (change)="setAutoRefresh($any($event.target).value)">
+          <option value="0">Actualización manual</option>
+          <option value="30">Cada 30 s</option>
+          <option value="60">Cada minuto</option>
+          <option value="300">Cada 5 min</option>
+        </select>
+      </label>
       <button type="button" class="refresh-button" [disabled]="loading() || searchLoading()" (click)="refresh()" aria-label="Actualizar monitorización">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5 9a7 7 0 0 1 12-2l3 5M4 12l3 5a7 7 0 0 0 12-2"/></svg>
       </button>
@@ -43,6 +52,9 @@
 
   @if (loading()) {
     <p class="notice" role="status">Cargando datos de monitorización…</p>
+  }
+  @if (liveError()) {
+    <p class="notice error" role="status">{{ liveError() }}</p>
   }
   @if (error()) {
     <p class="notice error" role="alert">{{ error() }}</p>
@@ -366,6 +378,7 @@
         <dl>
           <div><dt>Cola pendiente</dt><dd>{{ overview.collector.queuePending }} / {{ overview.collector.queueCapacity }}</dd></div>
           <div><dt>Descartados (DEBUG / INFO)</dt><dd>{{ overview.collector.droppedByLevel['DEBUG'] }} / {{ overview.collector.droppedByLevel['INFO'] }}</dd></div>
+          <div><dt>Muestreados (DEBUG / INFO)</dt><dd>{{ overview.collector.sampledOutByLevel?.['DEBUG'] ?? 'Sin datos' }} / {{ overview.collector.sampledOutByLevel?.['INFO'] ?? 'Sin datos' }}</dd></div>
           <div><dt>Descartados (WARN / ERROR)</dt><dd>{{ overview.collector.droppedByLevel['WARN'] }} / {{ overview.collector.droppedByLevel['ERROR'] }}</dd></div>
           <div><dt>Fallos consecutivos</dt><dd>{{ overview.collector.consecutiveWriteFailures }}</dd></div>
           <div><dt>Eventos fallidos</dt><dd>{{ overview.collector.failedEvents }}</dd></div>
