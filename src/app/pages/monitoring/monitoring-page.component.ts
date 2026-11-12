@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -32,6 +32,7 @@ interface PreviousEventView {
 export class MonitoringPageComponent {
   private readonly api = inject(MonitoringApiService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly document = inject(DOCUMENT);
   protected readonly period = signal<MonitoringPeriod>('1h');
   protected readonly data = signal<MonitoringOverview | null>(null);
   protected readonly loading = signal(false);
@@ -87,6 +88,10 @@ export class MonitoringPageComponent {
     const metrics = this.metricResult();
     return metrics?.service === 'backend' ? latencyChartData(metrics) : null;
   });
+  protected readonly websocketChart = computed(() => {
+    const metrics = this.data()?.webSocketMetrics;
+    return metrics ? activityChartData({ ...metrics, service: 'websocket', metric: 'websocket_activity' }) : null;
+  });
   protected readonly activityChartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -102,6 +107,10 @@ export class MonitoringPageComponent {
     this.refresh();
   }
 
+  protected navigateTo(section: 'overview' | 'metrics' | 'events' | 'audit'): void {
+    this.document.getElementById(`monitoring-${section}`)?.scrollIntoView({ block: 'start' });
+  }
+
   protected changePeriod(value: string): void {
     if (value !== '1h' && value !== '24h' && value !== '7d') return;
     this.period.set(value);
@@ -112,12 +121,17 @@ export class MonitoringPageComponent {
     if (this.searchLoading() || this.loading()) return;
     const range = this.searchRange();
     if (!range) return;
+    const traceId = this.searchTraceId.trim();
+    if (traceId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(traceId)) {
+      this.searchError.set('El identificador de traza no es un UUID válido (36 caracteres). Cópialo completo.');
+      return;
+    }
     this.searchFilters = {
       ...range,
       service: this.searchService,
       level: this.searchLevel,
       eventName: this.searchEventName.trim(),
-      traceId: this.searchTraceId.trim()
+      traceId
     };
     this.previousEventView = null;
     this.canReturnToEvents.set(false);

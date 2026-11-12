@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
+import { readFile } from 'node:fs/promises';
 
 const mocks = {
   '@angular/core': `
@@ -17,12 +18,13 @@ const mocks = {
     export const computed = (callback) => callback;
   `,
   '@angular/core/rxjs-interop': `export const takeUntilDestroyed = () => (value) => value;`,
-  '@angular/common': `export const CommonModule = {};`,
+  '@angular/common': `export const CommonModule = {}; export const DOCUMENT = 'document';`,
   '@angular/common/http': `export class HttpErrorResponse extends Error {}`,
   '@angular/forms': `export const FormsModule = {};`,
   'ng2-charts': `export const BaseChartDirective = {};`,
   'monitoring-api': `export const MonitoringApiService = 'api';`,
-  'storage-history': `export const StorageAuditHistoryComponent = {};`
+  'storage-history': `export const StorageAuditHistoryComponent = {};`,
+  'area-history': `export const AreaAuditHistoryComponent = {};`
 };
 
 const compiled = await build({
@@ -41,6 +43,8 @@ const compiled = await build({
         () => ({ path: 'monitoring-api', namespace: 'mock' }));
       plugin.onResolve({ filter: /storage-audit-history\.component$/ },
         () => ({ path: 'storage-history', namespace: 'mock' }));
+      plugin.onResolve({ filter: /area-audit-history\.component$/ },
+        () => ({ path: 'area-history', namespace: 'mock' }));
       plugin.onLoad({ filter: /.*/, namespace: 'mock' }, ({ path }) => ({ contents: mocks[path], loader: 'js' }));
     }
   }]
@@ -60,6 +64,7 @@ function setup() {
   };
   globalThis.monitoringTest = {
     destroy: {},
+    document: { getElementById: () => null },
     api: {
       overview: (...args) => observable('overview', args),
       auditStatus: (...args) => observable('auditStatus', args),
@@ -74,6 +79,31 @@ function setup() {
   requests.find((entry) => entry.name === 'auditStatus').observer.next({});
   return { component, calls, requests };
 }
+
+test('dashboard navigation scrolls to the chosen section without issuing queries', () => {
+  const { component, calls } = setup();
+  const scrolled = [];
+  globalThis.monitoringTest.document.getElementById = (id) => ({
+    scrollIntoView: (options) => scrolled.push({ id, options })
+  });
+  const count = calls.length;
+  for (const section of ['overview', 'metrics', 'events', 'audit']) component.navigateTo(section);
+  assert.deepEqual(scrolled.map((entry) => entry.id), [
+    'monitoring-overview', 'monitoring-metrics', 'monitoring-events', 'monitoring-audit'
+  ]);
+  assert.equal(calls.length, count);
+});
+
+test('dashboard keeps exploration and all audit sections available without automatic history queries', async () => {
+  const template = await readFile('src/app/pages/monitoring/monitoring-page.component.html', 'utf8');
+  for (const id of ['overview', 'metrics', 'events', 'audit']) assert.match(template, new RegExp(`id="monitoring-${id}"`));
+  for (const scope of ['boxes', 'workshop', 'tools', 'board', 'todo', 'drawing', 'catalogs', 'identity']) {
+    assert.match(template, new RegExp(`scope="${scope}"`));
+  }
+  assert.match(template, /showActivityTrace\(traceId\)/);
+  assert.match(template, /websocketChart\(\)/);
+  assert.match(template, /Consultar métricas/);
+});
 
 test('search uses the server overview range and navigates cursors in both directions', () => {
   const { component, calls, requests } = setup();

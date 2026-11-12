@@ -38,7 +38,17 @@ interface AuditEvent {
       }
     </section>
   `,
-  styles: [`.history { margin: 1.5rem 0; padding: 1rem; border: 1px solid #d6dce5; border-radius: .75rem; background: var(--surface-color, white); } .history li { overflow-wrap: anywhere; margin: .5rem 0; }`]
+  styles: [`
+    .history { padding: 1rem; color: var(--text); }
+    h2 { margin: 0 0 .5rem; font-size: .9rem; }
+    p { color: var(--muted); font-size: .78rem; line-height: 1.5; }
+    button { min-height: 2.4rem; padding: .5rem .75rem; border: 1.5px solid var(--primary); border-radius: .65rem; background: var(--accent-yellow); color: var(--primary); font-weight: 800; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    button:focus-visible { outline: 3px solid #f47d00; outline-offset: 3px; }
+    ul { padding-left: 1.2rem; max-height: 18rem; overflow: auto; }
+    li { overflow-wrap: anywhere; margin: .5rem 0; font-size: .78rem; }
+    [role="alert"] { color: #a22d36; }
+  `]
 })
 export class AreaAuditHistoryComponent {
   readonly scope = input.required<'tools' | 'board' | 'todo' | 'drawing' | 'catalogs' | 'identity'>();

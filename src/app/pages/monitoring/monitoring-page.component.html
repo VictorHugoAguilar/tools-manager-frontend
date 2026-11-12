@@ -5,8 +5,9 @@
         <svg viewBox="0 0 24 24"><path d="M2 12h4l2-7 4 14 3-10 2 3h5"/></svg>
       </span>
       <div>
+        <span class="heading-eyebrow">Centro de observabilidad</span>
         <h1>Monitorización</h1>
-        <p>Vista de la salud y actividad de la aplicación</p>
+        <p>Métricas, eventos y auditoría de la aplicación en un solo lugar.</p>
       </div>
     </div>
     <div class="controls">
@@ -25,12 +26,26 @@
     </div>
   </header>
 
+  <nav class="dashboard-nav" aria-label="Secciones de monitorización">
+    <span>Explorar</span>
+    <button type="button" [disabled]="!data()" (click)="navigateTo('overview')">Resumen</button>
+    <button type="button" (click)="navigateTo('metrics')">Métricas y servicios</button>
+    <button type="button" [disabled]="!data()" (click)="navigateTo('events')">Eventos y trazas</button>
+    <button type="button" (click)="navigateTo('audit')">Auditoría</button>
+  </nav>
+
   @if (loading()) {
     <p class="notice" role="status">Cargando datos de monitorización…</p>
   }
   @if (error()) {
     <p class="notice error" role="alert">{{ error() }}</p>
   }
+  <ng-template #monitoringQueries>
+  <section id="monitoring-metrics" class="dashboard-section" aria-labelledby="metrics-title">
+    <div class="section-heading">
+      <div><span class="section-eyebrow">Explorador</span><h2 id="metrics-title">Métricas y servicios</h2></div>
+      <p>Consulta rangos históricos y señales bajo demanda.</p>
+    </div>
   <div class="detail-grid monitoring-queries">
     <article class="card panel">
       <h2>Consultar métricas históricas</h2>
@@ -121,8 +136,14 @@
       }
     </article>
   </div>
+  </section>
+  </ng-template>
   @if (data(); as overview) {
-    <p class="updated">Última actualización: {{ overview.generatedAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+    <section id="monitoring-overview" class="dashboard-section" aria-labelledby="overview-title">
+    <div class="section-heading">
+      <div><span class="section-eyebrow">Vista general</span><h2 id="overview-title">Resumen operativo</h2></div>
+      <p class="updated">Última actualización: {{ overview.generatedAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+    </div>
     <div class="summary-grid">
       <article class="card summary">
         <span class="icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg></span>
@@ -199,17 +220,29 @@
           <p class="muted">Salud de métricas WebSocket no disponible para todas las instancias con señal reciente.</p>
         }
         @if (overview.webSocketMetrics.points.length) {
+          @if (websocketChart(); as chart) {
+            <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres y actualizaciones WebSocket por intervalo" role="img"></canvas></div>
+          }
+          <details class="metric-details">
+            <summary>Ver datos por intervalo</summary>
           <dl>
             @for (point of overview.webSocketMetrics.points; track point.start) {
               <div><dt>{{ point.start | date:'dd/MM HH:mm' }}</dt><dd>Aperturas: {{ point.opened }} · cierres: {{ point.closed }} · actualizaciones: {{ point.updates }}</dd></div>
             }
           </dl>
+          </details>
         } @else {
           <p>Sin métricas históricas registradas.</p>
         }
       </article>
     </div>
+    </section>
 
+    <section id="monitoring-events" class="dashboard-section" aria-labelledby="events-title">
+    <div class="section-heading">
+      <div><span class="section-eyebrow">Investigar</span><h2 id="events-title">Eventos y trazas</h2></div>
+      <p>Busca eventos, consulta trazas y revisa el recolector.</p>
+    </div>
     <div class="detail-grid">
       <article class="card panel recent-activity">
         <h2 class="panel-title"><span class="panel-icon accent" aria-hidden="true">ϟ</span>Actividad reciente</h2>
@@ -325,7 +358,14 @@
         </p>
       </article>
     </div>
+    </section>
   }
+  <ng-container *ngTemplateOutlet="monitoringQueries" />
+  <section id="monitoring-audit" class="dashboard-section" aria-labelledby="audit-title">
+  <div class="section-heading">
+    <div><span class="section-eyebrow">Registro durable</span><h2 id="audit-title">Auditoría</h2></div>
+    <p>Estado de publicación e historiales por ámbito.</p>
+  </div>
   <div class="detail-grid">
     <article class="card panel collector">
       <h2 class="panel-title">Outbox de auditoría</h2>
@@ -350,14 +390,15 @@
     <h2>Historiales de auditoría</h2>
     <p class="muted">Consultas independientes por ámbito. Tablero, inventario y categorías comparten datos de herramientas; reportes y preferencias locales no tienen historial propio.</p>
     <div class="audit-histories-grid">
-      <app-storage-audit-history scope="boxes" />
-      <app-storage-audit-history scope="workshop" />
-      <app-area-audit-history scope="tools" title="herramientas y reparaciones" />
-      <app-area-audit-history scope="board" title="listas de tareas" />
-      <app-area-audit-history scope="todo" title="tareas y proyectos" />
-      <app-area-audit-history scope="drawing" title="dibujar" />
-      <app-area-audit-history scope="catalogs" title="catálogos y técnicos" />
-      <app-area-audit-history scope="identity" title="usuarios y roles" />
+      <details class="history-entry"><summary>Cajas</summary><app-storage-audit-history scope="boxes" /></details>
+      <details class="history-entry"><summary>Taller</summary><app-storage-audit-history scope="workshop" /></details>
+      <details class="history-entry"><summary>Herramientas y reparaciones</summary><app-area-audit-history scope="tools" title="herramientas y reparaciones" /></details>
+      <details class="history-entry"><summary>Listas de tareas</summary><app-area-audit-history scope="board" title="listas de tareas" /></details>
+      <details class="history-entry"><summary>Tareas y proyectos</summary><app-area-audit-history scope="todo" title="tareas y proyectos" /></details>
+      <details class="history-entry"><summary>Dibujar</summary><app-area-audit-history scope="drawing" title="dibujar" /></details>
+      <details class="history-entry"><summary>Catálogos y técnicos</summary><app-area-audit-history scope="catalogs" title="catálogos y técnicos" /></details>
+      <details class="history-entry"><summary>Usuarios y roles</summary><app-area-audit-history scope="identity" title="usuarios y roles" /></details>
     </div>
+  </section>
   </section>
 </section>
