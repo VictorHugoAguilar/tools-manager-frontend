@@ -585,3 +585,19 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se ha rediseñado la página de Monitorización como un dashboard, manteniendo los colores y estilos de la aplicación.
 
 <!-- CHANGELOG-PR-116-END -->
+
+<!-- CHANGELOG-PR-117-START -->
+### [7.11.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/117) (2026-11-12)
+
+- Added: se añade para poder mider las operaciones de Realtime Database del backend: lecturas, escrituras y transacciones, con latencia y fallos. La suite del backend pasa (366 pruebas), igual que las del frontend (20), ESLint y el build. No lo he probado contra Firebase real.
+- Changed: se modifica la página de Monitorización tiene ahora una barra «Servicio» con cinco vistas: Todos, Backend, WebSocket, Frontend y Base de datos.
+- Added: se añade muestreo activo, los recuentos de eventos INFO/DEBUG dejan de ser exactos. Está explicado en el README. Se añade la actualizacion de monitoring automáticamente
+- Added: se añade para que el navegador mida el rendimiento y lo envía a la telemetría.
+- Added: se ha  añadido monitoring y tracing al almacenamiento del taller.
+- Fixed: Corregido: con «Todos» el anillo solo mostraba INFO porque se calculaba con los últimos 25 eventos del resumen, que casi siempre son INFO.
+- Added: se añade La tarjeta «Frontend» del resumen ya no está fija en «Sin datos». Ahora muestra la actividad del navegador del periodo elegido: el número de eventos, cuántos son errores y la hora del último evento
+- Changed: se cambia la obtencion de datos para front
+- Changed: Ahora los eventos frontend.api.request.failed indican qué petición falló, desde qué página y qué usuario la hizo.
+- Added: 1. se añade que al abrir «Ver traza», se piden todas las páginas seguidas hasta un tope de 200 eventos (unas 8 peticiones). El veredicto, la posible causa, los tiempos y la secuencia «Qué ocurrió» se calculan con la traza entera y no dependen de la página.
+
+<!-- CHANGELOG-PR-117-END -->
