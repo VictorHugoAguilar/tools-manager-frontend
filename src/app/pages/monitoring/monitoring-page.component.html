@@ -325,27 +325,7 @@
       <div><span class="section-eyebrow">Investigar</span><h2 id="events-title">Eventos y trazas</h2></div>
       <p>Busca eventos, consulta trazas y revisa el recolector.</p>
     </div>
-    <div class="detail-grid">
-      @if (shows('backend')) { <article class="card panel recent-activity">
-        <h2 class="panel-title"><span class="panel-icon accent" aria-hidden="true">ϟ</span>Actividad reciente</h2>
-        <p class="muted">Consultas de almacenamiento presentes entre los últimos 25 eventos recibidos del intervalo. Es telemetría que puede perderse, no un historial de auditoría ni una lista completa de actividad.</p>
-        @if (recentActivity().length) {
-          <ul>
-            @for (activity of recentActivity(); track activity.eventId) {
-              <li>
-                <time>{{ activity.receivedAt | date:'dd/MM HH:mm:ss' }}</time>
-                <strong>{{ activity.label }}</strong>
-                <span>Respuesta HTTP: {{ activity.statusCode ?? 'Sin datos' }}</span>
-                @if (activity.traceId; as traceId) {
-                  <button type="button" [disabled]="searchLoading() || loading()" (click)="showActivityTrace(traceId)">Ver traza en logs</button>
-                }
-              </li>
-            }
-          </ul>
-        } @else {
-          <p class="muted activity-empty">No hay consultas de almacenamiento entre los últimos 25 eventos recibidos.</p>
-        }
-      </article> }
+    <div class="logs-full">
       <article class="card panel logs">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Logs recientes</h2>
         @if (levelChart(); as levels) {
@@ -378,7 +358,10 @@
         @if (searchError()) { <p class="notice error" role="alert">{{ searchError() }}</p> }
         @if (searchLoading()) { <p class="muted" role="status">Consultando eventos…</p> }
         @if (traceView(); as traceId) {
-          <p class="muted trace-heading">Traza {{ traceId }} · todos los servicios y niveles, ordenados por recepción descendente.</p>
+          <div class="trace-header">
+            <p class="muted trace-heading">Traza <code>{{ traceId }}</code> · todos los servicios y niveles.</p>
+            <button type="button" (click)="copyTraceId(traceId)">{{ traceCopied() ? 'Copiado' : 'Copiar ID' }}</button>
+          </div>
         }
         @if (canReturnToEvents()) {
           <button type="button" class="return-events" [disabled]="searchLoading() || loading()" (click)="returnToEvents()">Volver a los eventos anteriores</button>
@@ -394,6 +377,46 @@
         @let visibleEvents = searchResults() ?? overview.events;
         @if (visibleEvents.length === 0 && !searchError() && !searchLoading()) {
           <p class="empty">No hay eventos en este intervalo.</p>
+        } @else if (traceView() && traceDetail(); as trace) {
+          <section class="trace-detail" aria-label="Detalle de la traza">
+            <div class="trace-verdict" [class.failed]="trace.verdict === 'failed'" [class.warning]="trace.verdict === 'warning'">
+              <strong>{{ trace.verdictLabel }}</strong>
+              @if (trace.request) { <span class="trace-request">{{ trace.request }}</span> }
+              <span class="trace-completeness" [class.incomplete]="!trace.complete">{{ trace.complete ? 'Completa' : 'Posiblemente incompleta' }}</span>
+            </div>
+            @if (trace.notices.length) {
+              <ul class="trace-notices" role="status">@for (notice of trace.notices; track notice) { <li>{{ notice }}</li> }</ul>
+            }
+            <dl class="trace-meta">
+              <div><dt>Inicio</dt><dd>{{ trace.startedAt | date:'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+              <div><dt>Duración entre eventos</dt><dd>{{ trace.spanMs | number:'1.0-0' }} ms</dd></div>
+              <div><dt>Servicios</dt><dd>{{ trace.services.join(', ') }}</dd></div>
+              <div><dt>Usuario</dt><dd>{{ trace.actorId ?? 'Sin datos' }}</dd></div>
+              <div><dt>Página de origen</dt><dd>{{ trace.page ?? 'Sin datos' }}</dd></div>
+            </dl>
+            @if (trace.sequence.length) {
+              <h3>Qué ocurrió</h3>
+              <ol class="trace-sequence">@for (line of trace.sequence; track $index) { <li>{{ line }}</li> }</ol>
+            }
+            <h3>Cronología</h3>
+            <p class="muted">Horas de recepción en el backend: el navegador envía por lotes y sus eventos pueden llegar con unos segundos de retraso.</p>
+            <ol class="trace-timeline">
+              @for (step of trace.steps; track step.event.eventId) {
+                <li [class.cause]="step.isCause">
+                  <span class="offset">+{{ step.offsetMs | number:'1.0-0' }} ms</span>
+                  <span class="level" [class.error-level]="step.event.level === 'ERROR'" [class.warn-level]="step.event.level === 'WARN'">{{ step.event.level }}</span>
+                  <div>
+                    <strong>{{ step.actor }}: {{ step.summary }}</strong>
+                    <small>{{ step.event.eventName }}@if (step.isCause) { · posible causa }</small>
+                    @if (step.barPercent !== null) {
+                      <span class="trace-bar" role="img" [attr.aria-label]="'Duración ' + step.event.durationMs"><span [style.width.%]="step.barPercent"></span></span>
+                      <small>{{ step.event.durationMs | number:'1.0-2' }} ms</small>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          </section>
         } @else {
           <ul>
             @for (event of visibleEvents; track event.eventId) {
@@ -401,7 +424,8 @@
                 <span class="level" [class.error-level]="event.level === 'ERROR'" [class.warn-level]="event.level === 'WARN'">{{ event.level }}</span>
                 <time>{{ event.receivedAt | date:'dd/MM HH:mm:ss' }}</time>
                 <div>
-                  <strong>[{{ event.service }}] {{ event.eventName }}</strong>
+                  <strong>[{{ event.service }}] {{ describeEvent(event.eventName) }}</strong>
+                  @if (describeEvent(event.eventName) !== event.eventName) { <small class="event-code">{{ event.eventName }}</small> }
                   @if (event.http; as http) {
                     <span>{{ http.method }} {{ http.route }} · {{ http.statusCode }}</span>
                   }
@@ -426,6 +450,28 @@
           </div>
         }
       </article>
+    </div>
+    <div class="detail-grid two-col">
+      @if (shows('backend')) { <article class="card panel recent-activity">
+        <h2 class="panel-title"><span class="panel-icon accent" aria-hidden="true">ϟ</span>Actividad reciente</h2>
+        <p class="muted">Consultas de almacenamiento presentes entre los últimos 25 eventos recibidos del intervalo. Es telemetría que puede perderse, no un historial de auditoría ni una lista completa de actividad.</p>
+        @if (recentActivity().length) {
+          <ul>
+            @for (activity of recentActivity(); track activity.eventId) {
+              <li>
+                <time>{{ activity.receivedAt | date:'dd/MM HH:mm:ss' }}</time>
+                <strong>{{ activity.label }}</strong>
+                <span>Respuesta HTTP: {{ activity.statusCode ?? 'Sin datos' }}</span>
+                @if (activity.traceId; as traceId) {
+                  <button type="button" [disabled]="searchLoading() || loading()" (click)="showActivityTrace(traceId)">Ver traza en logs</button>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted activity-empty">No hay consultas de almacenamiento entre los últimos 25 eventos recibidos.</p>
+        }
+      </article> }
       @if (shows('backend')) { <article class="card panel collector">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">⚙</span>Recolector backend</h2>
         <p class="muted">Solo la instancia que responde a esta consulta.</p>

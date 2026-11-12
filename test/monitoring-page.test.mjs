@@ -149,9 +149,34 @@ test('trace detail uses the active range and does not apply event filters', () =
     from: '2026-11-11T11:00:00.000Z', to: '2026-11-11T12:00:00.000Z'
   });
   requests.at(-1).observer.next({ events: [{ eventId: 'trace-event' }], nextCursor: 'next' });
-  component.loadMoreEvents();
   assert.equal(calls.at(-1).name, 'trace');
   assert.equal(calls.at(-1).args[1].cursor, 'next');
+  requests.at(-1).observer.next({ events: [{ eventId: 'second' }], nextCursor: null });
+  assert.equal(component.searchResults().length, 2);
+  assert.equal(component.nextCursor(), null);
+  assert.equal(component.traceTruncated(), false);
+  assert.equal(component.searchLoading(), false);
+});
+
+test('a trace is loaded completely and flagged as truncated at the event limit', () => {
+  const { component, calls, requests } = setup();
+  component.showTrace('trace-id');
+  const page = (start) => ({ events: Array.from({ length: 25 }, (_, i) => ({ eventId: `e${start + i}` })), nextCursor: `c${start}` });
+  for (let start = 0; start < 200; start += 25) requests.at(-1).observer.next(page(start));
+  assert.equal(component.searchResults().length, 200);
+  assert.equal(component.traceTruncated(), true);
+  assert.equal(component.nextCursor(), null);
+  assert.equal(calls.filter((call) => call.name === 'trace').length, 8);
+});
+
+test('a failed later page keeps the loaded events and marks the trace incomplete', () => {
+  const { component, requests } = setup();
+  component.showTrace('trace-id');
+  requests.at(-1).observer.next({ events: [{ eventId: 'a' }], nextCursor: 'n' });
+  requests.at(-1).observer.error(new Error('boom'));
+  assert.equal(component.searchResults().length, 1);
+  assert.equal(component.traceTruncated(), true);
+  assert.match(component.searchError(), /toda la traza/);
 });
 
 test('activity traces use the overview interval instead of a previous filtered search', () => {

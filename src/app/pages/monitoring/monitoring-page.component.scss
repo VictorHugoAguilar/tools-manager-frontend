@@ -102,6 +102,10 @@ select:focus-visible, button:focus-visible, input:focus-visible, summary:focus-v
 .unit { font-size: .7em; }
 .main-grid { display: grid; grid-template-columns: 3fr 2fr; gap: .7rem; margin-top: .85rem; }
 .detail-grid { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: .7rem; margin-top: .85rem; }
+.detail-grid.two-col { grid-template-columns: 1.4fr 1fr; }
+.logs-full { margin-top: .85rem; }
+.logs-full .logs ul { max-height: 32rem; }
+.logs-full .event-filters { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
 .panel { padding: 1rem; }
 .panel h2 { margin-bottom: .7rem; }
 .panel-title { display: flex; align-items: center; gap: .55rem; }
@@ -120,6 +124,29 @@ select:focus-visible, button:focus-visible, input:focus-visible, summary:focus-v
 .gauge > span { display: block; height: 100%; border-radius: inherit; background: #35ad71; transition: width .3s ease; }
 .gauge > span.warn { background: #e0a21b; }
 .gauge > span.crit { background: #b52e42; }
+.event-code { display: block; color: var(--muted); font-family: monospace; overflow-wrap: anywhere; }
+.trace-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.trace-heading code { overflow-wrap: anywhere; }
+.trace-verdict { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; padding: .7rem .9rem; border-radius: .75rem; border: 1px solid #b9e3cb; background: #e8f7ee; }
+.trace-verdict.warning { border-color: #f0d28a; background: #fff6df; }
+.trace-verdict.failed { border-color: #e6a3ad; background: #fbe6e9; }
+.trace-completeness { margin-left: auto; padding: .15rem .6rem; border-radius: 999px; font-size: .75rem; background: #d8f4e3; color: #1d6b43; }
+.trace-completeness.incomplete { background: #fff0c9; color: #7a5200; }
+.trace-notices { margin: .5rem 0; padding: .6rem .9rem .6rem 1.8rem; border: 1px solid #f0d28a; border-radius: .75rem; background: #fff6df; }
+.trace-notices li + li { margin-top: .3rem; }
+.trace-request { font-family: monospace; overflow-wrap: anywhere; }
+.trace-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .5rem; margin: .75rem 0; }
+.trace-meta dd { overflow-wrap: anywhere; }
+.trace-sequence, .trace-timeline { list-style: none; margin: .4rem 0 .9rem; padding: 0; }
+.trace-sequence { counter-reset: step; }
+.trace-sequence li { counter-increment: step; padding: .3rem 0 .3rem 2rem; position: relative; }
+.trace-sequence li::before { content: counter(step); position: absolute; left: 0; top: .3rem; width: 1.35rem; height: 1.35rem; border-radius: 50%; background: var(--primary); color: #fff; font-size: .75rem; display: grid; place-items: center; }
+.trace-timeline li { display: grid; grid-template-columns: 5.5rem auto 1fr; gap: .6rem; align-items: start; padding: .55rem 0; border-top: 1px solid #eeeae2; }
+.trace-timeline li.cause { background: #fbe6e9; border-radius: .5rem; padding-inline: .5rem; }
+.trace-timeline .offset { font-family: monospace; color: var(--muted); }
+.trace-timeline small { display: block; color: var(--muted); overflow-wrap: anywhere; }
+.trace-bar { display: block; height: .5rem; margin-top: .3rem; border-radius: 999px; background: #e6ebf1; overflow: hidden; }
+.trace-bar > span { display: block; height: 100%; background: #208ff4; border-radius: inherit; }
 .collector-status { margin: .5rem 0; padding: .6rem .8rem; border-radius: .75rem; border: 1px solid #b9e3cb; background: #e8f7ee; }
 .collector-status.warn { border-color: #f0d28a; background: #fff6df; }
 .collector-status.error { border-color: #e6a3ad; background: #fbe6e9; }
@@ -184,7 +211,7 @@ dd { margin: 0; font-weight: 600; text-align: right; }
 @media (max-width: 700px) {
   .monitoring { padding: 1rem; }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .main-grid, .detail-grid { grid-template-columns: 1fr; }
+  .main-grid, .detail-grid, .detail-grid.two-col { grid-template-columns: 1fr; }
   .monitoring-queries { grid-template-columns: 1fr; }
   .audit-histories-grid { grid-template-columns: 1fr; }
   .controls { flex-wrap: wrap; }

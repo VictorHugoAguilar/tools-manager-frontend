@@ -8,8 +8,12 @@ import { FormsModule } from '@angular/forms';
 import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 import { StorageAuditHistoryComponent } from './storage-audit-history.component';
 import { AreaAuditHistoryComponent } from './area-audit-history.component';
+import { describeEvent } from './monitoring-event-catalog';
+import { buildTraceView } from './monitoring-trace';
 import { activityChartData, errorRateChartData, latencyChartData, collectorStatus, levelCountsDoughnutData, levelDoughnutData, statusDoughnutData, usagePercent } from './monitoring-charts';
 import { recentStorageActivity } from './monitoring-activity';
+
+const TRACE_EVENT_LIMIT = 200;
 
 interface PreviousEventView {
   results: MonitoringEvent[] | null;
@@ -114,6 +118,12 @@ export class MonitoringPageComponent {
     return metrics?.count ? metrics.errors / metrics.count * 100 : null;
   });
   protected readonly usagePercent = usagePercent;
+  protected readonly traceTruncated = signal(false);
+  protected readonly traceDetail = computed(() => (this.traceView()
+    ? buildTraceView(this.searchResults() ?? [], { truncated: this.traceTruncated(), limit: TRACE_EVENT_LIMIT })
+    : null));
+  protected readonly describeEvent = describeEvent;
+  protected readonly traceCopied = signal(false);
   protected readonly collectorState = computed(() => {
     const collector = this.data()?.collector;
     return collector ? collectorStatus(collector) : null;
@@ -278,6 +288,16 @@ export class MonitoringPageComponent {
     this.startSearch();
   }
 
+  protected async copyTraceId(traceId: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(traceId);
+      this.traceCopied.set(true);
+      setTimeout(() => this.traceCopied.set(false), 2000);
+    } catch {
+      this.searchError.set('No se pudo copiar el identificador. Selecciónalo y cópialo manualmente.');
+    }
+  }
+
   protected returnToEvents(): void {
     if (this.searchLoading() || this.loading() || !this.previousEventView) return;
     const previous = this.previousEventView;
@@ -400,16 +420,72 @@ export class MonitoringPageComponent {
     this.canReturnToEvents.set(false);
   }
 
+  // Una traza se carga entera (hasta el tope) para que el veredicto y los tiempos no dependan de la página.
+  private loadTrace(traceId: string, range: { from: string; to: string }): void {
+    if (!this.searchFilters || this.searchLoading()) return;
+    const filters = this.searchFilters;
+    this.searchLoading.set(true);
+    this.searchError.set('');
+    this.traceTruncated.set(false);
+    const collected: MonitoringEvent[] = [];
+    const finish = (truncated: boolean) => {
+      this.searchResults.set(collected);
+      this.nextCursor.set(null);
+      this.pageCursors = [null];
+      this.pageNumber.set(1);
+      this.traceTruncated.set(truncated);
+      this.activeRange.set(range);
+      this.activeFilters.set(filters);
+      this.searchLoading.set(false);
+    };
+    const fetchPage = (cursor: string | null) => {
+      this.api.trace(traceId, { ...range, ...(cursor ? { cursor } : {}) })
+        .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: (page) => {
+            collected.push(...page.events);
+            if (page.nextCursor && collected.length >= TRACE_EVENT_LIMIT) {
+              collected.length = Math.min(collected.length, TRACE_EVENT_LIMIT);
+              finish(true);
+            } else if (page.nextCursor) {
+              fetchPage(page.nextCursor);
+            } else {
+              finish(false);
+            }
+          },
+          error: (error: unknown) => {
+            if (collected.length) {
+              finish(true);
+              this.searchError.set('No se pudo cargar toda la traza; se muestran los eventos obtenidos.');
+              return;
+            }
+            this.searchError.set(this.eventSearchErrorMessage(error));
+            this.searchLoading.set(false);
+          }
+        });
+    };
+    fetchPage(null);
+  }
+
+  private eventSearchErrorMessage(error: unknown): string {
+    return error instanceof HttpErrorResponse && error.status === 400
+      ? 'Comprueba los filtros, fechas y el identificador de traza. Si un cursor ha caducado, inicia una nueva búsqueda.'
+      : error instanceof HttpErrorResponse && error.status === 503 &&
+        error.error?.code === 'MONITORING_INDEX_UNAVAILABLE'
+        ? 'Faltan índices de Firestore o aún se están creando. Contacta con el administrador y vuelve a intentarlo cuando estén listos.'
+        : 'No se pudieron consultar los eventos. Comprueba los permisos, la conexión y los índices de Firestore.';
+  }
+
   private loadEvents(cursor: string | null, pageNumber: number): void {
     if (!this.searchFilters || this.searchLoading()) return;
+    const openTraceId = this.traceView();
+    if (openTraceId) {
+      this.loadTrace(openTraceId, { from: this.searchFilters.from, to: this.searchFilters.to });
+      return;
+    }
     this.searchLoading.set(true);
     this.searchError.set('');
     const filters = { ...this.searchFilters, ...(cursor ? { cursor } : {}) };
-    const traceId = this.traceView();
-    const request = traceId ? this.api.trace(traceId, {
-      from: filters.from, to: filters.to, ...(cursor ? { cursor } : {})
-    }) : this.api.events(filters);
-    request
+    this.api.events(filters)
       .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (page) => {
           this.searchResults.set(page.events);
@@ -422,12 +498,7 @@ export class MonitoringPageComponent {
           this.searchLoading.set(false);
         },
         error: (error: unknown) => {
-          this.searchError.set(error instanceof HttpErrorResponse && error.status === 400
-            ? 'Comprueba los filtros, fechas y el identificador de traza. Si un cursor ha caducado, inicia una nueva búsqueda.'
-            : error instanceof HttpErrorResponse && error.status === 503 &&
-              error.error?.code === 'MONITORING_INDEX_UNAVAILABLE'
-              ? 'Faltan índices de Firestore o aún se están creando. Contacta con el administrador y vuelve a intentarlo cuando estén listos.'
-              : 'No se pudieron consultar los eventos. Comprueba los permisos, la conexión y los índices de Firestore.');
+          this.searchError.set(this.eventSearchErrorMessage(error));
           this.searchLoading.set(false);
         }
       });
