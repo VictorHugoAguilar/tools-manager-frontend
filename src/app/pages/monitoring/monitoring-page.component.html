@@ -1,0 +1,404 @@
+<section class="monitoring">
+  <header class="heading">
+    <div class="heading-title">
+      <span class="heading-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M2 12h4l2-7 4 14 3-10 2 3h5"/></svg>
+      </span>
+      <div>
+        <span class="heading-eyebrow">Centro de observabilidad</span>
+        <h1>Monitorización</h1>
+        <p>Métricas, eventos y auditoría de la aplicación en un solo lugar.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <label>
+        <span class="sr-only">Intervalo de eventos</span>
+        <select [value]="period()" [disabled]="loading() || searchLoading()" (change)="changePeriod($any($event.target).value)">
+          <option value="1h">Última hora</option>
+          <option value="24h">Últimas 24 horas</option>
+          <option value="7d">Últimos 7 días</option>
+        </select>
+      </label>
+      <span class="update-mode"><span aria-hidden="true"></span>Actualización manual</span>
+      <button type="button" class="refresh-button" [disabled]="loading() || searchLoading()" (click)="refresh()" aria-label="Actualizar monitorización">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5 9a7 7 0 0 1 12-2l3 5M4 12l3 5a7 7 0 0 0 12-2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="dashboard-nav" aria-label="Secciones de monitorización">
+    <span>Explorar</span>
+    <button type="button" [disabled]="!data()" (click)="navigateTo('overview')">Resumen</button>
+    <button type="button" (click)="navigateTo('metrics')">Métricas y servicios</button>
+    <button type="button" [disabled]="!data()" (click)="navigateTo('events')">Eventos y trazas</button>
+    <button type="button" (click)="navigateTo('audit')">Auditoría</button>
+  </nav>
+
+  @if (loading()) {
+    <p class="notice" role="status">Cargando datos de monitorización…</p>
+  }
+  @if (error()) {
+    <p class="notice error" role="alert">{{ error() }}</p>
+  }
+  <ng-template #monitoringQueries>
+  <section id="monitoring-metrics" class="dashboard-section" aria-labelledby="metrics-title">
+    <div class="section-heading">
+      <div><span class="section-eyebrow">Explorador</span><h2 id="metrics-title">Métricas y servicios</h2></div>
+      <p>Consulta rangos históricos y señales bajo demanda.</p>
+    </div>
+  <div class="detail-grid monitoring-queries">
+    <article class="card panel">
+      <h2>Consultar métricas históricas</h2>
+      <p class="muted">Fechas en hora local. Solo se incluyen minutos completos; los grupos horarios de los extremos pueden ser parciales. Los huecos no indican cero actividad.</p>
+      <form class="event-filters" (ngSubmit)="queryMetrics()">
+        <label>Servicio
+          <select name="metricService" [(ngModel)]="metricService" [disabled]="metricLoading()">
+            <option value="backend">Backend · peticiones HTTP</option>
+            <option value="websocket">WebSocket · actividad</option>
+          </select>
+        </label>
+        <label>Resolución
+          <select name="metricInterval" [(ngModel)]="metricInterval" [disabled]="metricLoading()">
+            <option value="1m">Un minuto</option><option value="1h">Una hora</option>
+          </select>
+        </label>
+        <label>Desde <input type="datetime-local" name="metricFrom" [(ngModel)]="metricFrom" [disabled]="metricLoading()" required></label>
+        <label>Hasta <input type="datetime-local" name="metricTo" [(ngModel)]="metricTo" [disabled]="metricLoading()" required></label>
+        <button type="submit" [disabled]="metricLoading()">Consultar métricas</button>
+      </form>
+      @if (metricLoading()) { <p class="muted" role="status">Consultando métricas…</p> }
+      @if (metricError()) { <p class="notice error" role="alert">{{ metricError() }}</p> }
+      @if (metricResult(); as metric) {
+        <p class="muted">Minutos incluidos: {{ metric.from | date:'dd/MM/yyyy HH:mm' }} – {{ metric.to | date:'dd/MM/yyyy HH:mm' }} (final excluido). Resolución: {{ metric.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}.</p>
+        @if (metric.service === 'backend') {
+          @if (metric.count) {
+            <p>Peticiones: {{ metric.count }} · errores 5xx: {{ metric.errors }} · media: {{ metric.averageMs | number:'1.0-1' }} ms · p95: {{ metric.p95Range }} ms · p99: {{ metric.p99Range }} ms</p>
+            <p class="muted">Los percentiles son rangos estimados.</p>
+          } @else { <p>Sin intervalos registrados.</p> }
+          @if (metric.points.length) {
+            @if (metricActivityChart(); as chart) {
+              <h3>Actividad HTTP registrada</h3>
+              <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Peticiones HTTP y errores 5xx por intervalo" role="img"></canvas></div>
+              @if (metricLatencyChart(); as latency) {
+                <h3>Latencia media por intervalo</h3>
+                <div class="chart"><canvas baseChart [data]="latency" [options]="chartOptions" type="line" aria-label="Latencia media HTTP por intervalo" role="img"></canvas></div>
+              }
+            } @else {
+              <p class="muted">La gráfica admite hasta 1500 intervalos. Selecciona un rango menor o resolución de una hora; la tabla conserva todos los datos devueltos.</p>
+            }
+            <div class="metric-table"><table>
+              <thead><tr><th>Inicio</th><th>Peticiones</th><th>Errores 5xx</th><th>Media (ms)</th></tr></thead>
+              <tbody>@for (point of metric.points; track point.start) {
+                <tr><td>{{ point.start | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ point.count }}</td><td>{{ point.errors }}</td><td>{{ point.averageMs | number:'1.0-1' }}</td></tr>
+              }</tbody>
+            </table></div>
+          }
+        } @else {
+          @if (metric.points.length) {
+            @if (metricActivityChart(); as chart) {
+              <h3>Actividad WebSocket registrada</h3>
+              <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres y actualizaciones WebSocket por intervalo" role="img"></canvas></div>
+            } @else {
+              <p class="muted">La gráfica admite hasta 1500 intervalos. Selecciona un rango menor o resolución de una hora; la tabla conserva todos los datos devueltos.</p>
+            }
+            <div class="metric-table"><table>
+              <thead><tr><th>Inicio</th><th>Aperturas</th><th>Cierres</th><th>Actualizaciones</th></tr></thead>
+              <tbody>@for (point of metric.points; track point.start) {
+                <tr><td>{{ point.start | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ point.opened }}</td><td>{{ point.closed }}</td><td>{{ point.updates }}</td></tr>
+              }</tbody>
+            </table></div>
+          } @else { <p>Sin intervalos registrados.</p> }
+        }
+      }
+    </article>
+    <article class="card panel">
+      <h2>Señales por servicio</h2>
+      <p class="muted">Las señales recientes no garantizan la disponibilidad; las instancias sin señal reciente no se cuentan.</p>
+      <button type="button" [disabled]="servicesLoading()" (click)="queryServices()">Consultar servicios</button>
+      @if (servicesLoading()) { <p class="muted" role="status">Consultando servicios…</p> }
+      @if (servicesError()) { <p class="notice error" role="alert">{{ servicesError() }}</p> }
+      @if (servicesResult(); as result) {
+        <p class="muted">Consultado: {{ result.generatedAt | date:'dd/MM/yyyy HH:mm:ss' }} · señal reciente: hasta {{ result.freshnessSeconds }} segundos.</p>
+        <dl>
+          <div><dt>Backend: instancias con señal reciente</dt><dd>{{ result.services.backend.recentInstances }}</dd></div>
+          <div><dt>Backend: última señal</dt><dd>{{ result.services.backend.lastHeartbeatAt ? (result.services.backend.lastHeartbeatAt | date:'dd/MM/yyyy HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>WebSocket: instancias con señal reciente</dt><dd>{{ result.services.websocket.recentInstances }}</dd></div>
+          <div><dt>WebSocket: última señal</dt><dd>{{ result.services.websocket.lastHeartbeatAt ? (result.services.websocket.lastHeartbeatAt | date:'dd/MM/yyyy HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>WebSocket: conexiones en instancias recientes</dt><dd>{{ result.services.websocket.activeConnections ?? 'Sin datos' }}</dd></div>
+          <div><dt>Frontend: disponibilidad</dt><dd>Sin datos</dd></div>
+          <div><dt>Almacenamiento: disponibilidad</dt><dd>Sin datos</dd></div>
+        </dl>
+        @if (result.services.websocket.metricHealth; as health) {
+          <p class="muted">Métricas WebSocket de instancias recientes: {{ health.pending }} intervalos pendientes, {{ health.activeIntervals }} activos, {{ health.dropped }} descartados, {{ health.failed }} fallidos, {{ health.droppedSamples }} muestras descartadas y {{ health.consecutiveFailures }} fallos consecutivos sumados.</p>
+        } @else {
+          <p class="muted">Salud de métricas WebSocket no disponible para todas las instancias con señal reciente.</p>
+        }
+      }
+    </article>
+  </div>
+  </section>
+  </ng-template>
+  @if (data(); as overview) {
+    <section id="monitoring-overview" class="dashboard-section" aria-labelledby="overview-title">
+    <div class="section-heading">
+      <div><span class="section-eyebrow">Vista general</span><h2 id="overview-title">Resumen operativo</h2></div>
+      <p class="updated">Última actualización: {{ overview.generatedAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+    </div>
+    <div class="summary-grid">
+      <article class="card summary">
+        <span class="icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg></span>
+        <div><h2>Backend API</h2>@if (overview.httpMetrics.count) { <strong>{{ overview.httpMetrics.count }}</strong><small>Peticiones · {{ overview.httpMetrics.errors }} errores 5xx</small> } @else { <strong>Sin datos</strong><small>Sin intervalos registrados</small> }<small>{{ overview.heartbeats.services.backend.recentInstances }} instancias con señal reciente</small></div>
+      </article>
+      <article class="card summary">
+        <span class="icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 8a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8 16a6 6 0 0 1 8 0"/><circle cx="12" cy="20" r="1"/></svg></span>
+        <div><h2>WebSocket</h2>@if (overview.heartbeats.services.websocket.activeConnections !== null) { <strong>{{ overview.heartbeats.services.websocket.activeConnections }}</strong><small>Conexiones en instancias con señal reciente</small><small>{{ overview.heartbeats.services.websocket.recentInstances }} instancias · datos de hasta {{ overview.heartbeats.freshnessSeconds }} s</small> } @else if (overview.heartbeats.services.websocket.recentInstances) { <strong>Sin datos</strong><small>Faltan métricas de alguna instancia</small> } @else { <strong>Sin señal reciente</strong><small>Disponibilidad no medida</small> }</div>
+      </article>
+      <article class="card summary">
+        <span class="icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+        <div><h2>Frontend</h2><strong>Sin datos</strong><small>Disponibilidad no medida</small></div>
+      </article>
+      <article class="card summary">
+        <span class="icon orange" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M6 19v-1a6 6 0 0 1 12 0v1M5 10a3 3 0 0 0-1 6M19 10a3 3 0 0 1 1 6"/></svg></span>
+        <div><h2>Usuarios activos</h2>
+          @if (overview.activeUsers; as active) {
+            <strong>{{ active.count }}</strong><small>Usuarios únicos con interacción registrada en los últimos {{ active.windowMinutes }} min</small>
+            <small>Estimación: puede faltar actividad si falla la señal o hay clientes sin actualizar.</small>
+          } @else { <strong>Sin datos</strong><small>No se pudo consultar la actividad</small> }
+        </div>
+      </article>
+      <article class="card summary">
+        <span class="icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <div><h2>Tiempo respuesta API</h2>@if (overview.httpMetrics.averageMs !== null) { <strong>{{ overview.httpMetrics.averageMs | number:'1.0-1' }} <span class="unit">ms</span></strong><small>Media · p95: {{ overview.httpMetrics.p95Range }} ms · p99: {{ overview.httpMetrics.p99Range }} ms</small> } @else { <strong>Sin datos</strong><small>Sin intervalos registrados</small> }</div>
+      </article>
+    </div>
+
+    <div class="main-grid">
+      <article class="card panel">
+        <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▥</span>Latencia media del backend</h2>
+        <p class="muted">Intervalos completos de {{ overview.httpMetrics.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}; los huecos indican ausencia de datos. El p95 y el p99 son rangos estimados.</p>
+        @if (overview.httpMetrics.points.length) {
+          <div class="chart"><canvas baseChart [data]="latencyChart()" [options]="chartOptions" type="line" aria-label="Latencia media del backend en milisegundos" role="img"></canvas></div>
+        } @else {
+          <div class="empty-chart">Sin métricas agregadas para mostrar.</div>
+        }
+      </article>
+      <article class="card panel">
+        <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Recursos por instancia</h2>
+        <p class="muted">Solo instancias con señal reciente (hasta {{ overview.heartbeats.freshnessSeconds }} s). La CPU y la memoria corresponden al proceso; el disco es el sistema de archivos de /, no Firebase Storage. Los discos pueden estar compartidos y no se suman.</p>
+        @if (resourceInstances().length) {
+          <div class="resource-list">
+            @for (instance of resourceInstances(); track instance.service + instance.instanceId) {
+              <section class="resource-instance">
+                <h3>{{ instance.service }} · {{ instance.instanceId }}</h3>
+                <p class="muted">Última señal: {{ instance.heartbeatAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+                <dl>
+                  <div><dt>CPU del proceso</dt><dd>@if (instance.process; as process) { {{ process.cpuPercent !== null ? ((process.cpuPercent | number:'1.0-1') + ' %') : 'Sin datos' }} } @else { Sin datos }</dd></div>
+                  <div><dt>Memoria residente (RSS)</dt><dd>{{ instance.process ? ((instance.process.rssBytes / 1048576 | number:'1.0-1') + ' MiB') : 'Sin datos' }}</dd></div>
+                  <div><dt>Disco usado en /</dt><dd>{{ instance.disk ? ((instance.disk.usedBytes / instance.disk.totalBytes * 100 | number:'1.0-1') + ' %') : 'Sin datos' }}</dd></div>
+                  @if (instance.disk; as disk) {
+                    <div><dt>Disco disponible / total</dt><dd>{{ disk.availableBytes / 1073741824 | number:'1.0-2' }} / {{ disk.totalBytes / 1073741824 | number:'1.0-2' }} GiB</dd></div>
+                    <div><dt>Muestra de disco</dt><dd>{{ disk.sampledAt | date:'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+                  }
+                  @if (instance.process; as process) {
+                    <div><dt>Muestra del proceso</dt><dd>{{ process.sampledAt | date:'dd/MM/yyyy HH:mm:ss' }}</dd></div>
+                  }
+                </dl>
+              </section>
+            }
+          </div>
+          <p class="muted">CPU media entre muestras: 100 % equivale a un núcleo y puede superar el 100 %. La memoria RSS no es un porcentaje del límite del contenedor. Los valores antiguos o no disponibles se indican como «Sin datos».</p>
+        } @else {
+          <p class="muted">Sin datos de instancias recientes.</p>
+        }
+      </article>
+      <article class="card panel">
+        <h2 class="panel-title">Actividad WebSocket registrada</h2>
+        <p class="muted">Intervalos completos de {{ overview.webSocketMetrics.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}. Los huecos no implican ausencia de actividad; los datos pueden perderse.</p>
+        @if (overview.heartbeats.services.websocket.metricHealth; as health) {
+          <p class="muted">Instancias con señal reciente: {{ health.pending }} intervalos pendientes, {{ health.dropped }} descartados, {{ health.failed }} fallidos y {{ health.droppedSamples }} muestras descartadas. Las instancias sin señal no están incluidas.</p>
+        } @else {
+          <p class="muted">Salud de métricas WebSocket no disponible para todas las instancias con señal reciente.</p>
+        }
+        @if (overview.webSocketMetrics.points.length) {
+          @if (websocketChart(); as chart) {
+            <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres y actualizaciones WebSocket por intervalo" role="img"></canvas></div>
+          }
+          <details class="metric-details">
+            <summary>Ver datos por intervalo</summary>
+          <dl>
+            @for (point of overview.webSocketMetrics.points; track point.start) {
+              <div><dt>{{ point.start | date:'dd/MM HH:mm' }}</dt><dd>Aperturas: {{ point.opened }} · cierres: {{ point.closed }} · actualizaciones: {{ point.updates }}</dd></div>
+            }
+          </dl>
+          </details>
+        } @else {
+          <p>Sin métricas históricas registradas.</p>
+        }
+      </article>
+    </div>
+    </section>
+
+    <section id="monitoring-events" class="dashboard-section" aria-labelledby="events-title">
+    <div class="section-heading">
+      <div><span class="section-eyebrow">Investigar</span><h2 id="events-title">Eventos y trazas</h2></div>
+      <p>Busca eventos, consulta trazas y revisa el recolector.</p>
+    </div>
+    <div class="detail-grid">
+      <article class="card panel recent-activity">
+        <h2 class="panel-title"><span class="panel-icon accent" aria-hidden="true">ϟ</span>Actividad reciente</h2>
+        <p class="muted">Consultas de almacenamiento presentes entre los últimos 25 eventos recibidos del intervalo. Es telemetría que puede perderse, no un historial de auditoría ni una lista completa de actividad.</p>
+        @if (recentActivity().length) {
+          <ul>
+            @for (activity of recentActivity(); track activity.eventId) {
+              <li>
+                <time>{{ activity.receivedAt | date:'dd/MM HH:mm:ss' }}</time>
+                <strong>{{ activity.label }}</strong>
+                <span>Respuesta HTTP: {{ activity.statusCode ?? 'Sin datos' }}</span>
+                @if (activity.traceId; as traceId) {
+                  <button type="button" [disabled]="searchLoading() || loading()" (click)="showActivityTrace(traceId)">Ver traza en logs</button>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="muted activity-empty">No hay consultas de almacenamiento entre los últimos 25 eventos recibidos.</p>
+        }
+      </article>
+      <article class="card panel logs">
+        <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Logs recientes</h2>
+        <p class="muted">Hasta 25 eventos por página, ordenados por recepción. Si no indicas fechas, se usa el intervalo del resumen.</p>
+        <form class="event-filters" (ngSubmit)="searchEvents()">
+          <label>Servicio
+            <select name="service" [(ngModel)]="searchService" [disabled]="searchLoading()">
+              <option value="">Todos</option><option value="backend">Backend</option><option value="frontend">Frontend</option><option value="websocket">WebSocket</option>
+            </select>
+          </label>
+          <label>Nivel
+            <select name="level" [(ngModel)]="searchLevel" [disabled]="searchLoading()">
+              <option value="">Todos</option><option value="DEBUG">DEBUG</option><option value="INFO">INFO</option><option value="WARN">WARN</option><option value="ERROR">ERROR</option>
+            </select>
+          </label>
+          <label>Evento exacto <input name="eventName" [(ngModel)]="searchEventName" maxlength="100" [disabled]="searchLoading()"></label>
+          <label>Trace ID <input name="traceId" [(ngModel)]="searchTraceId" maxlength="36" [disabled]="searchLoading()"></label>
+          <label>Desde (hora local) <input type="datetime-local" name="from" [(ngModel)]="searchFrom" [disabled]="searchLoading()"></label>
+          <label>Hasta (hora local) <input type="datetime-local" name="to" [(ngModel)]="searchTo" [disabled]="searchLoading()"></label>
+          <div class="filter-actions">
+            <button type="submit" [disabled]="searchLoading() || loading()">Buscar</button>
+            <button type="button" [disabled]="searchLoading() || loading()" (click)="clearSearch()">Limpiar filtros</button>
+          </div>
+        </form>
+        @if (searchError()) { <p class="notice error" role="alert">{{ searchError() }}</p> }
+        @if (searchLoading()) { <p class="muted" role="status">Consultando eventos…</p> }
+        @if (traceView(); as traceId) {
+          <p class="muted trace-heading">Traza {{ traceId }} · todos los servicios y niveles, ordenados por recepción descendente.</p>
+        }
+        @if (canReturnToEvents()) {
+          <button type="button" class="return-events" [disabled]="searchLoading() || loading()" (click)="returnToEvents()">Volver a los eventos anteriores</button>
+        }
+        @if (activeRange(); as range) {
+          <p class="muted">Intervalo consultado: {{ range.from | date:'dd/MM/yyyy HH:mm:ss' }} – {{ range.to | date:'dd/MM/yyyy HH:mm:ss' }} · página {{ pageNumber() }}</p>
+        }
+        @if (activeFilters(); as filters) {
+          @if (!traceView()) {
+            <p class="muted">Filtros aplicados: servicio {{ filters.service || 'todos' }} · nivel {{ filters.level || 'todos' }} · evento {{ filters.eventName || 'todos' }} · traza {{ filters.traceId || 'todas' }}. Los cambios del formulario se aplican al buscar.</p>
+          }
+        }
+        @let visibleEvents = searchResults() ?? overview.events;
+        @if (visibleEvents.length === 0 && !searchError() && !searchLoading()) {
+          <p class="empty">No hay eventos en este intervalo.</p>
+        } @else {
+          <ul>
+            @for (event of visibleEvents; track event.eventId) {
+              <li>
+                <span class="level" [class.error-level]="event.level === 'ERROR'" [class.warn-level]="event.level === 'WARN'">{{ event.level }}</span>
+                <time>{{ event.receivedAt | date:'dd/MM HH:mm:ss' }}</time>
+                <div>
+                  <strong>[{{ event.service }}] {{ event.eventName }}</strong>
+                  @if (event.http; as http) {
+                    <span>{{ http.method }} {{ http.route }} · {{ http.statusCode }}</span>
+                  }
+                  @if (event.traceId; as traceId) {
+                    <span>Traza: {{ traceId }}</span>
+                    <button type="button" class="trace-button" [disabled]="searchLoading() || loading()" (click)="showTrace(traceId)">Ver traza</button>
+                  }
+                  @if (event.connectionId) { <span>Conexión: {{ event.connectionId }}</span> }
+                  @if (event.durationMs !== undefined) { <span>Duración: {{ event.durationMs | number:'1.0-2' }} ms</span> }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+        @if (searchResults() !== null && (pageNumber() > 1 || nextCursor())) {
+          <div class="pagination">
+            <button type="button" [disabled]="searchLoading() || pageNumber() === 1" (click)="loadPreviousEvents()">Página anterior</button>
+            <span>Página {{ pageNumber() }}</span>
+            <button type="button" [disabled]="searchLoading() || !nextCursor()" (click)="loadMoreEvents()">Página siguiente</button>
+          </div>
+        }
+      </article>
+      <article class="card panel collector">
+        <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">⚙</span>Recolector backend</h2>
+        <p class="muted">Solo la instancia que responde a esta consulta.</p>
+        <dl>
+          <div><dt>Cola pendiente</dt><dd>{{ overview.collector.queuePending }} / {{ overview.collector.queueCapacity }}</dd></div>
+          <div><dt>Descartados (DEBUG / INFO)</dt><dd>{{ overview.collector.droppedByLevel['DEBUG'] }} / {{ overview.collector.droppedByLevel['INFO'] }}</dd></div>
+          <div><dt>Descartados (WARN / ERROR)</dt><dd>{{ overview.collector.droppedByLevel['WARN'] }} / {{ overview.collector.droppedByLevel['ERROR'] }}</dd></div>
+          <div><dt>Fallos consecutivos</dt><dd>{{ overview.collector.consecutiveWriteFailures }}</dd></div>
+          <div><dt>Eventos fallidos</dt><dd>{{ overview.collector.failedEvents }}</dd></div>
+          <div><dt>Intervalos de métricas pendientes</dt><dd>{{ overview.collector.httpMetrics.pending }}</dd></div>
+          <div><dt>Intervalos descartados / fallidos</dt><dd>{{ overview.collector.httpMetrics.dropped }} / {{ overview.collector.httpMetrics.failed }}</dd></div>
+          <div><dt>Muestras descartadas</dt><dd>{{ overview.collector.httpMetrics.droppedSamples }}</dd></div>
+          <div><dt>Fallos consecutivos de métricas</dt><dd>{{ overview.collector.httpMetrics.consecutiveFailures }}</dd></div>
+          <div><dt>Fallos consecutivos de heartbeat</dt><dd>{{ overview.collector.heartbeat.consecutiveFailures }}</dd></div>
+          <div><dt>Última escritura</dt><dd>{{ overview.collector.lastSuccessfulFlushAt ? (overview.collector.lastSuccessfulFlushAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
+        </dl>
+        <p class="muted">Última señal WebSocket:
+          {{ overview.heartbeats.services.websocket.lastHeartbeatAt ? (overview.heartbeats.services.websocket.lastHeartbeatAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}.
+          Una señal reciente ({{ overview.heartbeats.freshnessSeconds }} s) no garantiza disponibilidad.
+        </p>
+      </article>
+    </div>
+    </section>
+  }
+  <ng-container *ngTemplateOutlet="monitoringQueries" />
+  <section id="monitoring-audit" class="dashboard-section" aria-labelledby="audit-title">
+  <div class="section-heading">
+    <div><span class="section-eyebrow">Registro durable</span><h2 id="audit-title">Auditoría</h2></div>
+    <p>Estado de publicación e historiales por ámbito.</p>
+  </div>
+  <div class="detail-grid">
+    <article class="card panel collector">
+      <h2 class="panel-title">Outbox de auditoría</h2>
+      @if (auditStatusLoading()) {
+        <p class="muted" role="status">Consultando auditoría pendiente…</p>
+      } @else if (auditStatusError()) {
+        <p class="notice error" role="alert">{{ auditStatusError() }}</p>
+      } @else if (auditStatus(); as audit) {
+        <dl>
+          <div><dt>Registros pendientes</dt><dd>{{ audit.pending.truncated ? 'Al menos ' : '' }}{{ audit.pending.count }}</dd></div>
+          <div><dt>Publicador de esta instancia</dt><dd>{{ audit.publisher.running ? 'Activado' : 'Detenido' }}{{ audit.publisher.inFlight ? ' · comprobando' : '' }}</dd></div>
+          <div><dt>Fallos consecutivos de esta instancia</dt><dd>{{ audit.publisher.lastAttemptAt ? audit.publisher.consecutiveFailures : 'Sin comprobar' }}</dd></div>
+          <div><dt>Último intento</dt><dd>{{ audit.publisher.lastAttemptAt ? (audit.publisher.lastAttemptAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>Última comprobación correcta</dt><dd>{{ audit.publisher.lastSuccessfulCheckAt ? (audit.publisher.lastSuccessfulCheckAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
+          <div><dt>Último fallo</dt><dd>{{ audit.publisher.lastFailureAt ? (audit.publisher.lastFailureAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
+        </dl>
+        <p class="muted">Consultado: {{ audit.checkedAt | date:'dd/MM HH:mm:ss' }}. La cola pertenece a toda la base; el estado del publicador corresponde solo a la instancia que responde y no garantiza que otros procesos funcionen. Una comprobación correcta puede abarcar solo una página y no descarta registros bloqueados. Un registro pendiente podría estar ya publicado.</p>
+      }
+    </article>
+  </div>
+  <section class="card panel audit-histories">
+    <h2>Historiales de auditoría</h2>
+    <p class="muted">Consultas independientes por ámbito. Tablero, inventario y categorías comparten datos de herramientas; reportes y preferencias locales no tienen historial propio.</p>
+    <div class="audit-histories-grid">
+      <details class="history-entry"><summary>Cajas</summary><app-storage-audit-history scope="boxes" /></details>
+      <details class="history-entry"><summary>Taller</summary><app-storage-audit-history scope="workshop" /></details>
+      <details class="history-entry"><summary>Herramientas y reparaciones</summary><app-area-audit-history scope="tools" title="herramientas y reparaciones" /></details>
+      <details class="history-entry"><summary>Listas de tareas</summary><app-area-audit-history scope="board" title="listas de tareas" /></details>
+      <details class="history-entry"><summary>Tareas y proyectos</summary><app-area-audit-history scope="todo" title="tareas y proyectos" /></details>
+      <details class="history-entry"><summary>Dibujar</summary><app-area-audit-history scope="drawing" title="dibujar" /></details>
+      <details class="history-entry"><summary>Catálogos y técnicos</summary><app-area-audit-history scope="catalogs" title="catálogos y técnicos" /></details>
+      <details class="history-entry"><summary>Usuarios y roles</summary><app-area-audit-history scope="identity" title="usuarios y roles" /></details>
+    </div>
+  </section>
+  </section>
+</section>

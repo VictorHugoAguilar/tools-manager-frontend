@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { TaskBoardTracingComponent } from '../../components/task-board-tracing.component';
 import { AuthService } from '../../services/auth.service';
 import {
   TodoList,
@@ -64,7 +65,7 @@ interface TodoListBoardColumn {
 @Component({
   selector: 'app-todo-list-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [CommonModule, FormsModule, CdkDropListGroup, CdkDropList, CdkDrag, TaskBoardTracingComponent],
   templateUrl: './todo-list-page.component.html',
   styleUrls: [
     './todo-list-page.component.scss',

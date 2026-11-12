@@ -4,6 +4,7 @@
     <p>Cargando tablero...</p>
   </section>
 } @else {
+  <app-tool-tracing [tools]="store.tools()" />
   <section class="board">
     @for (column of store.columns(); track column.id) {
       <div class="column" [class.column--available]="column.id === 'available'" [class.column--active]="column.id === 'active'" [class.column--maintenance]="column.id === 'maintenance'">

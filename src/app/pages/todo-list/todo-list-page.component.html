@@ -17,6 +17,8 @@
     </div>
   </header>
 
+  <app-task-board-tracing module="todo" [tasks]="todoListItems()" />
+
   @if (todoListError()) {
     <p class="todoList-message todoList-message--error" role="alert">{{ todoListError() }}</p>
   }

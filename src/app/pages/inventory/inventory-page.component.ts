@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, HostListener, inject, sig
 import { CommonModule } from '@angular/common';
 import { Tool } from '../../models/tool.model';
 import { ToolStoreService } from '../../services/tool-store.service';
+import { ToolTracingComponent } from '../../components/tool-tracing.component';
 
 @Component({
   selector: 'app-inventory-page',
-  imports: [CommonModule],
+  imports: [CommonModule, ToolTracingComponent],
   templateUrl: './inventory-page.component.html',
   styleUrl: './inventory-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

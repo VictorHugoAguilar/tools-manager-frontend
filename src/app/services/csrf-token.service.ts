@@ -35,4 +35,8 @@ export class CsrfTokenService {
   clear(): void {
     this.token = null;
   }
+
+  cachedToken(): string | null {
+    return this.token;
+  }
 }

@@ -20,6 +20,8 @@
     </div>
   </header>
 
+  <app-task-board-tracing module="board" [tasks]="tasks()" />
+
   @if (loadError()) {
     <p class="task-notice task-notice--error" role="alert">{{ loadError() }}</p>
   }

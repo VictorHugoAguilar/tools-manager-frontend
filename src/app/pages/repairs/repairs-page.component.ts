@@ -15,6 +15,7 @@ import { TechnicianStoreService } from '../../services/technician-store.service'
 import { ToolStoreService } from '../../services/tool-store.service';
 import { ToolApiService } from '../../services/tool-api.service';
 import { ToastService } from '../../services/toast.service';
+import { ToolTracingComponent } from '../../components/tool-tracing.component';
 
 interface ToolRepairMeta {
   code: string;
@@ -22,7 +23,7 @@ interface ToolRepairMeta {
 
 @Component({
   selector: 'app-repairs-page',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ToolTracingComponent],
   templateUrl: './repairs-page.component.html',
   styleUrl: './repairs-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

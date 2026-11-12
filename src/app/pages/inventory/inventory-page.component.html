@@ -1,6 +1,7 @@
 @if (store.loading()) {
   <section class="panel">Cargando inventario...</section>
 } @else {
+  <app-tool-tracing [tools]="store.tools()" />
   <section class="inventory-grid">
     <article class="inventory-table">
       <header class="table-header">

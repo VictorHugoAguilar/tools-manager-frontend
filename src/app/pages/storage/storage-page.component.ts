@@ -10,6 +10,7 @@ import { StorageBoxStoreService } from '../../services/storage-box-store.service
 import { TagStoreService } from '../../services/tag-store.service';
 import { ShelfConfigService } from '../../services/shelf-config.service';
 import { ImageFallbackService } from '../../services/image-fallback.service';
+import { StorageAuditHistoryComponent } from '../monitoring/storage-audit-history.component';
 
 interface HighlightPart {
   text: string;
@@ -20,7 +21,7 @@ type StorageFilterKey = 'new' | 'used' | 'withImage' | 'withoutImage' | 'withTag
 
 @Component({
   selector: 'app-storage-page',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, StorageAuditHistoryComponent],
   templateUrl: './storage-page.component.html',
   styleUrl: './storage-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
