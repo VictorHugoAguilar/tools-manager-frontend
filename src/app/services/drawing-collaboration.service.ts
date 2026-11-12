@@ -11,6 +11,8 @@ import {
 import { AuthUser } from '../models/auth.model';
 import { environment } from '../../environments/environment';
 import { DrawingApiService } from './drawing-api.service';
+import { CollaborationTelemetry } from './collaboration-telemetry';
+import { TelemetryService } from './telemetry.service';
 
 interface PendingPersistence {
   stateVector: Map<number, number>;
@@ -39,6 +41,7 @@ export interface DrawingCollaborationConnection {
 @Injectable({ providedIn: 'root' })
 export class DrawingCollaborationService {
   private readonly api = inject(DrawingApiService);
+  private readonly telemetry = inject(TelemetryService);
 
   async connect(
     documentId: string,
@@ -66,6 +69,9 @@ export class DrawingCollaborationService {
     const providerReference: { current?: HocuspocusProvider } = {};
     let revoked = false;
     const pendingPersistence: PendingPersistence[] = [];
+    const collaborationTelemetry = new CollaborationTelemetry(
+      (eventName, details) => this.telemetry.track(eventName, details)
+    );
 
     const updateParticipants = (): void => {
       const awareness = providerReference.current?.awareness;
@@ -118,10 +124,15 @@ export class DrawingCollaborationService {
         return session.token;
       },
       onStatus: ({ status }) => {
-        if (!revoked) state$.next(status === 'connected' ? 'connected' : 'offline');
+        if (revoked) return;
+        collaborationTelemetry.status(status);
+        state$.next(status === 'connected' ? 'connected' : 'offline');
       },
       onSynced: ({ state }) => {
-        if (state && !revoked) state$.next('connected');
+        if (state && !revoked) {
+          collaborationTelemetry.firstSync();
+          state$.next('connected');
+        }
       },
       onAwarenessChange: updateParticipants,
       onStateless: ({ payload }) => {
@@ -210,8 +221,10 @@ export class DrawingCollaborationService {
           }, 15_000);
           pendingPersistence.push({ stateVector: targetStateVector, resolve, reject, timeout });
         });
+        const completePersist = collaborationTelemetry.startPersist();
         provider.flushPendingUpdates();
         await persisted;
+        completePersist();
       },
       destroy: () => {
         for (const pending of pendingPersistence.splice(0)) {

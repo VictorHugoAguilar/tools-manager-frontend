@@ -8,8 +8,12 @@ import { FormsModule } from '@angular/forms';
 import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 import { StorageAuditHistoryComponent } from './storage-audit-history.component';
 import { AreaAuditHistoryComponent } from './area-audit-history.component';
-import { activityChartData, latencyChartData } from './monitoring-charts';
+import { describeEvent } from './monitoring-event-catalog';
+import { buildTraceView } from './monitoring-trace';
+import { activityChartData, errorRateChartData, latencyChartData, collectorStatus, levelCountsDoughnutData, levelDoughnutData, statusDoughnutData, usagePercent } from './monitoring-charts';
 import { recentStorageActivity } from './monitoring-activity';
+
+const TRACE_EVENT_LIMIT = 200;
 
 interface PreviousEventView {
   results: MonitoringEvent[] | null;
@@ -21,6 +25,9 @@ interface PreviousEventView {
   pageNumber: number;
   pageCursors: (string | null)[];
 }
+
+export type AutoRefreshSeconds = 0 | 30 | 60 | 300;
+export type ServiceView = 'all' | 'backend' | 'database' | 'websocket' | 'frontend';
 
 @Component({
   selector: 'app-monitoring-page',
@@ -34,6 +41,11 @@ export class MonitoringPageComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   protected readonly period = signal<MonitoringPeriod>('1h');
+  protected readonly serviceView = signal<ServiceView>('all');
+  protected readonly autoRefreshSeconds = signal<AutoRefreshSeconds>(0);
+  protected readonly liveError = signal('');
+  private liveTimer: ReturnType<typeof setInterval> | null = null;
+  private liveInFlight = false;
   protected readonly data = signal<MonitoringOverview | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -55,7 +67,7 @@ export class MonitoringPageComponent {
   protected readonly servicesResult = signal<MonitoringServices | null>(null);
   protected readonly servicesLoading = signal(false);
   protected readonly servicesError = signal('');
-  protected metricService: 'backend' | 'websocket' = 'backend';
+  protected metricService: 'backend' | 'database' | 'websocket' = 'backend';
   protected metricInterval: MonitoringMetricInterval = '1h';
   protected metricFrom = '';
   protected metricTo = '';
@@ -80,13 +92,63 @@ export class MonitoringPageComponent {
     const metrics = this.data()?.httpMetrics;
     return metrics ? latencyChartData(metrics) ?? { labels: [], datasets: [] } : { labels: [], datasets: [] };
   });
+  protected readonly httpActivityChart = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics ? activityChartData({ ...metrics, service: 'backend', metric: 'http_requests' }) : null;
+  });
+  protected readonly errorRateChart = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics ? errorRateChartData(metrics) : null;
+  });
+  protected readonly statusChart = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics ? statusDoughnutData(metrics.count, metrics.errors) : null;
+  });
+  protected readonly levelChart = computed(() => {
+    const search = this.searchResults();
+    if (search) return levelDoughnutData(search);
+    const overview = this.data();
+    return overview?.levelCounts ? levelCountsDoughnutData(overview.levelCounts) : levelDoughnutData(overview?.events ?? []);
+  });
+  protected readonly levelChartSource = computed(() => this.searchResults()
+    ? 'Muestra: resultados de la búsqueda actual.'
+    : this.data()?.levelCounts ? 'Total de eventos del periodo seleccionado.' : 'Muestra: últimos eventos del resumen.');
+  protected readonly errorRate = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics?.count ? metrics.errors / metrics.count * 100 : null;
+  });
+  protected readonly usagePercent = usagePercent;
+  protected readonly traceTruncated = signal(false);
+  protected readonly traceDetail = computed(() => (this.traceView()
+    ? buildTraceView(this.searchResults() ?? [], { truncated: this.traceTruncated(), limit: TRACE_EVENT_LIMIT })
+    : null));
+  protected readonly describeEvent = describeEvent;
+  protected readonly traceCopied = signal(false);
+  protected readonly collectorState = computed(() => {
+    const collector = this.data()?.collector;
+    return collector ? collectorStatus(collector) : null;
+  });
+  protected readonly doughnutOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom' } }
+  };
+  protected readonly percentChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, suggestedMax: 5, title: { display: true, text: '% de peticiones' } } }
+  };
   protected readonly metricActivityChart = computed(() => {
     const metrics = this.metricResult();
     return metrics ? activityChartData(metrics) : null;
   });
   protected readonly metricLatencyChart = computed(() => {
     const metrics = this.metricResult();
-    return metrics?.service === 'backend' ? latencyChartData(metrics) : null;
+    if (metrics?.service !== 'backend') return null;
+    return metrics.metric === 'database_operations'
+      ? latencyChartData(metrics, 'Latencia media de base de datos (ms)')
+      : latencyChartData(metrics);
   });
   protected readonly websocketChart = computed(() => {
     const metrics = this.data()?.webSocketMetrics;
@@ -105,6 +167,50 @@ export class MonitoringPageComponent {
 
   constructor() {
     this.refresh();
+    this.destroyRef.onDestroy?.(() => this.stopLiveTimer());
+  }
+
+  protected setAutoRefresh(value: string | number): void {
+    const seconds = Number(value);
+    if (seconds !== 0 && seconds !== 30 && seconds !== 60 && seconds !== 300) return;
+    this.stopLiveTimer();
+    this.autoRefreshSeconds.set(seconds);
+    this.liveError.set('');
+    if (seconds) this.liveTimer = setInterval(() => this.liveRefresh(), seconds * 1000);
+  }
+
+  // Actualiza solo el resumen: no borra búsquedas, trazas ni métricas consultadas.
+  protected liveRefresh(): void {
+    if (this.loading() || this.liveInFlight || this.document.hidden) return;
+    this.liveInFlight = true;
+    this.api.overview(this.period()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (data) => {
+        this.data.set(data);
+        this.error.set('');
+        this.liveError.set('');
+        this.liveInFlight = false;
+      },
+      error: () => {
+        this.liveError.set('No se pudo actualizar automáticamente; se muestran los últimos datos recibidos.');
+        this.liveInFlight = false;
+      }
+    });
+  }
+
+  private stopLiveTimer(): void {
+    if (this.liveTimer !== null) clearInterval(this.liveTimer);
+    this.liveTimer = null;
+  }
+
+  protected shows(...views: Exclude<ServiceView, 'all'>[]): boolean {
+    const current = this.serviceView();
+    return current === 'all' || views.includes(current);
+  }
+
+  protected selectServiceView(view: ServiceView): void {
+    this.serviceView.set(view);
+    if (view === 'backend' || view === 'database' || view === 'websocket') this.metricService = view;
+    if (!this.searchLoading()) this.searchService = view === 'all' ? '' : view === 'database' ? 'backend' : view;
   }
 
   protected navigateTo(section: 'overview' | 'metrics' | 'events' | 'audit'): void {
@@ -182,6 +288,16 @@ export class MonitoringPageComponent {
     this.startSearch();
   }
 
+  protected async copyTraceId(traceId: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(traceId);
+      this.traceCopied.set(true);
+      setTimeout(() => this.traceCopied.set(false), 2000);
+    } catch {
+      this.searchError.set('No se pudo copiar el identificador. Selecciónalo y cópialo manualmente.');
+    }
+  }
+
   protected returnToEvents(): void {
     if (this.searchLoading() || this.loading() || !this.previousEventView) return;
     const previous = this.previousEventView;
@@ -219,9 +335,9 @@ export class MonitoringPageComponent {
       return;
     }
     const range = { from: new Date(from).toISOString(), to: new Date(to).toISOString(), interval: this.metricInterval };
-    const filters: MonitoringMetricRequest = this.metricService === 'backend'
-      ? { ...range, service: 'backend', metric: 'http_requests' }
-      : { ...range, service: 'websocket', metric: 'websocket_activity' };
+    const filters: MonitoringMetricRequest = this.metricService === 'websocket'
+      ? { ...range, service: 'websocket', metric: 'websocket_activity' }
+      : { ...range, service: 'backend', metric: this.metricService === 'database' ? 'database_operations' : 'http_requests' };
     this.metricLoading.set(true);
     this.metricError.set('');
     this.metricResult.set(null);
@@ -304,16 +420,72 @@ export class MonitoringPageComponent {
     this.canReturnToEvents.set(false);
   }
 
+  // Una traza se carga entera (hasta el tope) para que el veredicto y los tiempos no dependan de la página.
+  private loadTrace(traceId: string, range: { from: string; to: string }): void {
+    if (!this.searchFilters || this.searchLoading()) return;
+    const filters = this.searchFilters;
+    this.searchLoading.set(true);
+    this.searchError.set('');
+    this.traceTruncated.set(false);
+    const collected: MonitoringEvent[] = [];
+    const finish = (truncated: boolean) => {
+      this.searchResults.set(collected);
+      this.nextCursor.set(null);
+      this.pageCursors = [null];
+      this.pageNumber.set(1);
+      this.traceTruncated.set(truncated);
+      this.activeRange.set(range);
+      this.activeFilters.set(filters);
+      this.searchLoading.set(false);
+    };
+    const fetchPage = (cursor: string | null) => {
+      this.api.trace(traceId, { ...range, ...(cursor ? { cursor } : {}) })
+        .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+          next: (page) => {
+            collected.push(...page.events);
+            if (page.nextCursor && collected.length >= TRACE_EVENT_LIMIT) {
+              collected.length = Math.min(collected.length, TRACE_EVENT_LIMIT);
+              finish(true);
+            } else if (page.nextCursor) {
+              fetchPage(page.nextCursor);
+            } else {
+              finish(false);
+            }
+          },
+          error: (error: unknown) => {
+            if (collected.length) {
+              finish(true);
+              this.searchError.set('No se pudo cargar toda la traza; se muestran los eventos obtenidos.');
+              return;
+            }
+            this.searchError.set(this.eventSearchErrorMessage(error));
+            this.searchLoading.set(false);
+          }
+        });
+    };
+    fetchPage(null);
+  }
+
+  private eventSearchErrorMessage(error: unknown): string {
+    return error instanceof HttpErrorResponse && error.status === 400
+      ? 'Comprueba los filtros, fechas y el identificador de traza. Si un cursor ha caducado, inicia una nueva búsqueda.'
+      : error instanceof HttpErrorResponse && error.status === 503 &&
+        error.error?.code === 'MONITORING_INDEX_UNAVAILABLE'
+        ? 'Faltan índices de Firestore o aún se están creando. Contacta con el administrador y vuelve a intentarlo cuando estén listos.'
+        : 'No se pudieron consultar los eventos. Comprueba los permisos, la conexión y los índices de Firestore.';
+  }
+
   private loadEvents(cursor: string | null, pageNumber: number): void {
     if (!this.searchFilters || this.searchLoading()) return;
+    const openTraceId = this.traceView();
+    if (openTraceId) {
+      this.loadTrace(openTraceId, { from: this.searchFilters.from, to: this.searchFilters.to });
+      return;
+    }
     this.searchLoading.set(true);
     this.searchError.set('');
     const filters = { ...this.searchFilters, ...(cursor ? { cursor } : {}) };
-    const traceId = this.traceView();
-    const request = traceId ? this.api.trace(traceId, {
-      from: filters.from, to: filters.to, ...(cursor ? { cursor } : {})
-    }) : this.api.events(filters);
-    request
+    this.api.events(filters)
       .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: (page) => {
           this.searchResults.set(page.events);
@@ -326,12 +498,7 @@ export class MonitoringPageComponent {
           this.searchLoading.set(false);
         },
         error: (error: unknown) => {
-          this.searchError.set(error instanceof HttpErrorResponse && error.status === 400
-            ? 'Comprueba los filtros, fechas y el identificador de traza. Si un cursor ha caducado, inicia una nueva búsqueda.'
-            : error instanceof HttpErrorResponse && error.status === 503 &&
-              error.error?.code === 'MONITORING_INDEX_UNAVAILABLE'
-              ? 'Faltan índices de Firestore o aún se están creando. Contacta con el administrador y vuelve a intentarlo cuando estén listos.'
-              : 'No se pudieron consultar los eventos. Comprueba los permisos, la conexión y los índices de Firestore.');
+          this.searchError.set(this.eventSearchErrorMessage(error));
           this.searchLoading.set(false);
         }
       });
@@ -339,6 +506,7 @@ export class MonitoringPageComponent {
 
   protected refresh(): void {
     if (this.loading()) return;
+    this.liveError.set('');
     this.resetResults();
     this.loading.set(true);
     this.error.set('');

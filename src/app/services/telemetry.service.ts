@@ -1,11 +1,12 @@
 import { DestroyRef, effect, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 import { CsrfTokenService } from './csrf-token.service';
-import { BufferedTelemetry, FrontendTelemetryName, TelemetryBuffer } from './telemetry-buffer';
+import { PerformanceTelemetry } from './performance-telemetry';
+import { BufferedTelemetry, FrontendTelemetryEvent, FrontendTelemetryName, TelemetryBuffer } from './telemetry-buffer';
 
 @Injectable({ providedIn: 'root' })
 export class TelemetryService {
@@ -29,21 +30,29 @@ export class TelemetryService {
       filter((event) => event instanceof NavigationEnd),
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(() => this.track('frontend.route.changed'));
+    const performanceTelemetry = new PerformanceTelemetry((name, details) => this.track(name, details));
+    performanceTelemetry.start();
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      if (event instanceof NavigationStart) performanceTelemetry.navigationStarted();
+      else if (event instanceof NavigationEnd) performanceTelemetry.navigationFinished();
+      else if (event instanceof NavigationCancel || event instanceof NavigationError) performanceTelemetry.navigationAborted();
+    });
     const timer = window.setInterval(() => void this.flush(), 5000);
-    const onPageHide = () => void this.flush(true);
+    const onPageHide = () => { performanceTelemetry.pageHidden(); void this.flush(true); };
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') void this.flush(true);
+      if (document.visibilityState === 'hidden') { performanceTelemetry.pageHidden(); void this.flush(true); }
     };
     window.addEventListener('pagehide', onPageHide);
     document.addEventListener('visibilitychange', onVisibilityChange);
     this.destroyRef.onDestroy(() => {
+      performanceTelemetry.stop();
       window.clearInterval(timer);
       window.removeEventListener('pagehide', onPageHide);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     });
   }
 
-  track(eventName: FrontendTelemetryName, details: { traceId?: string; durationMs?: number } = {}): void {
+  track(eventName: FrontendTelemetryName, details: { traceId?: string; durationMs?: number; http?: FrontendTelemetryEvent['http']; page?: string } = {}): void {
     if (!environment.telemetryEnabled) return;
     this.syncActor(this.auth.user()?.id ?? null);
     if (!this.actorId) return;
@@ -58,6 +67,8 @@ export class TelemetryService {
         occurredAt: new Date().toISOString(),
         eventName,
         ...(details.traceId ? { traceId: details.traceId } : {}),
+        ...(details.http ? { http: details.http } : {}),
+        ...(details.page ? { page: details.page } : {}),
         ...(details.durationMs !== undefined ? { durationMs: Math.min(86400000, Math.max(0, details.durationMs)) } : {})
       },
       attempts: 0

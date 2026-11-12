@@ -10,7 +10,7 @@ const mocks = {
     export const effect = (callback) => callback();
   `,
   '@angular/core/rxjs-interop': `export const takeUntilDestroyed = () => (value) => value;`,
-  '@angular/router': `export const Router = 'router'; export class NavigationEnd {}`,
+  '@angular/router': `export const Router = 'router'; export class NavigationEnd {} export class NavigationStart {} export class NavigationCancel {} export class NavigationError {}`,
   'rxjs': `
     export const filter = () => (value) => value;
     export const firstValueFrom = (value) => value;

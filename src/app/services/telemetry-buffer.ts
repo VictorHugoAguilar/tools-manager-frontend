@@ -1,5 +1,23 @@
 export type FrontendTelemetryName = 'frontend.runtime.error' | 'frontend.api.request.failed' |
-  'frontend.route.changed' | 'frontend.performance.measurement' | 'frontend.tools.search.completed';
+  'frontend.route.changed' | 'frontend.performance.measurement' | 'frontend.tools.search.completed' |
+  'frontend.collaboration.sync.completed' | 'frontend.collaboration.reconnected' |
+  'frontend.collaboration.persist.completed' |
+  'frontend.performance.page.loaded' |
+  'frontend.performance.first_contentful_paint' |
+  'frontend.performance.largest_contentful_paint' |
+  'frontend.performance.long_task' |
+  'frontend.performance.route_transition';
+
+const LOW_PRIORITY = new Set<FrontendTelemetryName>([
+  'frontend.route.changed', 'frontend.performance.measurement', 'frontend.tools.search.completed',
+  'frontend.collaboration.sync.completed', 'frontend.collaboration.reconnected',
+  'frontend.collaboration.persist.completed',
+  'frontend.performance.page.loaded',
+  'frontend.performance.first_contentful_paint',
+  'frontend.performance.largest_contentful_paint',
+  'frontend.performance.long_task',
+  'frontend.performance.route_transition'
+]);
 
 export interface FrontendTelemetryEvent {
   schemaVersion: 1;
@@ -8,6 +26,8 @@ export interface FrontendTelemetryEvent {
   eventName: FrontendTelemetryName;
   traceId?: string;
   durationMs?: number;
+  http?: { method: string; route: string; statusCode: number };
+  page?: string;
 }
 
 export interface BufferedTelemetry {
@@ -30,13 +50,8 @@ export class TelemetryBuffer {
 
   add(item: BufferedTelemetry): boolean {
     if (this.items.length >= this.capacity) {
-      const lowPriority = this.items.findIndex(({ event }) =>
-        event.eventName === 'frontend.route.changed' || event.eventName === 'frontend.performance.measurement' ||
-        event.eventName === 'frontend.tools.search.completed');
-      if (lowPriority < 0 ||
-          item.event.eventName === 'frontend.route.changed' ||
-          item.event.eventName === 'frontend.performance.measurement' ||
-          item.event.eventName === 'frontend.tools.search.completed') {
+      const lowPriority = this.items.findIndex(({ event }) => LOW_PRIORITY.has(event.eventName));
+      if (lowPriority < 0 || LOW_PRIORITY.has(item.event.eventName)) {
         this.dropped++;
         return false;
       }

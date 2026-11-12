@@ -149,9 +149,34 @@ test('trace detail uses the active range and does not apply event filters', () =
     from: '2026-11-11T11:00:00.000Z', to: '2026-11-11T12:00:00.000Z'
   });
   requests.at(-1).observer.next({ events: [{ eventId: 'trace-event' }], nextCursor: 'next' });
-  component.loadMoreEvents();
   assert.equal(calls.at(-1).name, 'trace');
   assert.equal(calls.at(-1).args[1].cursor, 'next');
+  requests.at(-1).observer.next({ events: [{ eventId: 'second' }], nextCursor: null });
+  assert.equal(component.searchResults().length, 2);
+  assert.equal(component.nextCursor(), null);
+  assert.equal(component.traceTruncated(), false);
+  assert.equal(component.searchLoading(), false);
+});
+
+test('a trace is loaded completely and flagged as truncated at the event limit', () => {
+  const { component, calls, requests } = setup();
+  component.showTrace('trace-id');
+  const page = (start) => ({ events: Array.from({ length: 25 }, (_, i) => ({ eventId: `e${start + i}` })), nextCursor: `c${start}` });
+  for (let start = 0; start < 200; start += 25) requests.at(-1).observer.next(page(start));
+  assert.equal(component.searchResults().length, 200);
+  assert.equal(component.traceTruncated(), true);
+  assert.equal(component.nextCursor(), null);
+  assert.equal(calls.filter((call) => call.name === 'trace').length, 8);
+});
+
+test('a failed later page keeps the loaded events and marks the trace incomplete', () => {
+  const { component, requests } = setup();
+  component.showTrace('trace-id');
+  requests.at(-1).observer.next({ events: [{ eventId: 'a' }], nextCursor: 'n' });
+  requests.at(-1).observer.error(new Error('boom'));
+  assert.equal(component.searchResults().length, 1);
+  assert.equal(component.traceTruncated(), true);
+  assert.match(component.searchError(), /toda la traza/);
 });
 
 test('activity traces use the overview interval instead of a previous filtered search', () => {
@@ -304,6 +329,60 @@ test('failed page navigation preserves the current page; refresh and clear reset
   assert.equal(component.traceView(), null);
 });
 
+test('service views preselect the metric service and event filter without querying', () => {
+  const { component, calls } = setup();
+  const count = calls.length;
+  component.selectServiceView('database');
+  assert.equal(component.metricService, 'database');
+  assert.equal(component.searchService, 'backend');
+  assert.equal(component.shows('backend'), false);
+  assert.equal(component.shows('database'), true);
+  component.selectServiceView('frontend');
+  assert.equal(component.searchService, 'frontend');
+  component.selectServiceView('all');
+  assert.equal(component.searchService, '');
+  assert.equal(component.shows('websocket'), true);
+  assert.equal(calls.length, count);
+});
+
+test('live refresh updates only the overview and keeps queried results', () => {
+  const { component, calls, requests } = setup();
+  const timers = [];
+  const originalSet = globalThis.setInterval;
+  const originalClear = globalThis.clearInterval;
+  globalThis.setInterval = (callback, ms) => { timers.push({ callback, ms, cleared: false }); return timers.length - 1; };
+  globalThis.clearInterval = (id) => { timers[id].cleared = true; };
+  try {
+    component.setAutoRefresh('45');
+    assert.equal(timers.length, 0);
+    component.setAutoRefresh('30');
+    assert.equal(timers[0].ms, 30000);
+    component.metricResult.set({ marker: true });
+    const before = calls.filter((call) => call.name === 'overview').length;
+    timers[0].callback();
+    timers[0].callback();
+    assert.equal(calls.filter((call) => call.name === 'overview').length, before + 1);
+    assert.equal(calls.filter((call) => call.name === 'auditStatus').length, 1);
+    requests.at(-1).observer.error(new Error('offline'));
+    assert.match(component.liveError(), /actualizar automáticamente/);
+    assert.ok(component.data());
+    assert.deepEqual(component.metricResult(), { marker: true });
+    globalThis.monitoringTest.document.hidden = true;
+    timers[0].callback();
+    assert.equal(calls.filter((call) => call.name === 'overview').length, before + 1);
+    globalThis.monitoringTest.document.hidden = false;
+    timers[0].callback();
+    requests.at(-1).observer.next({ period: '1h', generatedAt: '2026-11-11T12:01:00.000Z' });
+    assert.equal(component.liveError(), '');
+    assert.equal(component.data().generatedAt, '2026-11-11T12:01:00.000Z');
+    component.setAutoRefresh('0');
+    assert.equal(timers[0].cleared, true);
+  } finally {
+    globalThis.setInterval = originalSet;
+    globalThis.clearInterval = originalClear;
+  }
+});
+
 test('metrics validate range and query the correct service and resolution', () => {
   const { component, calls, requests } = setup();
   component.queryMetrics();
@@ -331,6 +410,9 @@ test('metrics validate range and query the correct service and resolution', () =
   requests.at(-1).observer.error(new Error('offline'));
   assert.match(component.metricError(), /No se pudieron consultar métricas/);
   assert.equal(component.metricLoading(), false);
+  component.metricService = 'database';
+  component.queryMetrics();
+  assert.deepEqual([calls.at(-1).args[0].service, calls.at(-1).args[0].metric], ['backend', 'database_operations']);
 });
 
 test('services are requested on demand and failures do not appear as healthy data', () => {

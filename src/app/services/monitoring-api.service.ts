@@ -14,6 +14,8 @@ export interface MonitoringEvent {
   connectionId?: string;
   durationMs?: number;
   http?: { method: string; route: string; statusCode: number };
+  page?: string;
+  actorId?: string;
 }
 
 export interface MonitoringEventFilters {
@@ -59,6 +61,8 @@ export interface MonitoringResources {
 export interface MonitoringOverview {
   period: MonitoringPeriod;
   generatedAt: string;
+  frontendActivity?: { events: number; errors: number | null; lastEventAt: string | null } | null;
+  levelCounts?: Record<'DEBUG' | 'INFO' | 'WARN' | 'ERROR', number> | null;
   activeUsers?: { count: number; windowMinutes: number; checkedAt: string } | null;
   events: MonitoringEvent[];
   heartbeats: {
@@ -96,12 +100,17 @@ export interface MonitoringOverview {
     from: string;
     to: string;
     resolutionSeconds: number;
-    points: { start: string; opened: number; closed: number; updates: number }[];
+    points: {
+      start: string; opened: number; closed: number; updates: number;
+      awareness?: number; rejected?: number; abnormalClosed?: number;
+    }[];
   };
   collector: {
     queuePending: number;
     queueCapacity: number;
     droppedByLevel: Record<string, number>;
+    sampledOutByLevel?: Record<string, number>;
+    sampleRates?: Record<string, number>;
     failedEvents: number;
     lastSuccessfulFlushAt: string | null;
     lastFlushDurationMs: number | null;
@@ -124,12 +133,12 @@ export type MonitoringMetricRequest = {
   to: string;
   interval: MonitoringMetricInterval;
 } & (
-  | { service: 'backend'; metric: 'http_requests' }
+  | { service: 'backend'; metric: 'http_requests' | 'database_operations' }
   | { service: 'websocket'; metric: 'websocket_activity' }
 );
 
 export type MonitoringMetricResult =
-  | ({ service: 'backend'; metric: 'http_requests' } & MonitoringOverview['httpMetrics'])
+  | ({ service: 'backend'; metric: 'http_requests' | 'database_operations' } & MonitoringOverview['httpMetrics'])
   | ({ service: 'websocket'; metric: 'websocket_activity' } & MonitoringOverview['webSocketMetrics']);
 
 export interface MonitoringServices {

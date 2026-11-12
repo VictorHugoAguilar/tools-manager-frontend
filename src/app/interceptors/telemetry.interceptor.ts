@@ -2,6 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { failedRequestDetails } from '../services/telemetry-route';
 import { TelemetryService } from '../services/telemetry.service';
 
 export const telemetryInterceptor: HttpInterceptorFn = (request, next) => {
@@ -18,7 +19,11 @@ export const telemetryInterceptor: HttpInterceptorFn = (request, next) => {
   return next(request.clone({ setHeaders: { 'X-Trace-Id': traceId } })).pipe(
     catchError((error: unknown) => {
       try {
-        telemetry.track('frontend.api.request.failed', { traceId, durationMs: performance.now() - start });
+        telemetry.track('frontend.api.request.failed', {
+          traceId,
+          durationMs: performance.now() - start,
+          ...failedRequestDetails(request.method, url.pathname, (error as { status?: unknown })?.status, window.location.pathname)
+        });
       } catch (telemetryError) {
         console.error('No se pudo registrar la telemetría de la petición.', telemetryError);
       }
