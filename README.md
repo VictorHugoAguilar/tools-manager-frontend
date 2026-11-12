@@ -558,3 +558,30 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Change drawingCollaborationUrl to use ws protocol
 
 <!-- CHANGELOG-PR-112-END -->
+
+<!-- CHANGELOG-PR-116-START -->
+### [7.10.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/116) (2026-11-12)
+
+- Added: se añade la nueva página de monitoreo de la app
+- Added: Se añaden los nuevos servicios contra los nuevos endpoint
+- Added: se añade el buffer de telemetria y el servicio
+- Added: se añaden los test del servicio de telemetria y de buffer
+- Added: se añaden las configuraciones y los guard para las rutas, se añade un interceptor y se añade las rutas para la nueva página, se añade en el navbar la nueva página
+- Added: se ha añadido la visibilidad operativa de la outbox de auditoría al panel de monitorización:
+- Added: se ha completado la implementación  para ambas páginas:
+- Added: se ha completado la auditoría experimental de técnicos, ubicaciones, tipos de herramientas y etiquetas. Los cambios y eventos se guardan en la misma transacción; los duplicados de etiquetas conservan su comportamiento y no generan eventos.
+- Added: se ha empezado la implementación del frontend de monitorización:
+- Added: se ha añadido al frontend de monitorización:
+- Added: se ha integrado en la página de monitorización los historiales de auditoría de cajas y taller, con consultas independientes y errores explícitos.
+- Added: se ha añadido gráficas históricas para peticiones y errores HTTP, latencia y actividad WebSocket. Los intervalos sin datos aparecen como huecos, no como ceros.
+- Added: se ha implementado Actividad reciente en la página de monitorización: muestra consultas de almacenamiento instrumentadas, su respuesta HTTP y acceso a la traza cuando está disponible.
+- Changed: se ha mejorado la navegación de logs de monitorización:
+- Added: se ha implementado el panel de recursos por instancia para backend y WebSocket:
+- Added: Se ha implementada la tarjeta Usuarios activos. Cuenta usuarios únicos con interacción registrada en una pestaña visible, sin contar pestañas o conexiones WebSocket como usuarios distintos.
+- Added: se ha implementado el seguimiento en Tablero, Inventario y Reparaciones:
+- Added: se ha implementado monitoring y tracing en Lista de tareas, Tareas y Categorías.
+- Changed: se ha movido el seguimiento a un panel en la página principal de Lista de tareas, como en las otras páginas. Desde allí puedes seleccionar una tarea y consultar su historial de auditoría; la actividad habitual sigue en el detalle de la tarea.
+- Added: se ha añadido en Monitorización historiales de herramientas y reparaciones, listas de tareas, tareas y proyectos, Dibujar, catálogos y usuarios y roles, además de cajas y taller. Las consultas requieren monitoring:app y registran el acceso antes de leer.
+- Changed: se ha rediseñado la página de Monitorización como un dashboard, manteniendo los colores y estilos de la aplicación.
+
+<!-- CHANGELOG-PR-116-END -->
