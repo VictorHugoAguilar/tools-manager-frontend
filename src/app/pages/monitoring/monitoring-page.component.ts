@@ -22,6 +22,8 @@ interface PreviousEventView {
   pageCursors: (string | null)[];
 }
 
+export type ServiceView = 'all' | 'backend' | 'database' | 'websocket' | 'frontend';
+
 @Component({
   selector: 'app-monitoring-page',
   imports: [CommonModule, FormsModule, BaseChartDirective, StorageAuditHistoryComponent, AreaAuditHistoryComponent],
@@ -34,6 +36,7 @@ export class MonitoringPageComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly document = inject(DOCUMENT);
   protected readonly period = signal<MonitoringPeriod>('1h');
+  protected readonly serviceView = signal<ServiceView>('all');
   protected readonly data = signal<MonitoringOverview | null>(null);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -108,6 +111,17 @@ export class MonitoringPageComponent {
 
   constructor() {
     this.refresh();
+  }
+
+  protected shows(...views: Exclude<ServiceView, 'all'>[]): boolean {
+    const current = this.serviceView();
+    return current === 'all' || views.includes(current);
+  }
+
+  protected selectServiceView(view: ServiceView): void {
+    this.serviceView.set(view);
+    if (view === 'backend' || view === 'database' || view === 'websocket') this.metricService = view;
+    if (!this.searchLoading()) this.searchService = view === 'all' ? '' : view === 'database' ? 'backend' : view;
   }
 
   protected navigateTo(section: 'overview' | 'metrics' | 'events' | 'audit'): void {

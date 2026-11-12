@@ -304,6 +304,22 @@ test('failed page navigation preserves the current page; refresh and clear reset
   assert.equal(component.traceView(), null);
 });
 
+test('service views preselect the metric service and event filter without querying', () => {
+  const { component, calls } = setup();
+  const count = calls.length;
+  component.selectServiceView('database');
+  assert.equal(component.metricService, 'database');
+  assert.equal(component.searchService, 'backend');
+  assert.equal(component.shows('backend'), false);
+  assert.equal(component.shows('database'), true);
+  component.selectServiceView('frontend');
+  assert.equal(component.searchService, 'frontend');
+  component.selectServiceView('all');
+  assert.equal(component.searchService, '');
+  assert.equal(component.shows('websocket'), true);
+  assert.equal(calls.length, count);
+});
+
 test('metrics validate range and query the correct service and resolution', () => {
   const { component, calls, requests } = setup();
   component.queryMetrics();

@@ -82,6 +82,7 @@ select:focus-visible, button:focus-visible, input:focus-visible, summary:focus-v
 }
 .dashboard-nav > span { padding: 0 .45rem; color: var(--muted); font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; }
 .dashboard-nav button { min-height: 2.2rem; border-color: transparent; box-shadow: none; background: transparent; }
+.dashboard-nav button.active { background: var(--accent-sky); border-color: var(--line); font-weight: 800; }
 .dashboard-nav button:hover:not(:disabled) { background: var(--accent-sky); border-color: var(--line); }
 .dashboard-section { margin-top: 1.5rem; scroll-margin-top: 1rem; }
 .section-heading { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: .5rem 1rem; margin-bottom: .75rem; }

@@ -34,6 +34,13 @@
     <button type="button" (click)="navigateTo('audit')">Auditoría</button>
   </nav>
 
+  <nav class="dashboard-nav service-tabs" aria-label="Vista por servicio">
+    <span>Servicio</span>
+    @for (view of [['all', 'Todos'], ['backend', 'Backend'], ['websocket', 'WebSocket'], ['frontend', 'Frontend'], ['database', 'Base de datos']]; track view[0]) {
+      <button type="button" [class.active]="serviceView() === view[0]" [attr.aria-pressed]="serviceView() === view[0]" (click)="selectServiceView($any(view[0]))">{{ view[1] }}</button>
+    }
+  </nav>
+
   @if (loading()) {
     <p class="notice" role="status">Cargando datos de monitorización…</p>
   }
@@ -147,19 +154,19 @@
       <p class="updated">Última actualización: {{ overview.generatedAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
     </div>
     <div class="summary-grid">
-      <article class="card summary">
+      @if (shows('backend')) { <article class="card summary">
         <span class="icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg></span>
         <div><h2>Backend API</h2>@if (overview.httpMetrics.count) { <strong>{{ overview.httpMetrics.count }}</strong><small>Peticiones · {{ overview.httpMetrics.errors }} errores 5xx</small> } @else { <strong>Sin datos</strong><small>Sin intervalos registrados</small> }<small>{{ overview.heartbeats.services.backend.recentInstances }} instancias con señal reciente</small></div>
-      </article>
-      <article class="card summary">
+      </article> }
+      @if (shows('websocket')) { <article class="card summary">
         <span class="icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 8a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8 16a6 6 0 0 1 8 0"/><circle cx="12" cy="20" r="1"/></svg></span>
         <div><h2>WebSocket</h2>@if (overview.heartbeats.services.websocket.activeConnections !== null) { <strong>{{ overview.heartbeats.services.websocket.activeConnections }}</strong><small>Conexiones en instancias con señal reciente</small><small>{{ overview.heartbeats.services.websocket.recentInstances }} instancias · datos de hasta {{ overview.heartbeats.freshnessSeconds }} s</small> } @else if (overview.heartbeats.services.websocket.recentInstances) { <strong>Sin datos</strong><small>Faltan métricas de alguna instancia</small> } @else { <strong>Sin señal reciente</strong><small>Disponibilidad no medida</small> }</div>
-      </article>
-      <article class="card summary">
+      </article> }
+      @if (shows('frontend')) { <article class="card summary">
         <span class="icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
         <div><h2>Frontend</h2><strong>Sin datos</strong><small>Disponibilidad no medida</small></div>
-      </article>
-      <article class="card summary">
+      </article> }
+      @if (serviceView() === 'all') { <article class="card summary">
         <span class="icon orange" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M6 19v-1a6 6 0 0 1 12 0v1M5 10a3 3 0 0 0-1 6M19 10a3 3 0 0 1 1 6"/></svg></span>
         <div><h2>Usuarios activos</h2>
           @if (overview.activeUsers; as active) {
@@ -167,15 +174,29 @@
             <small>Estimación: puede faltar actividad si falla la señal o hay clientes sin actualizar.</small>
           } @else { <strong>Sin datos</strong><small>No se pudo consultar la actividad</small> }
         </div>
-      </article>
-      <article class="card summary">
+      </article> }
+      @if (shows('backend')) { <article class="card summary">
         <span class="icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
         <div><h2>Tiempo respuesta API</h2>@if (overview.httpMetrics.averageMs !== null) { <strong>{{ overview.httpMetrics.averageMs | number:'1.0-1' }} <span class="unit">ms</span></strong><small>Media · p95: {{ overview.httpMetrics.p95Range }} ms · p99: {{ overview.httpMetrics.p99Range }} ms</small> } @else { <strong>Sin datos</strong><small>Sin intervalos registrados</small> }</div>
-      </article>
+      </article> }
     </div>
 
     <div class="main-grid">
-      <article class="card panel">
+      @if (serviceView() === 'frontend') {
+        <article class="card panel">
+          <h2 class="panel-title">Frontend</h2>
+          <p class="muted">El navegador emite errores JavaScript, fallos HTTP, navegación, acciones de usuario y medidas de rendimiento como eventos con servicio «Frontend». No hay métricas agregadas ni disponibilidad propias; consúltalos en «Logs recientes» (el filtro de servicio ya está preseleccionado). Es telemetría y puede perderse.</p>
+          <button type="button" [disabled]="searchLoading() || loading()" (click)="navigateTo('events')">Ir a eventos y trazas</button>
+        </article>
+      }
+      @if (serviceView() === 'database') {
+        <article class="card panel">
+          <h2 class="panel-title">Base de datos</h2>
+          <p class="muted">Operaciones de Realtime Database del backend (lecturas, escrituras y transacciones): volumen, fallos y latencia. Elige el rango en «Consultar métricas históricas»; el servicio ya está preseleccionado. No incluye el proceso WebSocket ni Firestore.</p>
+          <button type="button" (click)="navigateTo('metrics')">Ir a métricas históricas</button>
+        </article>
+      }
+      @if (shows('backend')) { <article class="card panel">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▥</span>Latencia media del backend</h2>
         <p class="muted">Intervalos completos de {{ overview.httpMetrics.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}; los huecos indican ausencia de datos. El p95 y el p99 son rangos estimados.</p>
         @if (overview.httpMetrics.points.length) {
@@ -183,8 +204,8 @@
         } @else {
           <div class="empty-chart">Sin métricas agregadas para mostrar.</div>
         }
-      </article>
-      <article class="card panel">
+      </article> }
+      @if (shows('backend', 'websocket')) { <article class="card panel">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Recursos por instancia</h2>
         <p class="muted">Solo instancias con señal reciente (hasta {{ overview.heartbeats.freshnessSeconds }} s). La CPU y la memoria corresponden al proceso; el disco es el sistema de archivos de /, no Firebase Storage. Los discos pueden estar compartidos y no se suman.</p>
         @if (resourceInstances().length) {
@@ -212,8 +233,8 @@
         } @else {
           <p class="muted">Sin datos de instancias recientes.</p>
         }
-      </article>
-      <article class="card panel">
+      </article> }
+      @if (shows('websocket')) { <article class="card panel">
         <h2 class="panel-title">Actividad WebSocket registrada</h2>
         <p class="muted">Presencia, rechazados y cierres anómalos solo se miden desde su incorporación; los intervalos anteriores aparecen como 0 sin que signifique ausencia de actividad. No se mide latencia ni reconexiones.</p>
         <p class="muted">Intervalos completos de {{ overview.webSocketMetrics.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}. Los huecos no implican ausencia de actividad; los datos pueden perderse.</p>
@@ -237,7 +258,7 @@
         } @else {
           <p>Sin métricas históricas registradas.</p>
         }
-      </article>
+      </article> }
     </div>
     </section>
 
@@ -247,7 +268,7 @@
       <p>Busca eventos, consulta trazas y revisa el recolector.</p>
     </div>
     <div class="detail-grid">
-      <article class="card panel recent-activity">
+      @if (shows('backend')) { <article class="card panel recent-activity">
         <h2 class="panel-title"><span class="panel-icon accent" aria-hidden="true">ϟ</span>Actividad reciente</h2>
         <p class="muted">Consultas de almacenamiento presentes entre los últimos 25 eventos recibidos del intervalo. Es telemetría que puede perderse, no un historial de auditoría ni una lista completa de actividad.</p>
         @if (recentActivity().length) {
@@ -266,7 +287,7 @@
         } @else {
           <p class="muted activity-empty">No hay consultas de almacenamiento entre los últimos 25 eventos recibidos.</p>
         }
-      </article>
+      </article> }
       <article class="card panel logs">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Logs recientes</h2>
         <p class="muted">Hasta 25 eventos por página, ordenados por recepción. Si no indicas fechas, se usa el intervalo del resumen.</p>
@@ -339,7 +360,7 @@
           </div>
         }
       </article>
-      <article class="card panel collector">
+      @if (shows('backend')) { <article class="card panel collector">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">⚙</span>Recolector backend</h2>
         <p class="muted">Solo la instancia que responde a esta consulta.</p>
         <dl>
@@ -359,7 +380,7 @@
           {{ overview.heartbeats.services.websocket.lastHeartbeatAt ? (overview.heartbeats.services.websocket.lastHeartbeatAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}.
           Una señal reciente ({{ overview.heartbeats.freshnessSeconds }} s) no garantiza disponibilidad.
         </p>
-      </article>
+      </article> }
     </div>
     </section>
   }
