@@ -33,13 +33,19 @@ function chartData<T extends Point>(
   return { labels, datasets };
 }
 
-export function latencyChartData(metrics: MonitoringOverview['httpMetrics']): ChartData<'line'> | null {
+export function latencyChartData(metrics: MonitoringOverview['httpMetrics'], label = 'Latencia media API (ms)'): ChartData<'line'> | null {
   return chartData(metrics, metrics.points, [
-    { label: 'Latencia media API (ms)', color: '#208ff4', value: (point) => point.averageMs }
+    { label, color: '#208ff4', value: (point) => point.averageMs }
   ]);
 }
 
 export function activityChartData(metrics: MonitoringMetricResult): ChartData<'line'> | null {
+  if (metrics.service === 'backend' && metrics.metric === 'database_operations') {
+    return chartData(metrics, metrics.points, [
+      { label: 'Operaciones', color: '#208ff4', value: (point) => point.count },
+      { label: 'Operaciones fallidas', color: '#b52e42', value: (point) => point.errors }
+    ]);
+  }
   if (metrics.service === 'backend') {
     return chartData(metrics, metrics.points, [
       { label: 'Peticiones', color: '#208ff4', value: (point) => point.count },
@@ -49,6 +55,9 @@ export function activityChartData(metrics: MonitoringMetricResult): ChartData<'l
   return chartData(metrics, metrics.points, [
     { label: 'Aperturas', color: '#208ff4', value: (point) => point.opened },
     { label: 'Cierres', color: '#b52e42', value: (point) => point.closed },
-    { label: 'Actualizaciones', color: '#35ad71', value: (point) => point.updates }
+    { label: 'Actualizaciones', color: '#35ad71', value: (point) => point.updates },
+    { label: 'Presencia', color: '#8a63d2', value: (point) => point.awareness ?? 0 },
+    { label: 'Mensajes rechazados', color: '#e0a21b', value: (point) => point.rejected ?? 0 },
+    { label: 'Cierres anómalos', color: '#7a2230', value: (point) => point.abnormalClosed ?? 0 }
   ]);
 }

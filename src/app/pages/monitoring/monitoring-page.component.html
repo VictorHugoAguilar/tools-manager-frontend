@@ -54,6 +54,7 @@
         <label>Servicio
           <select name="metricService" [(ngModel)]="metricService" [disabled]="metricLoading()">
             <option value="backend">Backend · peticiones HTTP</option>
+            <option value="database">Base de datos · operaciones</option>
             <option value="websocket">WebSocket · actividad</option>
           </select>
         </label>
@@ -72,8 +73,8 @@
         <p class="muted">Minutos incluidos: {{ metric.from | date:'dd/MM/yyyy HH:mm' }} – {{ metric.to | date:'dd/MM/yyyy HH:mm' }} (final excluido). Resolución: {{ metric.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}.</p>
         @if (metric.service === 'backend') {
           @if (metric.count) {
-            <p>Peticiones: {{ metric.count }} · errores 5xx: {{ metric.errors }} · media: {{ metric.averageMs | number:'1.0-1' }} ms · p95: {{ metric.p95Range }} ms · p99: {{ metric.p99Range }} ms</p>
-            <p class="muted">Los percentiles son rangos estimados.</p>
+            <p>{{ metric.metric === 'database_operations' ? 'Operaciones' : 'Peticiones' }}: {{ metric.count }} · {{ metric.metric === 'database_operations' ? 'fallidas' : 'errores 5xx' }}: {{ metric.errors }} · media: {{ metric.averageMs | number:'1.0-1' }} ms · p95: {{ metric.p95Range }} ms · p99: {{ metric.p99Range }} ms</p>
+            <p class="muted">Los percentiles son rangos estimados.@if (metric.metric === 'database_operations') { Solo cubre lecturas, escrituras y transacciones de Realtime Database del backend; no incluye rutas, el proceso WebSocket ni Firestore. }</p>
           } @else { <p>Sin intervalos registrados.</p> }
           @if (metric.points.length) {
             @if (metricActivityChart(); as chart) {
@@ -97,14 +98,15 @@
           @if (metric.points.length) {
             @if (metricActivityChart(); as chart) {
               <h3>Actividad WebSocket registrada</h3>
-              <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres y actualizaciones WebSocket por intervalo" role="img"></canvas></div>
+              <p class="muted">Presencia, rechazados y cierres anómalos solo se miden desde su incorporación; los intervalos anteriores aparecen como 0 sin que signifique ausencia de actividad. No se mide latencia ni reconexiones.</p>
+              <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres, actualizaciones, presencia, rechazos y cierres anómalos WebSocket por intervalo" role="img"></canvas></div>
             } @else {
               <p class="muted">La gráfica admite hasta 1500 intervalos. Selecciona un rango menor o resolución de una hora; la tabla conserva todos los datos devueltos.</p>
             }
             <div class="metric-table"><table>
-              <thead><tr><th>Inicio</th><th>Aperturas</th><th>Cierres</th><th>Actualizaciones</th></tr></thead>
+              <thead><tr><th>Inicio</th><th>Aperturas</th><th>Cierres</th><th>Actualizaciones</th><th>Presencia</th><th>Rechazados</th><th>Cierres anómalos</th></tr></thead>
               <tbody>@for (point of metric.points; track point.start) {
-                <tr><td>{{ point.start | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ point.opened }}</td><td>{{ point.closed }}</td><td>{{ point.updates }}</td></tr>
+                <tr><td>{{ point.start | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ point.opened }}</td><td>{{ point.closed }}</td><td>{{ point.updates }}</td><td>{{ point.awareness ?? 0 }}</td><td>{{ point.rejected ?? 0 }}</td><td>{{ point.abnormalClosed ?? 0 }}</td></tr>
               }</tbody>
             </table></div>
           } @else { <p>Sin intervalos registrados.</p> }
@@ -213,6 +215,7 @@
       </article>
       <article class="card panel">
         <h2 class="panel-title">Actividad WebSocket registrada</h2>
+        <p class="muted">Presencia, rechazados y cierres anómalos solo se miden desde su incorporación; los intervalos anteriores aparecen como 0 sin que signifique ausencia de actividad. No se mide latencia ni reconexiones.</p>
         <p class="muted">Intervalos completos de {{ overview.webSocketMetrics.resolutionSeconds === 60 ? 'un minuto' : 'una hora' }}. Los huecos no implican ausencia de actividad; los datos pueden perderse.</p>
         @if (overview.heartbeats.services.websocket.metricHealth; as health) {
           <p class="muted">Instancias con señal reciente: {{ health.pending }} intervalos pendientes, {{ health.dropped }} descartados, {{ health.failed }} fallidos y {{ health.droppedSamples }} muestras descartadas. Las instancias sin señal no están incluidas.</p>
@@ -221,13 +224,13 @@
         }
         @if (overview.webSocketMetrics.points.length) {
           @if (websocketChart(); as chart) {
-            <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres y actualizaciones WebSocket por intervalo" role="img"></canvas></div>
+            <div class="chart"><canvas baseChart [data]="chart" [options]="activityChartOptions" type="line" aria-label="Aperturas, cierres, actualizaciones, presencia, rechazos y cierres anómalos WebSocket por intervalo" role="img"></canvas></div>
           }
           <details class="metric-details">
             <summary>Ver datos por intervalo</summary>
           <dl>
             @for (point of overview.webSocketMetrics.points; track point.start) {
-              <div><dt>{{ point.start | date:'dd/MM HH:mm' }}</dt><dd>Aperturas: {{ point.opened }} · cierres: {{ point.closed }} · actualizaciones: {{ point.updates }}</dd></div>
+              <div><dt>{{ point.start | date:'dd/MM HH:mm' }}</dt><dd>Aperturas: {{ point.opened }} · cierres: {{ point.closed }} · actualizaciones: {{ point.updates }} · presencia: {{ point.awareness ?? 0 }} · rechazados: {{ point.rejected ?? 0 }} · cierres anómalos: {{ point.abnormalClosed ?? 0 }}</dd></div>
             }
           </dl>
           </details>

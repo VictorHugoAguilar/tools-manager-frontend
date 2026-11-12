@@ -35,12 +35,12 @@ test('WebSocket charts show each recorded series and preserve missing intervals'
     service: 'websocket', metric: 'websocket_activity',
     from: '2026-11-10T10:00:00.000Z', to: '2026-11-10T10:03:00.000Z',
     resolutionSeconds: 60,
-    points: [{ start: '2026-11-10T10:01:00.000Z', opened: 0, closed: 3, updates: 8 }]
+    points: [{ start: '2026-11-10T10:01:00.000Z', opened: 0, closed: 3, updates: 8, awareness: 5, rejected: 1, abnormalClosed: 2 }]
   };
   const chart = activityChartData(metrics);
-  assert.deepEqual(chart.datasets.map((dataset) => dataset.label), ['Aperturas', 'Cierres', 'Actualizaciones']);
+  assert.deepEqual(chart.datasets.map((dataset) => dataset.label), ['Aperturas', 'Cierres', 'Actualizaciones', 'Presencia', 'Mensajes rechazados', 'Cierres anómalos']);
   assert.deepEqual(chart.datasets.map((dataset) => dataset.data), [
-    [null, 0, null], [null, 3, null], [null, 8, null]
+    [null, 0, null], [null, 3, null], [null, 8, null], [null, 5, null], [null, 1, null], [null, 2, null]
   ]);
 });
 

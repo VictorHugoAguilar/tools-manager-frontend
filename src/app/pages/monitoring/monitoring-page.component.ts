@@ -55,7 +55,7 @@ export class MonitoringPageComponent {
   protected readonly servicesResult = signal<MonitoringServices | null>(null);
   protected readonly servicesLoading = signal(false);
   protected readonly servicesError = signal('');
-  protected metricService: 'backend' | 'websocket' = 'backend';
+  protected metricService: 'backend' | 'database' | 'websocket' = 'backend';
   protected metricInterval: MonitoringMetricInterval = '1h';
   protected metricFrom = '';
   protected metricTo = '';
@@ -86,7 +86,10 @@ export class MonitoringPageComponent {
   });
   protected readonly metricLatencyChart = computed(() => {
     const metrics = this.metricResult();
-    return metrics?.service === 'backend' ? latencyChartData(metrics) : null;
+    if (metrics?.service !== 'backend') return null;
+    return metrics.metric === 'database_operations'
+      ? latencyChartData(metrics, 'Latencia media de base de datos (ms)')
+      : latencyChartData(metrics);
   });
   protected readonly websocketChart = computed(() => {
     const metrics = this.data()?.webSocketMetrics;
@@ -219,9 +222,9 @@ export class MonitoringPageComponent {
       return;
     }
     const range = { from: new Date(from).toISOString(), to: new Date(to).toISOString(), interval: this.metricInterval };
-    const filters: MonitoringMetricRequest = this.metricService === 'backend'
-      ? { ...range, service: 'backend', metric: 'http_requests' }
-      : { ...range, service: 'websocket', metric: 'websocket_activity' };
+    const filters: MonitoringMetricRequest = this.metricService === 'websocket'
+      ? { ...range, service: 'websocket', metric: 'websocket_activity' }
+      : { ...range, service: 'backend', metric: this.metricService === 'database' ? 'database_operations' : 'http_requests' };
     this.metricLoading.set(true);
     this.metricError.set('');
     this.metricResult.set(null);

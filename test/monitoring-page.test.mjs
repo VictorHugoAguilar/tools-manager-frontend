@@ -331,6 +331,9 @@ test('metrics validate range and query the correct service and resolution', () =
   requests.at(-1).observer.error(new Error('offline'));
   assert.match(component.metricError(), /No se pudieron consultar métricas/);
   assert.equal(component.metricLoading(), false);
+  component.metricService = 'database';
+  component.queryMetrics();
+  assert.deepEqual([calls.at(-1).args[0].service, calls.at(-1).args[0].metric], ['backend', 'database_operations']);
 });
 
 test('services are requested on demand and failures do not appear as healthy data', () => {

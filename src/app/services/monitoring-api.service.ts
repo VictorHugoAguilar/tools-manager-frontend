@@ -96,7 +96,10 @@ export interface MonitoringOverview {
     from: string;
     to: string;
     resolutionSeconds: number;
-    points: { start: string; opened: number; closed: number; updates: number }[];
+    points: {
+      start: string; opened: number; closed: number; updates: number;
+      awareness?: number; rejected?: number; abnormalClosed?: number;
+    }[];
   };
   collector: {
     queuePending: number;
@@ -124,12 +127,12 @@ export type MonitoringMetricRequest = {
   to: string;
   interval: MonitoringMetricInterval;
 } & (
-  | { service: 'backend'; metric: 'http_requests' }
+  | { service: 'backend'; metric: 'http_requests' | 'database_operations' }
   | { service: 'websocket'; metric: 'websocket_activity' }
 );
 
 export type MonitoringMetricResult =
-  | ({ service: 'backend'; metric: 'http_requests' } & MonitoringOverview['httpMetrics'])
+  | ({ service: 'backend'; metric: 'http_requests' | 'database_operations' } & MonitoringOverview['httpMetrics'])
   | ({ service: 'websocket'; metric: 'websocket_activity' } & MonitoringOverview['webSocketMetrics']);
 
 export interface MonitoringServices {
