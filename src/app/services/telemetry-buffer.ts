@@ -26,6 +26,8 @@ export interface FrontendTelemetryEvent {
   eventName: FrontendTelemetryName;
   traceId?: string;
   durationMs?: number;
+  http?: { method: string; route: string; statusCode: number };
+  page?: string;
 }
 
 export interface BufferedTelemetry {

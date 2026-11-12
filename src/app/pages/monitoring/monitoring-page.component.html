@@ -405,6 +405,8 @@
                   @if (event.http; as http) {
                     <span>{{ http.method }} {{ http.route }} · {{ http.statusCode }}</span>
                   }
+                  @if (event.page) { <span>Página origen: {{ event.page }}</span> }
+                  @if (event.actorId) { <span>Usuario: {{ event.actorId }}</span> }
                   @if (event.traceId; as traceId) {
                     <span>Traza: {{ traceId }}</span>
                     <button type="button" class="trace-button" [disabled]="searchLoading() || loading()" (click)="showTrace(traceId)">Ver traza</button>

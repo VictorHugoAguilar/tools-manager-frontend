@@ -6,7 +6,7 @@ import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 import { CsrfTokenService } from './csrf-token.service';
 import { PerformanceTelemetry } from './performance-telemetry';
-import { BufferedTelemetry, FrontendTelemetryName, TelemetryBuffer } from './telemetry-buffer';
+import { BufferedTelemetry, FrontendTelemetryEvent, FrontendTelemetryName, TelemetryBuffer } from './telemetry-buffer';
 
 @Injectable({ providedIn: 'root' })
 export class TelemetryService {
@@ -52,7 +52,7 @@ export class TelemetryService {
     });
   }
 
-  track(eventName: FrontendTelemetryName, details: { traceId?: string; durationMs?: number } = {}): void {
+  track(eventName: FrontendTelemetryName, details: { traceId?: string; durationMs?: number; http?: FrontendTelemetryEvent['http']; page?: string } = {}): void {
     if (!environment.telemetryEnabled) return;
     this.syncActor(this.auth.user()?.id ?? null);
     if (!this.actorId) return;
@@ -67,6 +67,8 @@ export class TelemetryService {
         occurredAt: new Date().toISOString(),
         eventName,
         ...(details.traceId ? { traceId: details.traceId } : {}),
+        ...(details.http ? { http: details.http } : {}),
+        ...(details.page ? { page: details.page } : {}),
         ...(details.durationMs !== undefined ? { durationMs: Math.min(86400000, Math.max(0, details.durationMs)) } : {})
       },
       attempts: 0

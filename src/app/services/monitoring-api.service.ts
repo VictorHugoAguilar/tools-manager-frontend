@@ -14,6 +14,8 @@ export interface MonitoringEvent {
   connectionId?: string;
   durationMs?: number;
   http?: { method: string; route: string; statusCode: number };
+  page?: string;
+  actorId?: string;
 }
 
 export interface MonitoringEventFilters {
