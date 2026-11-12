@@ -1,5 +1,5 @@
 export type FrontendTelemetryName = 'frontend.runtime.error' | 'frontend.api.request.failed' |
-  'frontend.route.changed' | 'frontend.performance.measurement';
+  'frontend.route.changed' | 'frontend.performance.measurement' | 'frontend.tools.search.completed';
 
 export interface FrontendTelemetryEvent {
   schemaVersion: 1;
@@ -31,10 +31,12 @@ export class TelemetryBuffer {
   add(item: BufferedTelemetry): boolean {
     if (this.items.length >= this.capacity) {
       const lowPriority = this.items.findIndex(({ event }) =>
-        event.eventName === 'frontend.route.changed' || event.eventName === 'frontend.performance.measurement');
+        event.eventName === 'frontend.route.changed' || event.eventName === 'frontend.performance.measurement' ||
+        event.eventName === 'frontend.tools.search.completed');
       if (lowPriority < 0 ||
           item.event.eventName === 'frontend.route.changed' ||
-          item.event.eventName === 'frontend.performance.measurement') {
+          item.event.eventName === 'frontend.performance.measurement' ||
+          item.event.eventName === 'frontend.tools.search.completed') {
         this.dropped++;
         return false;
       }

@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 import { demoTools } from '../data/demo-tools';
@@ -7,6 +7,8 @@ import { ToolApiService } from './tool-api.service';
 import { ConfirmService } from './confirm.service';
 import { ToastService } from './toast.service';
 import { BoardColumnKey } from '../components/tool-card.component';
+import { TelemetryService } from './telemetry.service';
+import { AuthService } from './auth.service';
 
 export interface DashboardColumn {
   id: BoardColumnKey;
@@ -22,6 +24,10 @@ export class ToolStoreService {
   private readonly toolApi = inject(ToolApiService);
   private readonly toastService = inject(ToastService);
   private readonly confirmService = inject(ConfirmService);
+  private readonly telemetry = inject(TelemetryService);
+  private readonly auth = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
+  private searchTelemetryTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly searchTerm = signal('');
   readonly tools = signal<Tool[]>([]);
@@ -34,6 +40,12 @@ export class ToolStoreService {
   readonly bannerMessage = signal('Conectado a tu API de herramientas.');
 
   private initialized = false;
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      if (this.searchTelemetryTimer !== null) clearTimeout(this.searchTelemetryTimer);
+    });
+  }
 
   readonly filteredTools = computed(() => {
     const search = this.searchTerm().trim().toLowerCase();
@@ -158,6 +170,14 @@ export class ToolStoreService {
 
   updateSearch(value: string): void {
     this.searchTerm.set(value);
+    if (this.searchTelemetryTimer !== null) clearTimeout(this.searchTelemetryTimer);
+    this.searchTelemetryTimer = null;
+    const actorId = this.auth.user()?.id;
+    if (!value.trim() || !actorId) return;
+    this.searchTelemetryTimer = setTimeout(() => {
+      this.searchTelemetryTimer = null;
+      if (this.auth.user()?.id === actorId) this.telemetry.track('frontend.tools.search.completed');
+    }, 1000);
   }
 
   openCreateModal(): void {
