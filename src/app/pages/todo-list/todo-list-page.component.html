@@ -3,10 +3,6 @@
     <div>
       <p class="eyebrow">Tareas</p>
       <p class="summary-copy">Organiza, planifica y gestiona todas tus tareas de forma sencilla y eficiente.</p>
-      @if (todoListAuth.user()?.permissions?.includes('monitoring:app')) {
-        <a routerLink="/monitorizacion">Abrir monitorización y trazas técnicas</a>
-        <p>Las trazas se consultan por operación y no se vinculan automáticamente a una tarea.</p>
-      }
     </div>
     <div class="todoList-heading-actions">
       <button class="todoList-secondary-button" type="button" (click)="todoListToggleNotifications()">
@@ -20,6 +16,8 @@
       </button>
     </div>
   </header>
+
+  <app-task-board-tracing module="todo" [tasks]="todoListItems()" />
 
   @if (todoListError()) {
     <p class="todoList-message todoList-message--error" role="alert">{{ todoListError() }}</p>
@@ -765,9 +763,6 @@
 
             @if (todoListDetailTab() === 'history') {
               <div class="todoList-detail-tab-content todoList-detail-history">
-                @if (todoListDetail(); as task) {
-                  <app-task-tracing module="todo" [taskId]="task.id" />
-                }
                 @for (todoListActivity of todoListDetail()?.activities ?? []; track todoListActivity.id) {
                   <p class="todoList-activity">
                     <strong>{{ todoListActivity.userName }}</strong> · {{ todoListActivity.action }}

@@ -81,3 +81,15 @@ test('changing task cancels the request and clears data; errors are visible', ()
   assert.match(component.error(), /No se pudo consultar/);
   assert.equal(component.events(), null);
 });
+
+test('board and todo histories use their respective endpoints', () => {
+  const { component, calls, requests } = setup();
+  component.module.set('board');
+  component.load();
+  assert.equal(calls[0], 'http://api.example/api/tracing/tasks/board/id%201/history');
+  component.module.set('todo');
+  component.ngOnChanges();
+  assert.equal(requests[0].cancelled, true);
+  component.load();
+  assert.equal(calls[1], 'http://api.example/api/tracing/tasks/todo/id%201/history');
+});
