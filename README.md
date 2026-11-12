@@ -560,7 +560,7 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 <!-- CHANGELOG-PR-112-END -->
 
 <!-- CHANGELOG-PR-116-START -->
-### [7.10.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/116) (2026-11-12)
+### [7.10.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/116) (2026-11-10)
 
 - Added: se añade la nueva página de monitoreo de la app
 - Added: Se añaden los nuevos servicios contra los nuevos endpoint
