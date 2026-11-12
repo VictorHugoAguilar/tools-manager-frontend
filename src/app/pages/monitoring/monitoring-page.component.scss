@@ -120,6 +120,12 @@ select:focus-visible, button:focus-visible, input:focus-visible, summary:focus-v
 .gauge > span { display: block; height: 100%; border-radius: inherit; background: #35ad71; transition: width .3s ease; }
 .gauge > span.warn { background: #e0a21b; }
 .gauge > span.crit { background: #b52e42; }
+.collector-status { margin: .5rem 0; padding: .6rem .8rem; border-radius: .75rem; border: 1px solid #b9e3cb; background: #e8f7ee; }
+.collector-status.warn { border-color: #f0d28a; background: #fff6df; }
+.collector-status.error { border-color: #e6a3ad; background: #fbe6e9; }
+.collector-status strong { display: block; }
+.collector-status ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+.queue-gauge { display: grid; gap: .3rem; margin: .5rem 0; font-size: .85rem; }
 .summary strong.bad { color: #b52e42; }
 .icon.red { color: #b52e42; background: #f9dde1; }
 @media (prefers-reduced-motion: reduce) { .gauge > span { transition: none; } }

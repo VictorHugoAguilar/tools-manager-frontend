@@ -176,7 +176,12 @@
       </article> }
       @if (shows('frontend')) { <article class="card summary">
         <span class="icon green" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
-        <div><h2>Frontend</h2><strong>Sin datos</strong><small>Disponibilidad no medida</small></div>
+        <div><h2>Frontend</h2>
+          @if (overview.frontendActivity; as front) {
+            <strong>{{ front.events }}</strong>
+            <small>Eventos del navegador · {{ front.errors }} errores@if (front.lastEventAt) { · último {{ front.lastEventAt | date:'dd/MM HH:mm:ss' }} }</small>
+          } @else { <strong>Sin datos</strong><small>No se pudo consultar la actividad</small> }
+        </div>
       </article> }
       @if (serviceView() === 'all') { <article class="card summary">
         <span class="icon orange" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M6 19v-1a6 6 0 0 1 12 0v1M5 10a3 3 0 0 0-1 6M19 10a3 3 0 0 1 1 6"/></svg></span>
@@ -422,6 +427,17 @@
       @if (shows('backend')) { <article class="card panel collector">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">⚙</span>Recolector backend</h2>
         <p class="muted">Solo la instancia que responde a esta consulta.</p>
+        @if (collectorState(); as state) {
+          <div class="collector-status" [class.warn]="state.state === 'warn'" [class.error]="state.state === 'error'" role="status">
+            <strong>{{ state.label }}</strong>
+            @if (state.reasons.length) { <ul>@for (reason of state.reasons; track reason) { <li>{{ reason }}</li> }</ul> }
+            @else { <span>Sin fallos ni pérdidas desde que arrancó esta instancia.</span> }
+          </div>
+        }
+        <div class="gauge-row queue-gauge">
+          <span>Cola de eventos: {{ overview.collector.queuePending }} / {{ overview.collector.queueCapacity }}</span>
+          <span class="gauge" role="meter" aria-label="Ocupación de la cola" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="usagePercent(overview.collector.queuePending, overview.collector.queueCapacity) | number:'1.0-0'"><span [style.width.%]="usagePercent(overview.collector.queuePending, overview.collector.queueCapacity)" [class.warn]="usagePercent(overview.collector.queuePending, overview.collector.queueCapacity) >= 80" [class.crit]="usagePercent(overview.collector.queuePending, overview.collector.queueCapacity) >= 95"></span></span>
+        </div>
         <dl>
           <div><dt>Cola pendiente</dt><dd>{{ overview.collector.queuePending }} / {{ overview.collector.queueCapacity }}</dd></div>
           <div><dt>Descartados (DEBUG / INFO)</dt><dd>{{ overview.collector.droppedByLevel['DEBUG'] }} / {{ overview.collector.droppedByLevel['INFO'] }}</dd></div>
@@ -434,6 +450,8 @@
           <div><dt>Muestras descartadas</dt><dd>{{ overview.collector.httpMetrics.droppedSamples }}</dd></div>
           <div><dt>Fallos consecutivos de métricas</dt><dd>{{ overview.collector.httpMetrics.consecutiveFailures }}</dd></div>
           <div><dt>Fallos consecutivos de heartbeat</dt><dd>{{ overview.collector.heartbeat.consecutiveFailures }}</dd></div>
+          <div><dt>Duración de la última escritura</dt><dd>{{ overview.collector.lastFlushDurationMs !== null ? (overview.collector.lastFlushDurationMs + ' ms') : 'Sin datos' }}</dd></div>
+          <div><dt>Última señal del heartbeat</dt><dd>{{ overview.collector.heartbeat.lastSuccess ? (overview.collector.heartbeat.lastSuccess | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
           <div><dt>Última escritura</dt><dd>{{ overview.collector.lastSuccessfulFlushAt ? (overview.collector.lastSuccessfulFlushAt | date:'dd/MM HH:mm:ss') : 'Sin datos' }}</dd></div>
         </dl>
         <p class="muted">Última señal WebSocket:

@@ -10,7 +10,7 @@ const compiled = await build({
   platform: 'node'
 });
 const source = compiled.outputFiles[0].text;
-const { activityChartData, latencyChartData, errorRateChartData, levelDoughnutData, statusDoughnutData, usagePercent, levelCountsDoughnutData } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+const { activityChartData, latencyChartData, errorRateChartData, levelDoughnutData, statusDoughnutData, usagePercent, levelCountsDoughnutData, collectorStatus } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 
 test('HTTP charts preserve gaps and zero error counts in aligned hourly intervals', () => {
   const metrics = {
@@ -75,4 +75,19 @@ test('new overview charts derive rates, status split and level counts', () => {
   assert.deepEqual(totals.datasets[0].data, [900, 12, 3]);
   assert.equal(usagePercent(50, 0), 0);
   assert.equal(usagePercent(150, 100), 100);
+});
+
+test('collector status reports failures, losses and queue pressure', () => {
+  const base = {
+    queuePending: 10, queueCapacity: 1000, droppedByLevel: { DEBUG: 5, INFO: 2, WARN: 0, ERROR: 0 }, failedEvents: 0,
+    lastSuccessfulFlushAt: null, lastFlushDurationMs: null, consecutiveWriteFailures: 0,
+    heartbeat: { consecutiveFailures: 0, lastSuccess: null },
+    httpMetrics: { pending: 0, activeIntervals: 0, dropped: 0, droppedSamples: 0, failed: 0, consecutiveFailures: 0 }
+  };
+  assert.equal(collectorStatus(base).state, 'ok');
+  assert.equal(collectorStatus({ ...base, queuePending: 900 }).state, 'warn');
+  assert.equal(collectorStatus({ ...base, droppedByLevel: { WARN: 1 } }).state, 'warn');
+  const failing = collectorStatus({ ...base, consecutiveWriteFailures: 3, failedEvents: 2 });
+  assert.equal(failing.state, 'error');
+  assert.equal(failing.reasons.length, 2);
 });

@@ -96,3 +96,22 @@ export function levelDoughnutData(events: Pick<MonitoringEvent, 'level'>[]): Cha
 export function usagePercent(used: number, total: number): number {
   return total > 0 ? Math.min(100, Math.max(0, used / total * 100)) : 0;
 }
+
+export type CollectorState = 'ok' | 'warn' | 'error';
+
+export function collectorStatus(collector: MonitoringOverview['collector']): { state: CollectorState; label: string; reasons: string[] } {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  const metrics = collector.httpMetrics;
+  if (collector.consecutiveWriteFailures > 0) errors.push(`${collector.consecutiveWriteFailures} fallos consecutivos al escribir eventos`);
+  if (collector.heartbeat.consecutiveFailures > 0) errors.push(`${collector.heartbeat.consecutiveFailures} fallos consecutivos de heartbeat`);
+  if (metrics.consecutiveFailures > 0) errors.push(`${metrics.consecutiveFailures} fallos consecutivos al escribir métricas`);
+  const important = (collector.droppedByLevel['WARN'] ?? 0) + (collector.droppedByLevel['ERROR'] ?? 0);
+  if (important > 0) warnings.push(`${important} eventos WARN/ERROR descartados`);
+  if (collector.failedEvents > 0) warnings.push(`${collector.failedEvents} eventos no se pudieron escribir`);
+  if (metrics.dropped > 0 || metrics.failed > 0) warnings.push(`${metrics.dropped + metrics.failed} intervalos de métricas perdidos`);
+  if (collector.queueCapacity > 0 && collector.queuePending / collector.queueCapacity >= 0.8) warnings.push('La cola está al 80 % o más');
+  if (errors.length) return { state: 'error', label: 'Con fallos', reasons: [...errors, ...warnings] };
+  if (warnings.length) return { state: 'warn', label: 'Degradado', reasons: warnings };
+  return { state: 'ok', label: 'Operativo', reasons: [] };
+}

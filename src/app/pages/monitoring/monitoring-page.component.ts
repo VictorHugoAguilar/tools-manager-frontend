@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 import { StorageAuditHistoryComponent } from './storage-audit-history.component';
 import { AreaAuditHistoryComponent } from './area-audit-history.component';
-import { activityChartData, errorRateChartData, latencyChartData, levelCountsDoughnutData, levelDoughnutData, statusDoughnutData, usagePercent } from './monitoring-charts';
+import { activityChartData, errorRateChartData, latencyChartData, collectorStatus, levelCountsDoughnutData, levelDoughnutData, statusDoughnutData, usagePercent } from './monitoring-charts';
 import { recentStorageActivity } from './monitoring-activity';
 
 interface PreviousEventView {
@@ -114,6 +114,10 @@ export class MonitoringPageComponent {
     return metrics?.count ? metrics.errors / metrics.count * 100 : null;
   });
   protected readonly usagePercent = usagePercent;
+  protected readonly collectorState = computed(() => {
+    const collector = this.data()?.collector;
+    return collector ? collectorStatus(collector) : null;
+  });
   protected readonly doughnutOptions: ChartOptions<'doughnut'> = {
     responsive: true,
     maintainAspectRatio: false,
