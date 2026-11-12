@@ -179,7 +179,7 @@
         <div><h2>Frontend</h2>
           @if (overview.frontendActivity; as front) {
             <strong>{{ front.events }}</strong>
-            <small>Eventos del navegador · {{ front.errors }} errores@if (front.lastEventAt) { · último {{ front.lastEventAt | date:'dd/MM HH:mm:ss' }} }</small>
+            <small>Eventos del navegador@if (front.errors !== null) { · {{ front.errors }} errores }@if (front.lastEventAt) { · último {{ front.lastEventAt | date:'dd/MM HH:mm:ss' }} }</small>
           } @else { <strong>Sin datos</strong><small>No se pudo consultar la actividad</small> }
         </div>
       </article> }
