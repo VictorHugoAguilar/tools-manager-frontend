@@ -10,7 +10,7 @@ const compiled = await build({
   platform: 'node'
 });
 const source = compiled.outputFiles[0].text;
-const { activityChartData, latencyChartData } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+const { activityChartData, latencyChartData, errorRateChartData, levelDoughnutData, statusDoughnutData, usagePercent, levelCountsDoughnutData } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 
 test('HTTP charts preserve gaps and zero error counts in aligned hourly intervals', () => {
   const metrics = {
@@ -54,4 +54,25 @@ test('chart size is bounded without truncating or aggregating data', () => {
   metrics.to = new Date(start + 1501 * 60000).toISOString();
   assert.equal(activityChartData(metrics), null);
   assert.equal(latencyChartData(metrics), null);
+});
+
+test('new overview charts derive rates, status split and level counts', () => {
+  const metrics = {
+    from: '2026-11-12T10:00:00.000Z', to: '2026-11-12T10:03:00.000Z', resolutionSeconds: 60,
+    points: [{ start: '2026-11-12T10:00:00.000Z', count: 200, errors: 10, averageMs: 5 },
+      { start: '2026-11-12T10:02:00.000Z', count: 0, errors: 0, averageMs: 0 }]
+  };
+  const rate = errorRateChartData(metrics);
+  assert.deepEqual(rate.datasets[0].data, [5, null, 0]);
+  assert.equal(statusDoughnutData(0, 0), null);
+  assert.deepEqual(statusDoughnutData(100, 3).datasets[0].data, [97, 3]);
+  const levels = levelDoughnutData([{ level: 'INFO' }, { level: 'ERROR' }, { level: 'INFO' }]);
+  assert.deepEqual(levels.labels, ['INFO', 'ERROR']);
+  assert.deepEqual(levels.datasets[0].data, [2, 1]);
+  assert.equal(levelDoughnutData([]), null);
+  const totals = levelCountsDoughnutData({ DEBUG: 0, INFO: 900, WARN: 12, ERROR: 3 });
+  assert.deepEqual(totals.labels, ['INFO', 'WARN', 'ERROR']);
+  assert.deepEqual(totals.datasets[0].data, [900, 12, 3]);
+  assert.equal(usagePercent(50, 0), 0);
+  assert.equal(usagePercent(150, 100), 100);
 });

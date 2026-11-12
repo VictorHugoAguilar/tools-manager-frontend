@@ -1,5 +1,5 @@
 import { ChartData, ChartDataset } from 'chart.js';
-import { MonitoringMetricResult, MonitoringOverview } from '../../services/monitoring-api.service';
+import { MonitoringEvent, MonitoringMetricResult, MonitoringOverview } from '../../services/monitoring-api.service';
 
 const MAX_CHART_POINTS = 1500;
 
@@ -60,4 +60,39 @@ export function activityChartData(metrics: MonitoringMetricResult): ChartData<'l
     { label: 'Mensajes rechazados', color: '#e0a21b', value: (point) => point.rejected ?? 0 },
     { label: 'Cierres anómalos', color: '#7a2230', value: (point) => point.abnormalClosed ?? 0 }
   ]);
+}
+
+export function errorRateChartData(metrics: MonitoringOverview['httpMetrics']): ChartData<'line'> | null {
+  return chartData(metrics, metrics.points, [
+    { label: 'Tasa de errores 5xx (%)', color: '#b52e42', value: (point) => point.count ? point.errors / point.count * 100 : 0 }
+  ]);
+}
+
+export function statusDoughnutData(count: number, errors: number): ChartData<'doughnut'> | null {
+  if (!count) return null;
+  return {
+    labels: ['Correctas o 4xx', 'Errores 5xx'],
+    datasets: [{ data: [Math.max(0, count - errors), errors], backgroundColor: ['#35ad71', '#b52e42'], borderWidth: 0 }]
+  };
+}
+
+const LEVEL_COLORS: Record<string, string> = { DEBUG: '#8d9cad', INFO: '#208ff4', WARN: '#e0a21b', ERROR: '#b52e42' };
+
+export function levelCountsDoughnutData(counts: Partial<Record<string, number>>): ChartData<'doughnut'> | null {
+  const levels = Object.keys(LEVEL_COLORS).filter((level) => (counts[level] ?? 0) > 0);
+  if (!levels.length) return null;
+  return {
+    labels: levels,
+    datasets: [{ data: levels.map((level) => counts[level] ?? 0), backgroundColor: levels.map((level) => LEVEL_COLORS[level]), borderWidth: 0 }]
+  };
+}
+
+export function levelDoughnutData(events: Pick<MonitoringEvent, 'level'>[]): ChartData<'doughnut'> | null {
+  const counts: Record<string, number> = {};
+  for (const event of events) counts[event.level] = (counts[event.level] ?? 0) + 1;
+  return levelCountsDoughnutData(counts);
+}
+
+export function usagePercent(used: number, total: number): number {
+  return total > 0 ? Math.min(100, Math.max(0, used / total * 100)) : 0;
 }

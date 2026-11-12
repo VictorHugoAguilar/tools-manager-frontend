@@ -8,7 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 import { StorageAuditHistoryComponent } from './storage-audit-history.component';
 import { AreaAuditHistoryComponent } from './area-audit-history.component';
-import { activityChartData, latencyChartData } from './monitoring-charts';
+import { activityChartData, errorRateChartData, latencyChartData, levelCountsDoughnutData, levelDoughnutData, statusDoughnutData, usagePercent } from './monitoring-charts';
 import { recentStorageActivity } from './monitoring-activity';
 
 interface PreviousEventView {
@@ -88,6 +88,43 @@ export class MonitoringPageComponent {
     const metrics = this.data()?.httpMetrics;
     return metrics ? latencyChartData(metrics) ?? { labels: [], datasets: [] } : { labels: [], datasets: [] };
   });
+  protected readonly httpActivityChart = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics ? activityChartData({ ...metrics, service: 'backend', metric: 'http_requests' }) : null;
+  });
+  protected readonly errorRateChart = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics ? errorRateChartData(metrics) : null;
+  });
+  protected readonly statusChart = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics ? statusDoughnutData(metrics.count, metrics.errors) : null;
+  });
+  protected readonly levelChart = computed(() => {
+    const search = this.searchResults();
+    if (search) return levelDoughnutData(search);
+    const overview = this.data();
+    return overview?.levelCounts ? levelCountsDoughnutData(overview.levelCounts) : levelDoughnutData(overview?.events ?? []);
+  });
+  protected readonly levelChartSource = computed(() => this.searchResults()
+    ? 'Muestra: resultados de la búsqueda actual.'
+    : this.data()?.levelCounts ? 'Total de eventos del periodo seleccionado.' : 'Muestra: últimos eventos del resumen.');
+  protected readonly errorRate = computed(() => {
+    const metrics = this.data()?.httpMetrics;
+    return metrics?.count ? metrics.errors / metrics.count * 100 : null;
+  });
+  protected readonly usagePercent = usagePercent;
+  protected readonly doughnutOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '62%',
+    plugins: { legend: { position: 'bottom' } }
+  };
+  protected readonly percentChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, suggestedMax: 5, title: { display: true, text: '% de peticiones' } } }
+  };
   protected readonly metricActivityChart = computed(() => {
     const metrics = this.metricResult();
     return metrics ? activityChartData(metrics) : null;

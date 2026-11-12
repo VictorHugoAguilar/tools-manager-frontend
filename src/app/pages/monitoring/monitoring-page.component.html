@@ -191,8 +191,43 @@
         <span class="icon purple" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
         <div><h2>Tiempo respuesta API</h2>@if (overview.httpMetrics.averageMs !== null) { <strong>{{ overview.httpMetrics.averageMs | number:'1.0-1' }} <span class="unit">ms</span></strong><small>Media · p95: {{ overview.httpMetrics.p95Range }} ms · p99: {{ overview.httpMetrics.p99Range }} ms</small> } @else { <strong>Sin datos</strong><small>Sin intervalos registrados</small> }</div>
       </article> }
+      @if (shows('backend')) {
+        <article class="card summary">
+          <span class="icon" [class.red]="(errorRate() ?? 0) >= 1" [class.green]="(errorRate() ?? 0) < 1" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3zM12 10v4M12 17h.01"/></svg></span>
+          <div><h2>Tasa de errores 5xx</h2>
+            @if (errorRate() !== null) {
+              <strong [class.bad]="(errorRate() ?? 0) >= 1">{{ errorRate() | number:'1.0-2' }} <span class="unit">%</span></strong>
+              <small>{{ overview.httpMetrics.errors }} de {{ overview.httpMetrics.count }} peticiones del intervalo</small>
+            } @else { <strong>Sin datos</strong><small>Sin intervalos registrados</small> }
+          </div>
+        </article>
+      }
     </div>
 
+    @if (shows('backend') && httpActivityChart(); as activity) {
+      <div class="main-grid">
+        <article class="card panel">
+          <h2 class="panel-title"><span class="panel-icon accent" aria-hidden="true">▦</span>Tráfico del backend</h2>
+          <p class="muted">Peticiones y errores 5xx por intervalo completo. Los huecos indican ausencia de datos, no cero actividad.</p>
+          <div class="chart"><canvas baseChart [data]="activity" [options]="activityChartOptions" type="line" aria-label="Peticiones y errores 5xx del backend por intervalo" role="img"></canvas></div>
+        </article>
+        <article class="card panel">
+          <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">◔</span>Estado de las peticiones</h2>
+          @if (statusChart(); as status) {
+            <div class="chart doughnut"><canvas baseChart [data]="status" [options]="doughnutOptions" type="doughnut" aria-label="Proporción de peticiones correctas y con error 5xx" role="img"></canvas></div>
+          } @else { <div class="empty-chart">Sin peticiones registradas.</div> }
+        </article>
+      </div>
+      @if (errorRateChart(); as rate) {
+        <div class="main-grid single">
+          <article class="card panel">
+            <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">⚠</span>Tasa de errores 5xx</h2>
+            <p class="muted">Porcentaje de peticiones con error de servidor en cada intervalo.</p>
+            <div class="chart short"><canvas baseChart [data]="rate" [options]="percentChartOptions" type="line" aria-label="Porcentaje de errores 5xx por intervalo" role="img"></canvas></div>
+          </article>
+        </div>
+      }
+    }
     <div class="main-grid">
       @if (serviceView() === 'frontend') {
         <article class="card panel">
@@ -227,6 +262,12 @@
                 <h3>{{ instance.service }} · {{ instance.instanceId }}</h3>
                 <p class="muted">Última señal: {{ instance.heartbeatAt | date:'dd/MM/yyyy HH:mm:ss' }}</p>
                 <dl>
+                  @if (instance.disk; as disk) {
+                    <div class="gauge-row"><dt>Uso de disco</dt><dd><span class="gauge" role="meter" aria-label="Disco usado" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="usagePercent(disk.usedBytes, disk.totalBytes) | number:'1.0-0'"><span [style.width.%]="usagePercent(disk.usedBytes, disk.totalBytes)" [class.warn]="usagePercent(disk.usedBytes, disk.totalBytes) >= 80" [class.crit]="usagePercent(disk.usedBytes, disk.totalBytes) >= 90"></span></span></dd></div>
+                  }
+                  @if (instance.process?.cpuPercent !== null && instance.process?.cpuPercent !== undefined) {
+                    <div class="gauge-row"><dt>CPU (100 % = un núcleo)</dt><dd><span class="gauge" role="meter" aria-label="CPU del proceso" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="usagePercent(instance.process!.cpuPercent!, 100) | number:'1.0-0'"><span [style.width.%]="usagePercent(instance.process!.cpuPercent!, 100)" [class.warn]="instance.process!.cpuPercent! >= 70" [class.crit]="instance.process!.cpuPercent! >= 90"></span></span></dd></div>
+                  }
                   <div><dt>CPU del proceso</dt><dd>@if (instance.process; as process) { {{ process.cpuPercent !== null ? ((process.cpuPercent | number:'1.0-1') + ' %') : 'Sin datos' }} } @else { Sin datos }</dd></div>
                   <div><dt>Memoria residente (RSS)</dt><dd>{{ instance.process ? ((instance.process.rssBytes / 1048576 | number:'1.0-1') + ' MiB') : 'Sin datos' }}</dd></div>
                   <div><dt>Disco usado en /</dt><dd>{{ instance.disk ? ((instance.disk.usedBytes / instance.disk.totalBytes * 100 | number:'1.0-1') + ' %') : 'Sin datos' }}</dd></div>
@@ -302,6 +343,12 @@
       </article> }
       <article class="card panel logs">
         <h2 class="panel-title"><span class="panel-icon" aria-hidden="true">▤</span>Logs recientes</h2>
+        @if (levelChart(); as levels) {
+          <div class="level-summary">
+            <div class="chart doughnut small"><canvas baseChart [data]="levels" [options]="doughnutOptions" type="doughnut" aria-label="Distribución de eventos por nivel" role="img"></canvas></div>
+            <p class="muted">{{ levelChartSource() }}</p>
+          </div>
+        }
         <p class="muted">Hasta 25 eventos por página, ordenados por recepción. Si no indicas fechas, se usa el intervalo del resumen.</p>
         <form class="event-filters" (ngSubmit)="searchEvents()">
           <label>Servicio
