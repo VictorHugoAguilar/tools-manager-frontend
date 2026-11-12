@@ -3,6 +3,10 @@
     <div>
       <p class="eyebrow">Tareas</p>
       <p class="summary-copy">Gestiona y controlas las tareas de forma visual.</p>
+      @if (currentUser()?.permissions?.includes('monitoring:app')) {
+        <a routerLink="/monitorizacion">Abrir monitorización y trazas técnicas</a>
+        <p>Las trazas se consultan por operación y no se vinculan automáticamente a una tarea.</p>
+      }
     </div>
     <div class="task-board-intro__actions">
       <label class="board-search" aria-label="Buscar tareas">
@@ -482,6 +486,7 @@
             </section>
           } @else {
             <section class="task-panel-content task-history" role="tabpanel">
+              <app-task-tracing module="board" [taskId]="task.id" />
               @for (entry of task.history; track entry.id) {
                 <p><strong>{{ entry.actorName }}</strong> · {{ entry.text }}<time>{{ formatDate(entry.createdAt) }}</time></p>
               } @empty {

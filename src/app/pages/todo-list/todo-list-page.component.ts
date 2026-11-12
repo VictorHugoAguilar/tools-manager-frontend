@@ -4,6 +4,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { TaskTracingComponent } from '../../components/task-tracing.component';
 import { AuthService } from '../../services/auth.service';
 import {
   TodoList,
@@ -64,7 +66,7 @@ interface TodoListBoardColumn {
 @Component({
   selector: 'app-todo-list-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, CdkDropListGroup, CdkDropList, CdkDrag],
+  imports: [CommonModule, FormsModule, CdkDropListGroup, CdkDropList, CdkDrag, RouterLink, TaskTracingComponent],
   templateUrl: './todo-list-page.component.html',
   styleUrls: [
     './todo-list-page.component.scss',
@@ -76,7 +78,7 @@ interface TodoListBoardColumn {
 export class TodoListPageComponent implements OnInit, OnDestroy {
   private readonly todoListApi = inject(TodoListApiService);
   private readonly todoListConfirm = inject(ConfirmService);
-  private readonly todoListAuth = inject(AuthService);
+  protected readonly todoListAuth = inject(AuthService);
 
   protected readonly todoListOverview = signal<TodoListOverview | null>(null);
   protected readonly todoListItems = signal<TodoListItem[]>([]);

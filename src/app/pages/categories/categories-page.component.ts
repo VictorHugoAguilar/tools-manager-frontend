@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Tool } from '../../models/tool.model';
 import { ToolStoreService } from '../../services/tool-store.service';
+import { ToolTracingComponent } from '../../components/tool-tracing.component';
 
 @Component({
   selector: 'app-categories-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ToolTracingComponent],
   templateUrl: './categories-page.component.html',
   styleUrl: './categories-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush

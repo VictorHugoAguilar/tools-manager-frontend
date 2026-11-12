@@ -4,6 +4,8 @@ import { CdkDrag, CdkDragDrop, CdkDropList, moveItemInArray } from '@angular/cdk
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { RouterLink } from '@angular/router';
+import { TaskTracingComponent } from '../../components/task-tracing.component';
 import {
   TaskBoardColumn,
   TaskBoardLabel,
@@ -21,7 +23,7 @@ type TaskPanelTab = 'comments' | 'attachments' | 'history';
 
 @Component({
   selector: 'app-task-board-page',
-  imports: [CommonModule, FormsModule, CdkDrag, CdkDropList],
+  imports: [CommonModule, FormsModule, CdkDrag, CdkDropList, RouterLink, TaskTracingComponent],
   templateUrl: './task-board-page.component.html',
   styleUrl: './task-board-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
