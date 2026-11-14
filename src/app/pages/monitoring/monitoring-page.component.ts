@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { FormsModule } from '@angular/forms';
-import { MonitoringApiService, MonitoringAuditStatus, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
+import { MonitoringApiService, MonitoringAuditStatus, MonitoringBaseline, MonitoringEvent, MonitoringEventFilters, MonitoringMetricInterval, MonitoringMetricRequest, MonitoringMetricResult, MonitoringOverview, MonitoringPeriod, MonitoringServices } from '../../services/monitoring-api.service';
 import { StorageAuditHistoryComponent } from './storage-audit-history.component';
 import { AreaAuditHistoryComponent } from './area-audit-history.component';
 import { describeEvent } from './monitoring-event-catalog';
@@ -58,6 +58,14 @@ export class MonitoringPageComponent {
   protected readonly activeRange = signal<{ from: string; to: string } | null>(null);
   protected readonly activeFilters = signal<MonitoringEventFilters | null>(null);
   protected readonly canReturnToEvents = signal(false);
+  protected readonly baseline = signal<MonitoringBaseline | null>(null);
+  protected readonly baselineLoading = signal(false);
+  protected readonly baselineError = signal('');
+  protected readonly baselineTopOperations = computed(() => (this.baseline()?.operations ?? []).slice(0, 12));
+  protected readonly baselineTopRequests = computed(() =>
+    [...(this.baseline()?.requests ?? [])]
+      .sort((a, b) => (b.rtdbReads + b.firestoreReads) - (a.rtdbReads + a.firestoreReads))
+      .slice(0, 12));
   protected readonly auditStatus = signal<MonitoringAuditStatus | null>(null);
   protected readonly auditStatusLoading = signal(false);
   protected readonly auditStatusError = signal('');
@@ -523,6 +531,22 @@ export class MonitoringPageComponent {
           ? error.error.message
           : 'No se pudo cargar la monitorización. Comprueba los permisos y la conexión con el servidor.');
         this.loading.set(false);
+      }
+    });
+  }
+
+  protected loadBaseline(): void {
+    if (this.baselineLoading()) return;
+    this.baselineError.set('');
+    this.baselineLoading.set(true);
+    this.api.baseline().pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (result) => {
+        this.baseline.set(result);
+        this.baselineLoading.set(false);
+      },
+      error: () => {
+        this.baselineError.set('No se pudo consultar la línea base. Revisa los permisos y que la telemetría esté activa.');
+        this.baselineLoading.set(false);
       }
     });
   }
