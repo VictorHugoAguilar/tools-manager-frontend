@@ -601,3 +601,11 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: 1. se añade que al abrir «Ver traza», se piden todas las páginas seguidas hasta un tope de 200 eventos (unas 8 peticiones). El veredicto, la posible causa, los tiempos y la secuencia «Qué ocurrió» se calculan con la traza entera y no dependen de la página.
 
 <!-- CHANGELOG-PR-117-END -->
+
+<!-- CHANGELOG-PR-119-START -->
+### [7.12.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/119) (2026-11-14)
+
+- Added: La Fase 1 del plan de caché está implementada en el backend.
+- Added: se añade la vista del cache en el backend para ver lsi carga o no desde firebase, cargas y. errores
+
+<!-- CHANGELOG-PR-119-END -->
