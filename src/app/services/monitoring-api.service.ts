@@ -176,6 +176,26 @@ export interface BaselineRequest {
   databaseAverageMs: number | null;
 }
 
+export interface BaselineCache {
+  enabled: boolean;
+  size: number;
+  maxEntries: number;
+  hits: number;
+  misses: number;
+  loads: number;
+  errors: number;
+  expirations: number;
+  invalidations: number;
+  evictions: number;
+  hitRatio: number | null;
+}
+
+export interface BaselineProcess {
+  rssMb: number;
+  heapUsedMb: number;
+  uptimeSeconds: number;
+}
+
 export interface MonitoringBaseline {
   generatedAt: string;
   instanceId?: string;
@@ -185,6 +205,8 @@ export interface MonitoringBaseline {
   overflowedKeys: number;
   operations: BaselineOperation[];
   requests: BaselineRequest[];
+  cache?: BaselineCache;
+  process?: BaselineProcess;
 }
 
 @Injectable({ providedIn: 'root' })

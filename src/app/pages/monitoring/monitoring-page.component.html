@@ -549,6 +549,24 @@
         <p class="notice">La línea base está desactivada (TELEMETRY_BASELINE=false).</p>
       } @else {
         <p class="muted">Desde {{ base.since | date:'dd/MM HH:mm:ss' }} ({{ base.elapsedSeconds }} s). Contadores por instancia; se reinician al reiniciar el proceso.@if (base.overflowedKeys > 0) { Hay {{ base.overflowedKeys }} claves agrupadas en «other».}</p>
+        @if (base.cache; as cacheStats) {
+          <h3>Caché del backend</h3>
+          <dl class="baseline-cache">
+            <div><dt>Estado</dt><dd>{{ cacheStats.enabled ? 'Activada' : 'Desactivada' }}</dd></div>
+            <div><dt>Aciertos / fallos</dt><dd>{{ cacheStats.hits }} / {{ cacheStats.misses }}</dd></div>
+            <div><dt>Tasa de acierto</dt><dd>{{ cacheStats.hitRatio === null ? 'Sin consultas' : (cacheStats.hitRatio * 100 | number:'1.0-1') + ' %' }}</dd></div>
+            <div><dt>Cargas desde Firebase</dt><dd>{{ cacheStats.loads }}</dd></div>
+            <div><dt>Errores de carga</dt><dd>{{ cacheStats.errors }}</dd></div>
+            <div><dt>Entradas</dt><dd>{{ cacheStats.size }} de {{ cacheStats.maxEntries }}</dd></div>
+            <div><dt>Expiradas</dt><dd>{{ cacheStats.expirations }}</dd></div>
+            <div><dt>Invalidadas</dt><dd>{{ cacheStats.invalidations }}</dd></div>
+            <div><dt>Expulsadas por límite</dt><dd>{{ cacheStats.evictions }}</dd></div>
+            @if (base.process; as proc) {
+              <div><dt>Memoria (RSS / heap)</dt><dd>{{ proc.rssMb }} / {{ proc.heapUsedMb }} MB</dd></div>
+            }
+          </dl>
+          <p class="muted">Cada instancia tiene su propia caché y sus contadores. Las evicciones frecuentes indican que el límite de entradas es bajo.</p>
+        }
         <h3>Operaciones por recurso</h3>
         <div class="table-scroll">
           <table>
