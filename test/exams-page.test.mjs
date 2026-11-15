@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
+import { readFile } from 'node:fs/promises';
 
 const mocks = {
   '@angular/core': `
@@ -117,4 +118,58 @@ test('statistics account for correct, incorrect and unanswered questions', () =>
     assert.deepEqual(component.stats(), { count: 2, percent: 80, errors: 1.5, minutes: 6 });
     assert.equal(component.clock(64), '01:04');
   } finally { cleanup(); }
+});
+
+test('progress counts answered questions, not the current position', () => {
+  const { component, cleanup } = setup();
+  try {
+    component.exam.set({
+      status: 'active', questions: [{ id: 'one' }, { id: 'two' }, { id: 'three' }],
+      answers: { one: 'a', three: 'b' }
+    });
+    component.index.set(0);
+    assert.equal(component.answeredCount(), 2);
+    assert.equal(component.unansweredCount(), 1);
+    component.index.set(2);
+    assert.equal(component.answeredCount(), 2);
+    component.exam.set({ ...component.exam(), answers: {} });
+    assert.equal(component.unansweredCount(), 3);
+    component.exam.set({ ...component.exam(), answers: { one: 'a', two: 'b', three: 'c' } });
+    assert.equal(component.answeredCount(), 3);
+    assert.equal(component.unansweredCount(), 0);
+  } finally { cleanup(); }
+});
+
+test('score chart includes at most the 20 most recent exams', () => {
+  const { component, cleanup } = setup();
+  try {
+    component.history.set(Array.from({ length: 25 }, (_, i) => ({
+      startedAt: new Date(2026, 0, 25 - i, 12).getTime(),
+      correct: 25 - i, incorrect: i, unanswered: 0
+    })));
+    assert.deepEqual(component.scoreChart().datasets[0].data,
+      Array.from({ length: 20 }, (_, i) => Math.round((6 + i) * 100 / 25)));
+  } finally { cleanup(); }
+});
+
+test('result and score charts use actual counts and show recent attempts in chronological order', () => {
+  const { component, cleanup } = setup();
+  try {
+    component.history.set([
+      { startedAt: new Date(2026, 0, 2, 12).getTime(), correct: 7, incorrect: 2, unanswered: 1 },
+      { startedAt: new Date(2026, 0, 1, 12).getTime(), correct: 9, incorrect: 1, unanswered: 0 }
+    ]);
+    assert.deepEqual(component.resultChart().datasets[0].data, [16, 3, 1]);
+    assert.deepEqual(component.scoreChart().datasets[0].data, [90, 70]);
+    assert.deepEqual(component.scoreChart().labels, [1, 2].map((day) =>
+      new Date(2026, 0, day, 12).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })));
+    assert.equal(component.scoreChartOptions.scales.y.max, 100);
+  } finally { cleanup(); }
+});
+
+test('last active question shows finish rather than next and completed reviews have no finish action', async () => {
+  const template = await readFile('src/app/pages/exams/exams-page.component.html', 'utf8');
+  assert.match(template, /@if \(index\(\) < currentExam\.questions\.length - 1\)[\s\S]*?Siguiente →[\s\S]*?@else if \(currentExam\.status === 'active'\)[\s\S]*?\(click\)="finish\(\)"[^>]*>Finalizar examen/);
+  assert.match(template, /aria-label="Navegación por preguntas"/);
+  assert.match(template, /\[value\]="answeredCount\(\)"/);
 });

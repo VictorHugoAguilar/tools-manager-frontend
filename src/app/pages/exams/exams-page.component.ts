@@ -36,6 +36,11 @@ export class ExamsPageComponent {
   protected readonly now = signal(Date.now());
   protected readonly current = computed(() => this.exam()?.questions[this.index()]);
   protected readonly remaining = computed(() => Math.max(0, Math.ceil(((this.exam()?.deadlineAt ?? this.now()) - this.now()) / 1000)));
+  protected readonly answeredCount = computed(() => {
+    const exam = this.exam();
+    return exam ? exam.questions.filter((question) => !!exam.answers?.[question.id]).length : 0;
+  });
+  protected readonly unansweredCount = computed(() => (this.exam()?.questions.length ?? 0) - this.answeredCount());
   protected readonly stats = computed(() => {
     const records = this.history();
     const count = records.length;
@@ -55,10 +60,35 @@ export class ExamsPageComponent {
     }] };
   });
   protected readonly resultChart = computed<ChartData<'doughnut'>>(() => ({
-    labels: ['Aciertos', 'Errores y sin responder'],
-    datasets: [{ data: [this.stats().percent, 100 - this.stats().percent], backgroundColor: ['#4ea07d', '#d7685f'] }]
+    labels: ['Aciertos', 'Errores', 'Sin responder'],
+    datasets: [{
+      data: [
+        this.history().reduce((sum, record) => sum + record.correct, 0),
+        this.history().reduce((sum, record) => sum + record.incorrect, 0),
+        this.history().reduce((sum, record) => sum + record.unanswered, 0)
+      ],
+      backgroundColor: ['#4ea07d', '#d7685f', '#e1b848']
+    }]
   }));
+  protected readonly scoreChart = computed<ChartData<'line'>>(() => {
+    const records = [...this.history()].slice(0, 20).reverse();
+    return {
+      labels: records.map((record) => new Date(record.startedAt).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })),
+      datasets: [{
+        label: 'Aciertos (%)',
+        data: records.map((record) => {
+          const total = record.correct + record.incorrect + record.unanswered;
+          return total ? Math.round(record.correct * 100 / total) : 0;
+        }),
+        borderColor: '#4ea07d', backgroundColor: 'rgba(142,223,192,.3)', fill: true, tension: 0.3
+      }]
+    };
+  });
   protected readonly chartOptions: ChartOptions<'line'> = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+  protected readonly scoreChartOptions: ChartOptions<'line'> = {
+    responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+    scales: { y: { min: 0, max: 100, ticks: { callback: (value) => `${value}%` } } }
+  };
   protected readonly doughnutOptions: ChartOptions<'doughnut'> = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
 
   constructor() {

@@ -166,7 +166,7 @@ progress { width: 100%; accent-color: var(--success); }
   box-shadow: 3px 4px 0 rgba(35, 52, 90, 0.8);
 }
 
-.question h2 { margin: 1rem 0; font-size: 1.3rem; }
+.question h2 { margin: 1rem 0 0.4rem; font-size: 1.3rem; }
 .badge {
   display: inline-block;
   padding: 0.35rem 0.7rem;
@@ -178,6 +178,25 @@ progress { width: 100%; accent-color: var(--success); }
   font-weight: 800;
 }
 .options { display: grid; gap: 0.6rem; }
+.question-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+}
+.question-number {
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--muted);
+  font-weight: 800;
+}
+.question-number.answered { background: #e8f7ee; border-color: var(--success); color: var(--text); }
+.question-number.current { border: 2px solid var(--primary); background: var(--accent-yellow); color: var(--primary); }
+.question-legend { margin-top: 0.5rem; color: var(--muted); font-size: 0.75rem; }
+.answer-status { margin-bottom: 0.85rem; color: var(--muted); font-size: 0.82rem; }
 .option {
   display: flex;
   align-items: center;
@@ -206,7 +225,10 @@ progress { width: 100%; accent-color: var(--success); }
 }
 .selected .letter { background: var(--accent-yellow); }
 .mark { margin-left: auto; font-size: 1.2rem; }
+.option-result { margin-left: auto; flex-shrink: 0; font-size: 0.75rem; font-weight: 800; }
 .question footer { margin-top: 1.5rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.finish-action { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.finish-action span { color: var(--muted); font-size: 0.8rem; font-weight: 700; }
 .explanation, .message {
   margin: 0;
   padding: 0.8rem 1rem;
@@ -277,4 +299,6 @@ progress { width: 100%; accent-color: var(--success); }
   .subject-panel label, .subject-panel select { width: 100%; }
   .controls > p { flex-basis: 100%; }
   .file { width: 100%; }
+  .option { flex-wrap: wrap; gap: 0.6rem; }
+  .option-result { margin-left: 2.6rem; }
 }

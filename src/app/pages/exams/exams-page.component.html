@@ -20,15 +20,15 @@
     <main>
       <section class="panel controls">
         <label>Tiempo seleccionado
-          <select [ngModel]="minutes()" (ngModelChange)="minutes.set(+$event)" [disabled]="exam()?.status === 'active' || busy()">
+          <select [ngModel]="exam()?.status === 'active' ? exam()?.minutes : minutes()" (ngModelChange)="minutes.set(+$event)" [disabled]="exam()?.status === 'active' || busy()">
             @for (time of [5, 10, 15, 20, 30]; track time) { <option [value]="time">{{ time }} min</option> }
           </select>
         </label>
         @if (exam(); as currentExam) {
           @if (currentExam.status === 'active') {
             <div class="timer"><strong>{{ clock(remaining()) }}</strong><small>Restante</small></div>
-            <div class="progress"><span>Pregunta {{ index() + 1 }} de {{ currentExam.questions.length }}</span>
-              <progress [value]="index() + 1" [max]="currentExam.questions.length"></progress>
+            <div class="progress"><span>{{ answeredCount() }} de {{ currentExam.questions.length }} respondidas · {{ unansweredCount() }} pendientes</span>
+              <progress [value]="answeredCount()" [max]="currentExam.questions.length" aria-label="Preguntas respondidas"></progress>
             </div>
             <button type="button" class="outline" (click)="finish()" [disabled]="busy()">Finalizar</button>
           } @else {
@@ -46,16 +46,44 @@
         @if (current(); as question) {
           <section class="panel question">
             <span class="badge">Pregunta {{ index() + 1 }} de {{ currentExam.questions.length }}</span>
+            <nav class="question-nav" aria-label="Navegación por preguntas">
+              @for (item of currentExam.questions; track item.id; let i = $index) {
+                <button type="button" class="question-number"
+                  [class.current]="index() === i"
+                  [class.answered]="!!currentExam.answers?.[item.id]"
+                  [attr.aria-current]="index() === i ? 'step' : null"
+                  [attr.aria-label]="'Pregunta ' + (i + 1) + (currentExam.answers?.[item.id] ? ', respondida' : ', sin responder')"
+                  [disabled]="busy()" (click)="index.set(i)">{{ i + 1 }}</button>
+              }
+            </nav>
+            <p class="question-legend">Amarillo: pregunta actual · Verde: respondida · Blanco: pendiente</p>
             <h2>{{ question.question }}</h2>
+            @if (currentExam.status === 'finished') {
+              <p class="answer-status">
+                @if (!currentExam.answers?.[question.id]) { Sin responder. }
+                @else if (currentExam.answers?.[question.id] === question.correctOptionId) { Respuesta correcta. }
+                @else { Respuesta incorrecta. }
+                La opción correcta aparece marcada.
+              </p>
+            } @else {
+              <p class="answer-status">{{ currentExam.answers?.[question.id] ? 'Respuesta guardada. Puedes cambiarla antes de finalizar.' : 'Selecciona una respuesta.' }}</p>
+            }
             <div class="options">
               @for (option of question.options; track option.id; let i = $index) {
                 <button type="button" class="option"
                   [class.selected]="currentExam.answers?.[question.id] === option.id"
                   [class.correct]="currentExam.status === 'finished' && option.id === question.correctOptionId"
                   [class.incorrect]="currentExam.status === 'finished' && currentExam.answers?.[question.id] === option.id && option.id !== question.correctOptionId"
+                  [attr.aria-pressed]="currentExam.answers?.[question.id] === option.id"
                   [disabled]="currentExam.status === 'finished' || busy()" (click)="answer(option.id)">
                   <span class="letter">{{ ['A', 'B', 'C', 'D'][i] }}</span><span>{{ option.text }}</span>
-                  <span class="mark">{{ currentExam.answers?.[question.id] === option.id ? '✓' : '○' }}</span>
+                  @if (currentExam.status === 'finished' && option.id === question.correctOptionId) {
+                    <span class="option-result">Correcta</span>
+                  } @else if (currentExam.status === 'finished' && currentExam.answers?.[question.id] === option.id) {
+                    <span class="option-result">Tu respuesta</span>
+                  } @else {
+                    <span class="mark" aria-hidden="true">{{ currentExam.answers?.[question.id] === option.id ? '✓' : '○' }}</span>
+                  }
                 </button>
               }
             </div>
@@ -64,7 +92,14 @@
             }
             <footer>
               <button type="button" class="outline" (click)="index.set(index() - 1)" [disabled]="index() === 0 || busy()">← Anterior</button>
-              <button type="button" class="primary" (click)="index.set(index() + 1)" [disabled]="index() >= currentExam.questions.length - 1 || busy()">Siguiente →</button>
+              @if (index() < currentExam.questions.length - 1) {
+                <button type="button" class="primary" (click)="index.set(index() + 1)" [disabled]="busy()">Siguiente →</button>
+              } @else if (currentExam.status === 'active') {
+                <div class="finish-action">
+                  @if (unansweredCount() > 0) { <span>{{ unansweredCount() }} sin responder</span> }
+                  <button type="button" class="primary" (click)="finish()" [disabled]="busy()">Finalizar examen</button>
+                </div>
+              }
             </footer>
           </section>
         }
@@ -95,12 +130,25 @@
         </div><p class="note">Estadísticas de los últimos 200 intentos; solo incluyen exámenes finalizados.</p>
       </section>
       <section class="panel"><h2><span class="panel-icon" aria-hidden="true">◷</span> Tiempos de los exámenes</h2>
-        @if (history().length) { <div class="chart"><canvas baseChart [data]="timeChart()" [options]="chartOptions" type="line"></canvas></div> }
+        @if (history().length) {
+          <p class="note">Duración en minutos de los últimos {{ history().length > 20 ? 20 : history().length }} exámenes, del más antiguo al más reciente.</p>
+          <div class="chart"><canvas baseChart [data]="timeChart()" [options]="chartOptions" type="line" role="img" aria-label="Duración en minutos de los últimos exámenes"></canvas></div>
+        }
         @else { <p class="note">Aún no hay exámenes finalizados.</p> }
       </section>
       <section class="panel"><h2><span class="panel-icon" aria-hidden="true">◉</span> Resultados</h2>
-        @if (history().length) { <div class="chart"><canvas baseChart [data]="resultChart()" [options]="doughnutOptions" type="doughnut"></canvas></div> }
+        @if (history().length) {
+          <p class="note">Distribución de respuestas de los exámenes del historial.</p>
+          <p class="note">Aciertos: {{ resultChart().datasets[0].data[0] }} · Errores: {{ resultChart().datasets[0].data[1] }} · Sin responder: {{ resultChart().datasets[0].data[2] }}</p>
+          <div class="chart"><canvas baseChart [data]="resultChart()" [options]="doughnutOptions" type="doughnut" role="img" [attr.aria-label]="'Aciertos: ' + resultChart().datasets[0].data[0] + ', errores: ' + resultChart().datasets[0].data[1] + ', sin responder: ' + resultChart().datasets[0].data[2]"></canvas></div>
+        }
         @else { <p class="note">Completa un examen para ver tus resultados.</p> }
+      </section>
+      <section class="panel"><h2><span class="panel-icon" aria-hidden="true">↗</span> Evolución de aciertos</h2>
+        @if (history().length) {
+          <p class="note">Porcentaje de aciertos en los últimos {{ history().length > 20 ? 20 : history().length }} exámenes, incluidas las preguntas sin responder.</p>
+          <div class="chart"><canvas baseChart [data]="scoreChart()" [options]="scoreChartOptions" type="line" role="img" aria-label="Porcentaje de aciertos de los últimos exámenes"></canvas></div>
+        } @else { <p class="note">Completa un examen para seguir tu evolución.</p> }
       </section>
       <section class="panel"><h2><span class="panel-icon" aria-hidden="true">☷</span> Últimos exámenes</h2>
         @for (record of (showHistory() ? history() : history().slice(0, 5)); track record.id) {
