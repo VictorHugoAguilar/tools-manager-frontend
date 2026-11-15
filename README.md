@@ -409,16 +409,12 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: se modifica los estilos visuales de la subida de avatar de usuarios
 - Changed: se modifican los changelog para que cumplan la nueva semántica
 
-<!-- CHANGELOG-PR-78-START -->
 ### [5.1.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/78) (2026-10-30)
 
 - Fixed: cambio del flujo guardado de dato modificados
 - Changed: añadimos en la pagina del login un icono en lugar de texto
 - Changed: se modifica y añade los iconos para ver la contraseña o para ocultarla en la pagina de crear nuevo perfil
 
-<!-- CHANGELOG-PR-78-END -->
-
-<!-- CHANGELOG-PR-80-START -->
 ### [6.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/80) (2026-10-30)
 
 - Added: se añaden la nueva pagina para la lista de tareas
@@ -428,9 +424,6 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se crea un nuevo modelo de datos para las lista de tareas
 - Changed: se modifican los subpaneles para que mantengan el mismo estilo en todas las páginas
 
-<!-- CHANGELOG-PR-80-END -->
-
-<!-- CHANGELOG-PR-88-START -->
 ### [7.0.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/88) (2026-11-02)
 
 - Added: generación de nuevo modelo de datos para la página de tareas
@@ -439,16 +432,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se añade la página nueva Tareas
 - Changed: se quita etiqueta de @deprecated de una función de un servicio de almacenamiento en el storage
 
-<!-- CHANGELOG-PR-88-END -->
-
-<!-- CHANGELOG-PR-90-START -->
 ### [7.0.1](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/90) (2026-11-02)
 
 - Fixed: se arregla la implementacion y se añade en las rutas las propiedades showGlobalSearch
 
-<!-- CHANGELOG-PR-90-END -->
-
-<!-- CHANGELOG-PR-92-START -->
 ### [7.1.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/92) (2026-11-02)
 
 - Changed: cambio en las propiedades de las rutas
@@ -461,16 +448,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: cambio de nombres, y unificación de headers
 - Fixed: cambio de avisos y errores en el budgets
 
-<!-- CHANGELOG-PR-92-END -->
-
-<!-- CHANGELOG-PR-94-START -->
 ### [7.2.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/94) (2026-11-03)
 
 - Changed: cambios visuales en el headers
 
-<!-- CHANGELOG-PR-94-END -->
-
-<!-- CHANGELOG-PR-96-START -->
 ### [7.3.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/96) (2026-11-03)
 
 - Changed: Se modifican los estilos de los filtros de la lista de tareas
@@ -483,30 +464,18 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Fixed: se modifica que al abrir la edición, el formulario recibía la tarea del listado, que no incluye los detalles de repetición. Aunque la consulta del detalle sí los devuelve, esos campos no se copiaban al formulario.
 - Fixed: se ha dividido los estilos de Todo List en tres hojas independientes, manteniendo la encapsulación de Angular y sin tocar las plantillas ni la lógica. El CSS de cada hoja queda por debajo de 26 kB: página 21,7 kB, detalle 12,6 kB y formulario 9,6 kB. Angular aplica anyComponentStyle por hoja individual.
 
-<!-- CHANGELOG-PR-96-END -->
-
-<!-- CHANGELOG-PR-98-START -->
 ### [7.4.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/98) (2026-11-03)
 
 - Fixed: se corrige en la expresión de la línea 927: reemplacé ?? '' por || ''.
 
-<!-- CHANGELOG-PR-98-END -->
-
-<!-- CHANGELOG-PR-100-START -->
 ### [7.5.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/100) (2026-11-03)
 
 - Changed: cambio de estilos visuales en los input, textarea y select
 
-<!-- CHANGELOG-PR-100-END -->
-
-<!-- CHANGELOG-PR-102-START -->
 ### [7.6.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/102) (2026-11-03)
 
 - Changed: se añade una bandera roja SVG junto al título en las tareas de TODOList
 
-<!-- CHANGELOG-PR-102-END -->
-
-<!-- CHANGELOG-PR-104-START -->
 ### [7.7.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/104) (2026-11-04)
 
 - Added: se añade la ruta para la nueva pagina de dibujar
@@ -516,16 +485,10 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se añade el nuevo modelo de datos para la página de dibujar
 - Added: se añade la nueva pagina drawing-canvas con todos los componentes necesarios
 
-<!-- CHANGELOG-PR-104-END -->
-
-<!-- CHANGELOG-PR-106-START -->
 ### [7.8.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/106) (2026-11-05)
 
 - Added: se añade boton para salir del lienzo y volver a la lista de lienzos del usuario
 
-<!-- CHANGELOG-PR-106-END -->
-
-<!-- CHANGELOG-PR-108-START -->
 ### [7.9.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/108) (2026-11-05)
 
 - Added: se añaden los servicios necesarios para compartir en tiempo real los dibujos
@@ -536,30 +499,18 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se añaden los nuevos componentes para compartir los lienzos con los otros usuarios
 - Added: se añade la configuracion para la conexion con el ws en local y en el servidor
 
-<!-- CHANGELOG-PR-108-END -->
-
-<!-- CHANGELOG-PR-110-START -->
 ### [7.9.1](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/110) (2026-11-05)
 
 - Fixed: se modifica la url del websocket
 
-<!-- CHANGELOG-PR-110-END -->
-
-<!-- CHANGELOG-PR-111-START -->
 ### [7.9.2](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/111) (2026-11-05)
 
 - Change drawingCollaborationUrl to use wss protocol
 
-<!-- CHANGELOG-PR-111-END -->
-
-<!-- CHANGELOG-PR-112-START -->
 ### [7.9.3](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/112) (2026-11-05)
 
 - Change drawingCollaborationUrl to use ws protocol
 
-<!-- CHANGELOG-PR-112-END -->
-
-<!-- CHANGELOG-PR-116-START -->
 ### [7.10.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/116) (2026-11-10)
 
 - Added: se añade la nueva página de monitoreo de la app
@@ -584,9 +535,6 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se ha añadido en Monitorización historiales de herramientas y reparaciones, listas de tareas, tareas y proyectos, Dibujar, catálogos y usuarios y roles, además de cajas y taller. Las consultas requieren monitoring:app y registran el acceso antes de leer.
 - Changed: se ha rediseñado la página de Monitorización como un dashboard, manteniendo los colores y estilos de la aplicación.
 
-<!-- CHANGELOG-PR-116-END -->
-
-<!-- CHANGELOG-PR-117-START -->
 ### [7.11.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/117) (2026-11-12)
 
 - Added: se añade para poder mider las operaciones de Realtime Database del backend: lecturas, escrituras y transacciones, con latencia y fallos. La suite del backend pasa (366 pruebas), igual que las del frontend (20), ESLint y el build. No lo he probado contra Firebase real.
@@ -600,21 +548,13 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Changed: Ahora los eventos frontend.api.request.failed indican qué petición falló, desde qué página y qué usuario la hizo.
 - Added: 1. se añade que al abrir «Ver traza», se piden todas las páginas seguidas hasta un tope de 200 eventos (unas 8 peticiones). El veredicto, la posible causa, los tiempos y la secuencia «Qué ocurrió» se calculan con la traza entera y no dependen de la página.
 
-<!-- CHANGELOG-PR-117-END -->
-
-<!-- CHANGELOG-PR-119-START -->
 ### [7.12.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/119) (2026-11-14)
 
-- Added: La Fase 1 del plan de caché está implementada en el backend.
+- Added: la Fase 1 del plan de caché está implementada en el backend.
 - Added: se añade la vista del cache en el backend para ver lsi carga o no desde firebase, cargas y. errores
 
-<!-- CHANGELOG-PR-119-END -->
-
-<!-- CHANGELOG-PR-121-START -->
 ### [7.13.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/121) (2026-11-15)
 
-- Added: He creado la página Exámenes y la he añadido a la navegación, con selección de materia y tiempo, preguntas aleatorias, corrección, historial personal y gráficas.
+- Added: se ha creado la página Exámenes y la he añadido a la navegación, con selección de materia y tiempo, preguntas aleatorias, corrección, historial personal y gráficas.
 - Changed: se ha mejorado la página de exámenes:
-- Changed: se ha eorganizado Banco de preguntas en dos opciones diferenciadas: importar un archivo JSON y cargar el banco HAREC inicial. En móvil se muestran en columna.
-
-<!-- CHANGELOG-PR-121-END -->
+- Changed: se ha reorganizado Banco de preguntas en dos opciones diferenciadas: importar un archivo JSON y cargar el banco HAREC inicial. En móvil se muestran en columna.
