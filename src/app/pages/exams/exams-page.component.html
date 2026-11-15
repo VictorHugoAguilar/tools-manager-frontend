@@ -1,0 +1,116 @@
+<section class="exams">
+  <section class="subject-panel">
+    <div>
+      <p class="eyebrow">Práctica · Radioafición</p>
+      <p class="subject-copy">Elige una materia para preparar tu examen.</p>
+    </div>
+    <label for="exam-subject">Materia
+      <select id="exam-subject" [ngModel]="section()" (ngModelChange)="section.set($event)" [disabled]="exam()?.status === 'active' || busy()">
+        <option value="mixed">Mixto · 5 preguntas por bloque</option>
+        @for (item of sections(); track item.id) { <option [value]="item.id">{{ item.name }} ({{ item.count }})</option> }
+      </select>
+    </label>
+  </section>
+
+  @if (error()) { <p class="message error" role="alert">{{ error() }} <button type="button" (click)="error.set('')">Cerrar</button></p> }
+  @if (notice()) { <p class="message" role="status">{{ notice() }}</p> }
+  @if (loading()) { <p role="status">Cargando exámenes…</p> }
+
+  <div class="layout">
+    <main>
+      <section class="panel controls">
+        <label>Tiempo seleccionado
+          <select [ngModel]="minutes()" (ngModelChange)="minutes.set(+$event)" [disabled]="exam()?.status === 'active' || busy()">
+            @for (time of [5, 10, 15, 20, 30]; track time) { <option [value]="time">{{ time }} min</option> }
+          </select>
+        </label>
+        @if (exam(); as currentExam) {
+          @if (currentExam.status === 'active') {
+            <div class="timer"><strong>{{ clock(remaining()) }}</strong><small>Restante</small></div>
+            <div class="progress"><span>Pregunta {{ index() + 1 }} de {{ currentExam.questions.length }}</span>
+              <progress [value]="index() + 1" [max]="currentExam.questions.length"></progress>
+            </div>
+            <button type="button" class="outline" (click)="finish()" [disabled]="busy()">Finalizar</button>
+          } @else {
+            <div class="summary"><strong>{{ currentExam.correct }} / {{ currentExam.questions.length }} aciertos</strong>
+              <span>{{ currentExam.incorrect }} errores · {{ currentExam.unanswered }} sin responder</span></div>
+            <button type="button" class="primary" (click)="start()" [disabled]="busy()">Nuevo examen</button>
+          }
+        } @else {
+          <p>Selecciona materia y tiempo para comenzar.</p>
+          <button type="button" class="primary" (click)="start()" [disabled]="busy() || loading()">Comenzar examen</button>
+        }
+      </section>
+
+      @if (exam(); as currentExam) {
+        @if (current(); as question) {
+          <section class="panel question">
+            <span class="badge">Pregunta {{ index() + 1 }} de {{ currentExam.questions.length }}</span>
+            <h2>{{ question.question }}</h2>
+            <div class="options">
+              @for (option of question.options; track option.id; let i = $index) {
+                <button type="button" class="option"
+                  [class.selected]="currentExam.answers?.[question.id] === option.id"
+                  [class.correct]="currentExam.status === 'finished' && option.id === question.correctOptionId"
+                  [class.incorrect]="currentExam.status === 'finished' && currentExam.answers?.[question.id] === option.id && option.id !== question.correctOptionId"
+                  [disabled]="currentExam.status === 'finished' || busy()" (click)="answer(option.id)">
+                  <span class="letter">{{ ['A', 'B', 'C', 'D'][i] }}</span><span>{{ option.text }}</span>
+                  <span class="mark">{{ currentExam.answers?.[question.id] === option.id ? '✓' : '○' }}</span>
+                </button>
+              }
+            </div>
+            @if (currentExam.status === 'finished' && currentExam.answers?.[question.id] !== question.correctOptionId) {
+              <p class="explanation"><strong>Explicación:</strong> {{ question.explanation }}</p>
+            }
+            <footer>
+              <button type="button" class="outline" (click)="index.set(index() - 1)" [disabled]="index() === 0 || busy()">← Anterior</button>
+              <button type="button" class="primary" (click)="index.set(index() + 1)" [disabled]="index() >= currentExam.questions.length - 1 || busy()">Siguiente →</button>
+            </footer>
+          </section>
+        }
+      } @else {
+        <section class="panel empty"><h2>¿Preparado para practicar?</h2><p>Elige una materia y comienza. Las respuestas se corrigen al finalizar o al agotarse el tiempo.</p></section>
+      }
+
+      @if (auth.user()?.permissions?.includes('users:manage')) {
+        <section class="panel import">
+          <h2>Banco de preguntas</h2>
+          <p>Importa un JSON compatible: los ID existentes se actualizan y los demás se conservan. Máximo 2 MB y 1.000 preguntas por archivo.</p>
+          <label class="file" for="exam-import-file">
+            <span>Importar preguntas</span>
+            <input id="exam-import-file" type="file" accept=".json,application/json" (change)="importFile($event)" [disabled]="busy()">
+          </label>
+          <button type="button" class="outline" (click)="importInitial()" [disabled]="busy()">Cargar banco HAREC inicial</button>
+          <p class="note">Las preguntas normativas deben contrastarse con la legislación e instrucciones oficiales vigentes.</p>
+        </section>
+      }
+    </main>
+    <aside>
+      <section class="panel"><h2><span class="panel-icon" aria-hidden="true">▥</span> Tus estadísticas</h2>
+        <div class="stat-grid">
+          <div><strong>{{ stats().count }}</strong><span>Exámenes realizados</span></div>
+          <div><strong>{{ stats().percent }} %</strong><span>Media de aciertos</span></div>
+          <div><strong>{{ stats().errors | number:'1.0-1' }}</strong><span>Errores promedio</span></div>
+          <div><strong>{{ stats().minutes | number:'1.0-1' }} min</strong><span>Tiempo medio</span></div>
+        </div><p class="note">Estadísticas de los últimos 200 intentos; solo incluyen exámenes finalizados.</p>
+      </section>
+      <section class="panel"><h2><span class="panel-icon" aria-hidden="true">◷</span> Tiempos de los exámenes</h2>
+        @if (history().length) { <div class="chart"><canvas baseChart [data]="timeChart()" [options]="chartOptions" type="line"></canvas></div> }
+        @else { <p class="note">Aún no hay exámenes finalizados.</p> }
+      </section>
+      <section class="panel"><h2><span class="panel-icon" aria-hidden="true">◉</span> Resultados</h2>
+        @if (history().length) { <div class="chart"><canvas baseChart [data]="resultChart()" [options]="doughnutOptions" type="doughnut"></canvas></div> }
+        @else { <p class="note">Completa un examen para ver tus resultados.</p> }
+      </section>
+      <section class="panel"><h2><span class="panel-icon" aria-hidden="true">☷</span> Últimos exámenes</h2>
+        @for (record of (showHistory() ? history() : history().slice(0, 5)); track record.id) {
+          <button type="button" class="history" (click)="openResult(record.id)" [disabled]="busy()">
+            <span>{{ record.startedAt | date:'dd/MM/yyyy HH:mm' }} · {{ record.durationSeconds / 60 | number:'1.0-1' }} min</span>
+            <strong>{{ record.correct * 10 }} %</strong>
+          </button>
+        } @empty { <p class="note">No hay exámenes finalizados.</p> }
+        @if (history().length > 5) { <button type="button" class="link" (click)="showHistory.set(!showHistory())">{{ showHistory() ? 'Ver menos' : 'Ver todos' }}</button> }
+      </section>
+    </aside>
+  </div>
+</section>

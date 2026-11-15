@@ -102,6 +102,16 @@ export const appRoutes: Routes = [
         }
       },
       {
+        path: 'examenes',
+        loadComponent: () => import('./pages/exams/exams-page.component').then((module) => module.ExamsPageComponent),
+        data: {
+          eyebrow: 'Aprendizaje',
+          title: 'Exámenes tipo test',
+          description: 'Pon a prueba tus conocimientos con exámenes de 10 preguntas.',
+          showCreateAction: false
+        }
+      },
+      {
         path: 'dibujar',
         loadComponent: () => import('./pages/drawing/drawing-library-page.component')
           .then((module) => module.DrawingLibraryPageComponent),
