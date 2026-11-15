@@ -4,7 +4,7 @@ import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 import { CsrfTokenService } from './csrf-token.service';
 
-const SEND_INTERVAL_MS = 15000;
+const SEND_INTERVAL_MS = 60000;
 
 @Injectable({ providedIn: 'root' })
 export class ActiveUserService {
