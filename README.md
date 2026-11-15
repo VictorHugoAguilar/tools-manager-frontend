@@ -609,3 +609,12 @@ El formato sigue una estructura inspirada en [Keep a Changelog](https://keepacha
 - Added: se añade la vista del cache en el backend para ver lsi carga o no desde firebase, cargas y. errores
 
 <!-- CHANGELOG-PR-119-END -->
+
+<!-- CHANGELOG-PR-121-START -->
+### [7.13.0](https://github.com/VictorHugoAguilar/tools-manager-frontend/pull/121) (2026-11-15)
+
+- Added: He creado la página Exámenes y la he añadido a la navegación, con selección de materia y tiempo, preguntas aleatorias, corrección, historial personal y gráficas.
+- Changed: se ha mejorado la página de exámenes:
+- Changed: se ha eorganizado Banco de preguntas en dos opciones diferenciadas: importar un archivo JSON y cargar el banco HAREC inicial. En móvil se muestran en columna.
+
+<!-- CHANGELOG-PR-121-END -->
