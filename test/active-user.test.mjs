@@ -86,13 +86,14 @@ test('only trusted visible authenticated interactions send a CSRF-protected sign
   assert.equal(s.timer(), null);
 });
 
-test('continuous input is throttled and a trailing signal only follows actual input', async (t) => {
+test('continuous input is throttled to one signal per minute with a trailing signal', async (t) => {
   const s = setup(t);
   s.event('keydown');
   await tick();
   s.event('wheel');
   s.event('pointerdown');
-  assert.equal(s.timer().delay, 15000);
+  assert.equal(s.calls.length, 1);
+  assert.equal(s.timer().delay, 60000);
   s.runTimer();
   await tick();
   assert.equal(s.calls.length, 2);
