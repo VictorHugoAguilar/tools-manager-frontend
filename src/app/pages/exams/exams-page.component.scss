@@ -268,8 +268,26 @@ progress { width: 100%; accent-color: var(--success); }
 }
 .history:hover:not(:disabled) { color: #2f8062; }
 .link { margin-top: 0.5rem; border: 0; background: transparent; color: var(--primary); font-weight: 800; text-decoration: underline; }
-.import { display: flex; align-items: center; flex-wrap: wrap; gap: 0.8rem; }
-.import h2, .import p { width: 100%; }
+.import { display: grid; gap: 0.8rem; }
+.import-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.75rem;
+}
+.import-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--accent-cream);
+}
+.import-option h3 { margin: 0; font-size: 0.9rem; }
+.import-option p { color: var(--muted); font-size: 0.8rem; line-height: 1.4; }
+.import-option > button, .import-option > .file { margin-top: auto; }
 .file {
   display: grid;
   min-width: 0;

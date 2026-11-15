@@ -110,12 +110,22 @@
       @if (auth.user()?.permissions?.includes('users:manage')) {
         <section class="panel import">
           <h2>Banco de preguntas</h2>
-          <p>Importa un JSON compatible: los ID existentes se actualizan y los demás se conservan. Máximo 2 MB y 1.000 preguntas por archivo.</p>
-          <label class="file" for="exam-import-file">
-            <span>Importar preguntas</span>
-            <input id="exam-import-file" type="file" accept=".json,application/json" (change)="importFile($event)" [disabled]="busy()">
-          </label>
-          <button type="button" class="outline" (click)="importInitial()" [disabled]="busy()">Cargar banco HAREC inicial</button>
+          <p>Los ID existentes se actualizan y las demás preguntas se conservan.</p>
+          <div class="import-actions">
+            <div class="import-option">
+              <h3>Importar archivo</h3>
+              <p id="exam-import-help">Selecciona un JSON compatible de hasta 2 MB y 1.000 preguntas.</p>
+              <label class="file" for="exam-import-file">
+                <span>Archivo de preguntas</span>
+                <input id="exam-import-file" type="file" accept=".json,application/json" aria-describedby="exam-import-help" (change)="importFile($event)" [disabled]="busy()">
+              </label>
+            </div>
+            <div class="import-option">
+              <h3>Banco HAREC inicial</h3>
+              <p>Añade o actualiza las 60 preguntas iniciales del banco.</p>
+              <button type="button" class="outline" (click)="importInitial()" [disabled]="busy()">Cargar banco HAREC inicial</button>
+            </div>
+          </div>
           <p class="note">Las preguntas normativas deben contrastarse con la legislación e instrucciones oficiales vigentes.</p>
         </section>
       }
